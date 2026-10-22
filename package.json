@@ -8,12 +8,12 @@
     "frontend"
   ],
   "scripts": {
-    "agent:dev": "npm --workspace=agent run dev",
-    "agent:propose": "npm --workspace=agent run propose",
-    "agent:build": "npm --workspace=agent run build",
-    "frontend:dev": "npm --workspace=frontend run dev",
-    "frontend:build": "npm --workspace=frontend run build",
-    "build": "npm run agent:build && npm run frontend:build",
+    "build": "cd frontend && npm run build",
+    "frontend:build": "cd frontend && npm run build",
+    "agent:build": "cd agent && npm run build",
+    "agent:dev": "npm --workspace=@zinipay/agent run dev",
+    "agent:propose": "npm --workspace=@zinipay/agent run propose",
+    "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
     "setup:testnet": "node scripts/setup-testnet.mjs"
   }
 }
