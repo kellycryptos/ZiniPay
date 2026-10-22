@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
-const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? '';
+const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'genesis.sputnikv2.testnet';
 
 export interface Proposal {
   id: number;
@@ -42,7 +42,7 @@ async function viewFunction<T>(methodName: string, args: object = {}): Promise<T
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       jsonrpc: '2.0',
-      id: `syncommons-${methodName}`,
+      id: `zinipay-${methodName}`,
       method: 'query',
       params: {
         request_type: 'call_function',
@@ -76,7 +76,7 @@ export function useNearDao() {
       setProposals([
         {
           id: 104,
-          proposer: 'syncommons-agent.testnet',
+          proposer: 'zinipay-agent.testnet',
           description: 'Deliverable validated: Q4 Developer documentation & tutorials | Deliverable: https://github.com/community/docs/pull/42 | Agent confidence: 96/100',
           kind: {
             Transfer: {
@@ -92,7 +92,7 @@ export function useNearDao() {
         },
         {
           id: 103,
-          proposer: 'syncommons-agent.testnet',
+          proposer: 'zinipay-agent.testnet',
           description: 'Community Bounty #12: Smart contract security audit summary | Deliverable: ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | Agent confidence: 92/100',
           kind: {
             Transfer: {

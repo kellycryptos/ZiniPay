@@ -48,7 +48,7 @@ export interface ThreeWayMatchResult {
   attestationSummary: string; // Used for on-chain Sputnik DAO proposal description
 }
 
-const INSPECTOR_SYSTEM_PROMPT = `You are the Inspector Agent in SynCommons.
+const INSPECTOR_SYSTEM_PROMPT = `You are the Inspector Agent in ZiniPay.
 Your job is technical deliverable verification for community grants & bounties.
 
 Analyze:
@@ -64,7 +64,7 @@ Respond in JSON ONLY:
   "artifactVerified": boolean
 }`;
 
-const RISK_SYSTEM_PROMPT = `You are the Risk Arbiter Agent in SynCommons.
+const RISK_SYSTEM_PROMPT = `You are the Risk Arbiter Agent in ZiniPay.
 Your job is treasury protection and financial risk assessment.
 
 Analyze:

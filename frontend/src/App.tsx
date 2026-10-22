@@ -17,7 +17,7 @@ import { Proposal, ActivityEvent } from './lib/types.ts';
 import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles } from 'lucide-react';
 
 const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
-const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'zinipay.sputnik-dao.testnet';
+const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'genesis.sputnikv2.testnet';
 
 const PRESETS = [
   {

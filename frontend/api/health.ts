@@ -14,9 +14,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     version: '1.0.0',
     service: 'ZiniPay Agent Layer & Deliberation Engine',
     network: 'near-testnet',
-    sputnikDao: 'zinipay.sputnikdao2.testnet',
+    sputnikDao: 'genesis.sputnikv2.testnet',
     contracts: {
-      sputnikDaoV2: 'sputnikdao2.testnet',
+      sputnikDaoFactory: 'sputnikv2.testnet',
+      sputnikDaoContract: 'genesis.sputnikv2.testnet',
       policyGuard: 'zinipay-policy.testnet',
     },
     features: [

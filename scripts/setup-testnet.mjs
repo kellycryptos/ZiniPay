@@ -23,12 +23,12 @@ const ask = (q) => new Promise((res) => rl.question(q, res));
 
 console.log(`
 ╔══════════════════════════════════════════════╗
-║  SynCommons — Testnet Setup                  ║
+║  ZiniPay — Testnet Setup                     ║
 ╚══════════════════════════════════════════════╝
 `);
 
-const daoId = await ask('Enter your Sputnik DAO contract ID (e.g. my-dao.sputnik-dao.testnet): ');
-const agentAccount = await ask('Enter the agent NEAR account ID (e.g. syncommons-agent.testnet): ');
+const daoId = await ask('Enter your Sputnik DAO contract ID (e.g. zinipay.sputnikdao2.testnet): ');
+const agentAccount = await ask('Enter the agent NEAR account ID (e.g. zinipay-agent.testnet): ');
 
 console.log(`
 Next steps (run these in your terminal):
