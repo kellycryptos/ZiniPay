@@ -10,21 +10,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@near-wallet-selector/core": "^10.1.4",
+    "@near-wallet-selector/here-wallet": "^10.1.4",
+    "@near-wallet-selector/meteor-wallet": "^10.1.4",
+    "@near-wallet-selector/modal-ui": "^10.1.4",
+    "@near-wallet-selector/my-near-wallet": "^10.1.4",
+    "axios": "^1.7.9",
     "lucide-react": "^0.468.0",
-    "axios": "^1.7.9"
+    "near-api-js": "^7.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/node": "^22.10.0",
     "@vercel/node": "^5.1.8",
     "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.7",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
   }
 }

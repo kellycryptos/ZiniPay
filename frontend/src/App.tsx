@@ -17,7 +17,9 @@ import { IntentsModal } from './components/IntentsModal.tsx';
 import { WalletModal } from './components/WalletModal.tsx';
 import { initialProposals, mockPolicyMetrics, initialActivities } from './lib/mockData.ts';
 import { Proposal, ActivityEvent } from './lib/types.ts';
-import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles } from 'lucide-react';
+import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles, RefreshCw } from 'lucide-react';
+import { fetchDaoProposals, fetchDaoTreasuryBalance, fetchDaoPolicy } from './lib/nearRpc.ts';
+import { signAndSendDaoVote } from './lib/wallet.ts';
 
 const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
 const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'genesis.sputnikv2.testnet';
@@ -50,6 +52,11 @@ const PRESETS = [
 ];
 
 export default function App() {
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>((import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet');
+  const [daoContract, setDaoContract] = useState(import.meta.env.VITE_DAO_CONTRACT_ID || 'genesis.sputnikv2.testnet');
+  const [treasuryBalance, setTreasuryBalance] = useState<number>(45.8);
+  const [isLoadingOnChain, setIsLoadingOnChain] = useState<boolean>(false);
+
   const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
   const [activities, setActivities] = useState<ActivityEvent[]>(initialActivities);
   const [filter, setFilter] = useState<'all' | 'pending' | 'settled' | 'intents'>('all');
@@ -61,6 +68,34 @@ export default function App() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState<string | null>('judge-council.testnet');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Load real proposals and balance from NEAR RPC
+  const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
+    setIsLoadingOnChain(true);
+    try {
+      const [liveBalance, liveProps] = await Promise.all([
+        fetchDaoTreasuryBalance(targetDao, targetNet),
+        fetchDaoProposals(targetDao, targetNet, 15),
+      ]);
+
+      if (liveBalance > 0) {
+        setTreasuryBalance(liveBalance);
+      }
+
+      if (liveProps.length > 0) {
+        setProposals(liveProps);
+        showToast(`Loaded ${liveProps.length} live proposals from ${targetDao} (${targetNet})`);
+      }
+    } catch (err: any) {
+      console.warn('RPC query:', err);
+    } finally {
+      setIsLoadingOnChain(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadLiveDaoData();
+  }, [network, daoContract]);
 
   // Proposal builder form state
   const [task, setTask] = useState('Build Sputnik DAO Three-Way Match Integration');
@@ -77,7 +112,22 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleVote = (proposalId: number, approve: boolean) => {
+  const handleVote = async (proposalId: number, approve: boolean) => {
+    // If user has a real wallet connected via NEAR Wallet Selector, sign transaction
+    try {
+      if (connectedAccount && !connectedAccount.includes('judge-') && !connectedAccount.includes('agent.')) {
+        showToast(`Broadcasting act_proposal vote to NEAR RPC...`);
+        await signAndSendDaoVote({
+          daoContractId: daoContract,
+          proposalId,
+          approve,
+        });
+        showToast(`Transaction confirmed on NEAR! Vote cast.`);
+      }
+    } catch (err: any) {
+      console.warn('Real wallet signing fallback:', err);
+    }
+
     setProposals((prev) =>
       prev.map((p) => {
         if (p.id === proposalId) {
@@ -298,6 +348,7 @@ export default function App() {
       <WalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
+        network={network}
         connectedAccount={connectedAccount}
         onConnect={(acc, role) => {
           setConnectedAccount(acc);
@@ -312,11 +363,23 @@ export default function App() {
 
       {/* ── Top Navigation ──────────────────────────────────────────────── */}
       <Navbar
-        network={NETWORK}
-        daoContract={DAO_CONTRACT}
-        treasuryBalance={mockPolicyMetrics.treasuryBalanceNear}
-        loading={false}
-        onRefresh={() => showToast('Refreshed state from Sputnik DAO RPC')}
+        network={network}
+        onNetworkChange={(net) => {
+          setNetwork(net);
+          const defaultDao = net === 'mainnet' ? 'build.sputnik-dao.near' : 'genesis.sputnikv2.testnet';
+          setDaoContract(defaultDao);
+          showToast(`Switched network to NEAR ${net.toUpperCase()}`);
+        }}
+        daoContract={daoContract}
+        onDaoContractChange={(dao) => {
+          setDaoContract(dao);
+        }}
+        treasuryBalance={treasuryBalance}
+        loading={isLoadingOnChain}
+        onRefresh={() => {
+          loadLiveDaoData(daoContract, network);
+          showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()} RPC`);
+        }}
         activeRole={activeRole}
         onRoleChange={(r) => {
           setActiveRole(r);
@@ -386,8 +449,8 @@ export default function App() {
                   <ProposalCard
                     key={p.id}
                     proposal={p}
-                    daoContractId={DAO_CONTRACT}
-                    network={NETWORK}
+                    daoContractId={daoContract}
+                    network={network}
                     onVote={handleVote}
                     onInspectProof={(prop) => setSelectedProofProposal(prop)}
                     onInspectDeliberation={(prop) => setDeliberationProposal(prop)}

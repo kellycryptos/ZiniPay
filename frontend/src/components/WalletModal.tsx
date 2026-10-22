@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { X, Wallet, Check, Shield, UserCheck, Sparkles, ExternalLink } from 'lucide-react';
+import { X, Wallet, Check, Shield, UserCheck, Sparkles, ExternalLink, Globe } from 'lucide-react';
+import { initNearWallet } from '../lib/wallet.ts';
 
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
+  network?: 'testnet' | 'mainnet';
   connectedAccount: string | null;
   onConnect: (accountId: string, role: 'council' | 'agent' | 'contributor') => void;
   onDisconnect: () => void;
@@ -12,13 +14,28 @@ interface WalletModalProps {
 export function WalletModal({
   isOpen,
   onClose,
+  network = 'testnet',
   connectedAccount,
   onConnect,
   onDisconnect,
 }: WalletModalProps) {
   const [customInput, setCustomInput] = useState('');
+  const [isLaunching, setIsLaunching] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleLaunchOfficialModal = async () => {
+    setIsLaunching(true);
+    try {
+      const { modal } = await initNearWallet(network);
+      modal.show();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLaunching(false);
+    }
+  };
 
   const DEMO_ACCOUNTS = [
     {
@@ -97,6 +114,22 @@ export function WalletModal({
           ) : (
             <div className="flex flex-col gap-4">
               
+              {/* Official NEAR Selector Button */}
+              <button
+                onClick={handleLaunchOfficialModal}
+                disabled={isLaunching}
+                className="w-full py-3 px-4 rounded-xl near-gradient text-black font-extrabold text-xs flex items-center justify-center gap-2 hover:opacity-95 transition-opacity shadow-lg shadow-emerald-500/20"
+              >
+                <Wallet size={16} />
+                <span>{isLaunching ? 'Connecting...' : `Connect Real Wallet (MyNearWallet / Meteor / HERE)`}</span>
+              </button>
+
+              <div className="flex items-center gap-2 my-1">
+                <div className="h-px bg-gray-800 flex-1"></div>
+                <span className="text-[10px] text-gray-500 uppercase font-mono">or 1-click profiles</span>
+                <div className="h-px bg-gray-800 flex-1"></div>
+              </div>
+
               <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
                 <Sparkles size={14} />
                 <span>Instant Hackathon Evaluation Profiles:</span>

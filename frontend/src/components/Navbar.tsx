@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Coins, RefreshCw, Wallet, Check, ChevronDown, Shield } from 'lucide-react';
 
 interface NavbarProps {
-  network: string;
+  network: 'testnet' | 'mainnet';
+  onNetworkChange: (network: 'testnet' | 'mainnet') => void;
   daoContract: string;
+  onDaoContractChange: (dao: string) => void;
   treasuryBalance: number;
   loading: boolean;
   onRefresh: () => void;
@@ -15,7 +17,9 @@ interface NavbarProps {
 
 export function Navbar({
   network,
+  onNetworkChange,
   daoContract,
+  onDaoContractChange,
   treasuryBalance,
   loading,
   onRefresh,
@@ -54,17 +58,29 @@ export function Navbar({
           <span className="text-emerald-400 font-bold">{treasuryBalance.toFixed(1)} NEAR</span>
         </div>
 
-        {/* Contract Address */}
-        <span className="text-xs text-gray-400 font-mono bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800">
-          {daoContract}
-        </span>
+        {/* DAO Contract Input */}
+        <div className="flex items-center gap-1.5 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 text-xs font-mono">
+          <span className="text-gray-500">DAO:</span>
+          <input
+            value={daoContract}
+            onChange={(e) => onDaoContractChange(e.target.value)}
+            className="bg-transparent text-white font-mono focus:outline-none w-36 sm:w-48 text-xs font-semibold"
+            placeholder="genesis.sputnikv2.testnet"
+          />
+        </div>
 
-        {/* Network Pill */}
-        <span className={`status-badge border ${
-          network === 'testnet' ? 'bg-amber-400/10 text-amber-400 border-amber-400/30' : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30'
-        }`}>
-          {network}
-        </span>
+        {/* Network Pill / Toggle */}
+        <button
+          onClick={() => onNetworkChange(network === 'testnet' ? 'mainnet' : 'testnet')}
+          className={`status-badge border transition-all cursor-pointer font-bold ${
+            network === 'testnet'
+              ? 'bg-amber-400/10 text-amber-400 border-amber-400/30 hover:bg-amber-400/20'
+              : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20'
+          }`}
+          title="Click to toggle between Testnet and Mainnet"
+        >
+          {network.toUpperCase()} ⟲
+        </button>
 
         {/* Refresh */}
         <button
