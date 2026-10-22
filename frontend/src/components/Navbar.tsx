@@ -9,6 +9,8 @@ interface NavbarProps {
   onRefresh: () => void;
   activeRole: 'council' | 'agent' | 'contributor';
   onRoleChange: (role: 'council' | 'agent' | 'contributor') => void;
+  connectedAccount: string | null;
+  onOpenWalletModal: () => void;
 }
 
 export function Navbar({
@@ -19,8 +21,9 @@ export function Navbar({
   onRefresh,
   activeRole,
   onRoleChange,
+  connectedAccount,
+  onOpenWalletModal,
 }: NavbarProps) {
-  const [walletConnected, setWalletConnected] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   return (
@@ -111,15 +114,15 @@ export function Navbar({
 
         {/* Wallet Connect */}
         <button
-          onClick={() => setWalletConnected(!walletConnected)}
+          onClick={onOpenWalletModal}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
-            walletConnected
+            connectedAccount
               ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 shadow-emerald-600/10'
               : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/30'
           }`}
         >
           <Wallet size={14} />
-          {walletConnected ? 'Connected: council.testnet' : 'Connect Wallet'}
+          {connectedAccount ? `${connectedAccount}` : 'Connect Wallet'}
         </button>
       </div>
     </header>

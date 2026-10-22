@@ -12,6 +12,9 @@ import { ProposalCard } from './components/ProposalCard.tsx';
 import { PolicyPanel } from './components/PolicyPanel.tsx';
 import { ActivityLog } from './components/ActivityLog.tsx';
 import { ProofModal } from './components/ProofModal.tsx';
+import { DeliberationModal } from './components/DeliberationModal.tsx';
+import { IntentsModal } from './components/IntentsModal.tsx';
+import { WalletModal } from './components/WalletModal.tsx';
 import { initialProposals, mockPolicyMetrics, initialActivities } from './lib/mockData.ts';
 import { Proposal, ActivityEvent } from './lib/types.ts';
 import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles } from 'lucide-react';
@@ -53,6 +56,10 @@ export default function App() {
   const [tab, setTab] = useState<'proposals' | 'propose'>('proposals');
   const [activeRole, setActiveRole] = useState<'council' | 'agent' | 'contributor'>('council');
   const [selectedProofProposal, setSelectedProofProposal] = useState<Proposal | null>(null);
+  const [deliberationProposal, setDeliberationProposal] = useState<Proposal | null>(null);
+  const [intentsProposal, setIntentsProposal] = useState<Proposal | null>(null);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [connectedAccount, setConnectedAccount] = useState<string | null>('judge-council.testnet');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Proposal builder form state
@@ -267,6 +274,42 @@ export default function App() {
         onClose={() => setSelectedProofProposal(null)}
       />
 
+      {/* Deliberation Modal */}
+      <DeliberationModal
+        proposal={deliberationProposal}
+        isOpen={Boolean(deliberationProposal)}
+        onClose={() => setDeliberationProposal(null)}
+      />
+
+      {/* Intents Cross-Chain Settlement Modal */}
+      <IntentsModal
+        proposal={intentsProposal}
+        isOpen={Boolean(intentsProposal)}
+        onClose={() => setIntentsProposal(null)}
+        onSettled={(id) => {
+          setProposals((prev) =>
+            prev.map((p) => (p.id === id ? { ...p, status: 'settled' } : p))
+          );
+          showToast(`Proposal #${id} settled cross-chain via NEAR Intents!`);
+        }}
+      />
+
+      {/* Wallet Selector Modal */}
+      <WalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        connectedAccount={connectedAccount}
+        onConnect={(acc, role) => {
+          setConnectedAccount(acc);
+          setActiveRole(role);
+          showToast(`Connected as ${acc} (${role})`);
+        }}
+        onDisconnect={() => {
+          setConnectedAccount(null);
+          showToast('Wallet disconnected');
+        }}
+      />
+
       {/* ── Top Navigation ──────────────────────────────────────────────── */}
       <Navbar
         network={NETWORK}
@@ -279,6 +322,8 @@ export default function App() {
           setActiveRole(r);
           showToast(`Switched active view to: ${r}`);
         }}
+        connectedAccount={connectedAccount}
+        onOpenWalletModal={() => setIsWalletModalOpen(true)}
       />
 
       {/* ── Main Content Area ───────────────────────────────────────────── */}
@@ -345,6 +390,8 @@ export default function App() {
                     network={NETWORK}
                     onVote={handleVote}
                     onInspectProof={(prop) => setSelectedProofProposal(prop)}
+                    onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
+                    onExecuteIntent={(prop) => setIntentsProposal(prop)}
                   />
                 ))}
 

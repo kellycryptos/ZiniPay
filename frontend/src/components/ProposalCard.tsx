@@ -19,6 +19,8 @@ interface Props {
   network: string;
   onVote?: (id: number, approve: boolean) => void;
   onInspectProof?: (proposal: Proposal) => void;
+  onInspectDeliberation?: (proposal: Proposal) => void;
+  onExecuteIntent?: (proposal: Proposal) => void;
 }
 
 const STATUS_CONFIG = {
@@ -28,7 +30,15 @@ const STATUS_CONFIG = {
   rejected:       { icon: XCircle, color: 'text-red-400', bg: 'bg-red-400/10 border-red-400/20', label: 'Rejected' },
 };
 
-export function ProposalCard({ proposal, daoContractId, network, onVote, onInspectProof }: Props) {
+export function ProposalCard({
+  proposal,
+  daoContractId,
+  network,
+  onVote,
+  onInspectProof,
+  onInspectDeliberation,
+  onExecuteIntent,
+}: Props) {
   const cfg = STATUS_CONFIG[proposal.status] || STATUS_CONFIG.pending_quorum;
   const StatusIcon = cfg.icon;
 
@@ -114,15 +124,37 @@ export function ProposalCard({ proposal, daoContractId, network, onVote, onInspe
           )}
         </div>
 
-        {onInspectProof && (
-          <button
-            onClick={() => onInspectProof(proposal)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 hover:text-cyan-300 font-medium transition-colors border border-gray-700"
-          >
-            <FileSearch size={13} />
-            <span>Inspect Proof</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {onInspectDeliberation && (
+            <button
+              onClick={() => onInspectDeliberation(proposal)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 font-medium transition-colors border border-purple-500/30"
+            >
+              <Cpu size={13} className="text-purple-400" />
+              <span>TEE Deliberation</span>
+            </button>
+          )}
+
+          {onInspectProof && (
+            <button
+              onClick={() => onInspectProof(proposal)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 hover:text-cyan-300 font-medium transition-colors border border-gray-700"
+            >
+              <FileSearch size={13} />
+              <span>Inspect Proof</span>
+            </button>
+          )}
+
+          {proposal.settlement.type === 'cross_chain_intent' && onExecuteIntent && (
+            <button
+              onClick={() => onExecuteIntent(proposal)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 font-medium transition-colors border border-blue-500/30"
+            >
+              <Globe size={13} className="text-blue-400" />
+              <span>Intent Solver ({proposal.settlement.targetChain.toUpperCase()})</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Footer & Voting Actions */}
