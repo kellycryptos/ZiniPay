@@ -1,0 +1,19 @@
+{
+  "name": "zinipay",
+  "version": "1.0.0",
+  "description": "ZiniPay: 100% NEAR-Aligned Constrained Agent Layer for Community Treasuries (Sputnik DAO & Trezu)",
+  "private": true,
+  "workspaces": [
+    "agent",
+    "frontend"
+  ],
+  "scripts": {
+    "agent:dev": "npm --workspace=agent run dev",
+    "agent:propose": "npm --workspace=agent run propose",
+    "agent:build": "npm --workspace=agent run build",
+    "frontend:dev": "npm --workspace=frontend run dev",
+    "frontend:build": "npm --workspace=frontend run build",
+    "build": "npm run agent:build && npm run frontend:build",
+    "setup:testnet": "node scripts/setup-testnet.mjs"
+  }
+}
