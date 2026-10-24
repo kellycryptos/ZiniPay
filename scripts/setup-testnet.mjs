@@ -36,18 +36,24 @@ Next steps (run these in your terminal):
 ─── 1. Create the agent account (skip if it already exists) ───────────────────
   near create-account ${agentAccount} --useFaucet --networkId testnet
 
-─── 2. Create a function-call key for the agent ───────────────────────────────
-  (This key can ONLY call add_proposal — it cannot transfer funds or change policy)
+─── 2. Key Architecture & Bond Handling ─────────────────────────────────────
+  Note: NEAR function-call access keys cannot attach a non-zero deposit.
+  
+  Pattern A (Recommended: Funded Proposer Account):
+    If your Sputnik DAO requires a proposal bond (e.g. 1 NEAR), fund ${agentAccount}
+    with 2-5 testnet NEAR. The agent will attach the bond deposit when submitting proposals.
+    Security: The agent holds zero access to the DAO account; only its own small bond balance is active.
+    Export key: cat ~/.near-credentials/testnet/${agentAccount}.json
 
-  near add-key ${agentAccount} \\
-    --contract-id ${daoId} \\
-    --allowance 0.25 \\
-    --method-names add_proposal \\
-    --networkId testnet
+  Pattern B (0-Bond Role with Restricted Function-Call Key):
+    If your DAO sets proposal_bond to "0" for the Requestor role, add a restricted function-call key:
+    near add-key ${agentAccount} \\
+      --contract-id ${daoId} \\
+      --allowance 0.25 \\
+      --method-names add_proposal \\
+      --networkId testnet
 
-  Then view the key: near list-keys ${agentAccount} --networkId testnet
-  Copy the ed25519 public key, then export the private key from your keystore:
-    cat ~/.near-credentials/testnet/${agentAccount}.json
+  Then export the private key for ${agentAccount} from your keystore.
 
 ─── 3. Add the agent as a Requestor in Trezu ──────────────────────────────────
   - Go to https://app.trezu.org (or testnet equivalent)

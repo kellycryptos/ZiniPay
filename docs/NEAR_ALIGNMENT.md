@@ -5,16 +5,16 @@
 
 ---
 
-## 🏛️ Executive Summary: The 6 Pillars of Alignment
+## 🏛️ Executive Summary: Core Alignment Pillars
 
 | NEAR Primitive / Hackathon Track | Official NEAR Specification | How ZiniPay Implements It | Verified Code Reference |
 |---|---|---|---|
-| **1. Sputnik DAO v2** | `near-daos/sputnik-dao-contract` | Uses native `add_proposal` (Transfer & FunctionCall), `act_proposal`, and `get_policy`. Attaches `proposal_bond`. Operates on live instances (`*.sputnik-dao.near`) without rebuilding the base multisig. | [`agent/src/dao.ts`](../agent/src/dao.ts) |
-| **2. Trezu Operational Roles** | `docs.trezu.org` & `NEAR-DevHub/trezu` | The AI agent is assigned the **Requestor** role. It queues proposals under policy constraints; human members in **Finance** or **Governance** retain ultimate voting and veto authority. | [`agent/src/index.ts`](../agent/src/index.ts) |
-| **3. Restricted Key Security** | NEAR Account Model (`docs.near.org`) | The agent operates under a **Function-Call Access Key** restricted strictly to `add_proposal` with a finite gas allowance. It is mathematically impossible for the agent to drain funds. | [`scripts/setup-testnet.mjs`](../scripts/setup-testnet.mjs) |
-| **4. NEAR AI Cloud** | `cloud.near.ai` (TEE Inference) | Multi-agent deliberation runs via `https://cloud-api.near.ai/v1` (Intel TDX / AMD SEV TEE enclaves) on open models (Llama 3.3 70B, DeepSeek). User-owned, private compute. | [`agent/src/deliberation.ts`](../agent/src/deliberation.ts) |
-| **5. NEAR Intents** | `near-intents.org` (Defuse / 1Click) | Payouts route through the NEAR Intents 1Click API (`1click.chaindefuser.com`) for atomic, bridge-less settlement in native USDC on Ethereum, Solana, and Bitcoin. | [`agent/src/intents.ts`](../agent/src/intents.ts) |
-| **6. Social Money Track** | Hackathon Prompt: *"Build what communities do with Sputnik DAO & Trezu"* | Delivers **Three-Way Match releases**, **programmable rewards**, **reputation-tier scaling (Bronze/Silver/Gold)**, and anti-replay protection. | [`agent/src/policy.ts`](../agent/src/policy.ts) & [`reputation.ts`](../agent/src/reputation.ts) |
+| **1. Sputnik DAO v2** | `near-daos/sputnik-dao-contract` | Uses native `add_proposal` (FunctionCall to policy helper or Transfer), `act_proposal`, and `get_policy`. Attaches `proposal_bond` if required by DAO policy. Operates on live instances (`*.sputnik-dao.near`) without rebuilding the base multisig. | [`agent/src/dao.ts`](../agent/src/dao.ts) |
+| **2. Trezu Operational Roles** | `docs.trezu.org` & `NEAR-DevHub/trezu` | The AI agent is assigned the **Requestor** role. It queues proposals under on-chain policy constraints; human members in **Finance** or **Governance** retain ultimate voting and veto authority. | [`agent/src/index.ts`](../agent/src/index.ts) |
+| **3. Proposer Sandboxing & Security** | NEAR Account Model (`docs.near.org`) | The agent only has permissions to file proposals. It cannot unilaterally release treasury funds. All payouts require human multi-sig quorum approval. | [`scripts/setup-testnet.mjs`](../scripts/setup-testnet.mjs) |
+| **4. NEAR AI Cloud** | `api.near.ai` (TEE Inference) | Multi-agent deliberation runs via `https://api.near.ai/v1` on open models (Llama 3.3 70B, DeepSeek). When credentials are absent, runs in explicit `--dry-run` simulation mode. | [`agent/src/deliberation.ts`](../agent/src/deliberation.ts) |
+| **5. NEAR Intents** | `1click.chaindefuser.com` (Defuse / 1Click) | Optional cross-chain payouts route through the NEAR Intents 1Click API for atomic settlement in native USDC on Ethereum, Solana, and Bitcoin. | [`agent/src/intents.ts`](../agent/src/intents.ts) |
+| **6. Social Money Track** | Hackathon Prompt: *"Build what communities do with Sputnik DAO & Trezu"* | Delivers **Three-Way Match releases**, **on-chain policy helper contract**, **reputation-tier scaling (Bronze/Silver/Gold)**, and anti-replay protection. | [`agent/src/policy.ts`](../agent/src/policy.ts) & [`contracts/policy-helper`](../contracts/policy-helper) |
 
 ---
 
@@ -22,19 +22,26 @@
 
 The hackathon explicitly advises: **"Don't rebuild the multisig — build what communities do with it."**
 
-ZiniPay adheres to this 100%:
-- **No Redundant Multisig Contracts**: We deploy or connect to standard Sputnik DAO v2 instances (`sputnikv2.testnet` / `sputnik-dao.near`).
+ZiniPay adheres to this principle:
+- **No Redundant Multisig Contracts**: We connect to standard Sputnik DAO v2 instances (`sputnikv2.testnet` / `sputnik-dao.near`).
 - **Standard ABI Compatibility**:
   - `add_proposal`:
+    Submits an atomic `FunctionCall` proposal into the `policy-helper` contract (`release` method) or a fallback `Transfer` proposal:
     ```json
     {
       "proposal": {
-        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: https://... | Confidence: 95%",
+        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: near/core-contracts#42 | Confidence: 95%",
         "kind": {
-          "Transfer": {
-            "token_id": "",
-            "receiver_id": "contributor.testnet",
-            "amount": "4500000000000000000000000"
+          "FunctionCall": {
+            "receiver_id": "policy.zinipay.testnet",
+            "actions": [
+              {
+                "method_name": "release",
+                "args": "eyJyZWNpcGllbnQiOiJhbGljZS50ZXN0bmV0IiwiYW1vdW50IjoiNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImNpZCI6Im5lYXIvY29yZS1jb250cmFjdHMjNDIifQ==",
+                "deposit": "5000000000000000000000000",
+                "gas": "150000000000000"
+              }
+            ]
           }
         }
       }
@@ -42,13 +49,13 @@ ZiniPay adheres to this 100%:
     ```
   - `act_proposal`: Supports `VoteApprove`, `VoteReject`, and `Finalize`.
   - `get_policy`: Dynamically parses proposal bonds, proposal voting periods, roles, and voting weights.
-  - `proposal_bond`: Correctly attaches the DAO's configured deposit (default 1 NEAR).
+  - `proposal_bond`: Supports attached bond deposits or 0-bond policies.
 
 ---
 
 ## 2. Trezu Workspace Role Alignment (`docs.trezu.org`)
 
-Trezu structures treasury permissions into three roles:
+Trezu structures treasury permissions into distinct roles:
 1. **Requestor**: Can draft and submit payout requests, invoices, and token transfers. Cannot sign or approve.
 2. **Finance**: Reviews, audits, and votes on everyday payouts and contractor expenses.
 3. **Governance**: Master multi-sig controlling member membership, voting thresholds, and contract upgrades.
@@ -56,72 +63,52 @@ Trezu structures treasury permissions into three roles:
 ### How ZiniPay Maps to Trezu:
 - The **ZiniPay Agent** is registered exclusively as a **Requestor**.
 - Proposals generated by the agent immediately surface inside the community's **Trezu UI** (`app.trezu.org`) with full attestation metadata.
-- Human signers in the **Finance** or **Governance** roles review the attached deliverable proof, inspect the agent's confidence score, and cast their multi-sig votes.
+- Human signers in the **Finance** or **Governance** roles review the attached deliverable proof, inspect the agent's confidence score, and cast their multi-sig votes. The agent cannot unilaterally release funds; the human quorum decides.
 
 ---
 
-## 3. NEAR Account Model: Restricted Function-Call Keys
+## 3. Proposal Submission & Key Management Tradeoffs
 
-A common vulnerability in Web3 AI agents (especially on EVM or Solana) is granting an autonomous agent a full-access private key with unrestricted asset transfer permissions.
+On NEAR Protocol, key permissions and attached deposits interact in a specific way:
+- **NEAR Function-Call Keys** cannot attach a deposit (`CannotAttachDeposit`).
+- **Sputnik DAO `add_proposal`** requires the proposal bond configured in the DAO's policy (often 1 NEAR, though configurable to 0).
 
-On NEAR, ZiniPay utilizes **Function-Call Access Keys**:
-```bash
-near add-key $AGENT_ACCOUNT \
-  --contract-id $DAO_CONTRACT \
-  --allowance 0.25 \
-  --method-names add_proposal \
-  --networkId testnet
-```
+ZiniPay supports two truthful, battle-tested operational patterns:
 
-### Security Guarantees:
-- **Zero Custody**: The agent key cannot transfer NEAR or FTs out of any account.
-- **Method-Restricted**: The key can only execute the `add_proposal` method.
-- **Gas Capped**: The `allowance` limits the total gas the agent can consume, preventing DoS or spam loops.
-- **Governance Invariant**: Only human multi-sig signers with voting keys can approve or release funds.
+### Pattern A: Dedicated Funded Proposer Account (Recommended for Standard DAOs)
+The agent operates a dedicated NEAR account (e.g. `zinipay-agent.testnet`) with a small operating balance (e.g., 2–5 NEAR) used strictly to attach the required `proposal_bond`.
+- **Security Tradeoff**: The agent's exposure is strictly capped at its own small balance (which is refunded upon proposal execution/resolution according to DAO policy). The agent **never holds access keys to the DAO treasury account**, making it impossible for the agent to unilaterally drain DAO treasury funds.
+
+### Pattern B: 0-Bond Policy for Requestor Role (Recommended for Pure Function-Call Keys)
+The DAO's policy is configured with `proposal_bond = "0"` for the `Requestor` role.
+- **Security Tradeoff**: Enables the agent to use a restricted Function-Call Access Key restricted strictly to `add_proposal`. The tradeoff is that 0-bond proposals can theoretically be spammed if the role is compromised. ZiniPay mitigates this with off-chain policy rate limits and the on-chain `policy-helper` contract.
 
 ---
 
-## 4. NEAR AI Cloud Alignment (`cloud.near.ai`)
+## 4. NEAR AI Cloud Alignment (`api.near.ai`)
 
-In line with NEAR's 2026 User-Owned AI initiative, ZiniPay avoids closed, centralized APIs:
-- **Endpoint**: Configured for `https://cloud-api.near.ai/v1` (with fallback to `https://api.near.ai/v1`).
-- **Hardware Enclaves (TEEs)**: Inference executes inside Intel TDX and AMD SEV hardware-isolated enclaves, guaranteeing that contributor deliverables and scoring evaluations cannot be snooped or altered by cloud hosts.
-- **Open-Weight Models**: Powered by leading open models including `meta-llama/Llama-3.3-70B-Instruct` and `deepseek-ai/DeepSeek-V3`.
+In line with NEAR's User-Owned AI initiative:
+- **Base URL**: Configured for `https://api.near.ai/v1` (OpenAI-compatible inference).
+- **Open-Weight Models**: Powered by open models such as `meta-llama/Llama-3.3-70B-Instruct`.
+- **Strict Simulation Tagging**: If no valid API key is configured, the system strictly requires `--dry-run` and tags all outputs with `[SIMULATION]`. It fails closed in live mode.
 
 ---
 
-## 5. NEAR Intents Alignment (`near-intents.org`)
+## 5. NEAR Intents Alignment (`1click.chaindefuser.com`)
 
-Rather than forcing DAOs to maintain fragmented liquidity pools across multiple chains or interact with risky bridges, ZiniPay uses **NEAR Intents**:
-- **Protocol**: 1Click Intent Swap REST API (`1click.chaindefuser.com`).
+Rather than forcing DAOs to manage cross-chain bridges:
+- **Protocol**: 1Click Intent Swap REST API (`https://1click.chaindefuser.com/v1/quote`).
 - **Mechanism**:
-  1. The agent requests a quote to deliver foreign assets (e.g. USDC on Ethereum or Solana).
-  2. The 1Click solver network generates a unique deposit address on NEAR.
-  3. The Sputnik DAO proposal executes a transfer to this deposit address.
-  4. Solvers atomically settle the native token directly to the recipient's external wallet.
+  1. The agent requests a quote to deliver foreign assets (e.g. USDC on Ethereum).
+  2. The 1Click solver network generates a deposit address on NEAR.
+  3. The Sputnik DAO proposal executes a transfer to this deposit address upon council approval.
+  4. Solvers settle the native token directly to the recipient's external wallet.
 
 ---
 
-## 6. Hackathon Multi-Track Alignment
+## 6. Hackathon Track Alignment
 
-The NEAR Hackathon allows selecting all tracks a single submission genuinely fits:
-
-### 🏦 Primary: Social Money
-- **Core Thesis**: Coordinate community capital without rebuilding multisigs.
-- **ZiniPay Feature**: Shared treasury releases on Sputnik DAO + Trezu, programmable contributor rewards, and reputation-gated access tiers.
-
-### 🏢 Autonomous Business
-- **Core Thesis**: Autonomous companies and teams of one (or none).
-- **ZiniPay Feature**: AI agent operates as an autonomous financial clerk—processing tasks, verifying proof CIDs, calculating cooldowns, and queuing payments.
-
-### 💸 Agent Economy
-- **Core Thesis**: Agents that earn, spend, and transact.
-- **ZiniPay Feature**: Autonomous evaluation and cross-chain payouts via NEAR Intents solver networks.
-
-### 🛡️ AI Security & Defense
-- **Core Thesis**: Guardrails, spend limits, and sandboxed agents.
-- **ZiniPay Feature**: **The Three-Way Release Gate**, rolling 24h spend caps, per-recipient cooldown periods, anti-double-spend database, and function-call restricted keys.
-
-### 🌍 Real-World Money
-- **Core Thesis**: Contributor payroll, remittances, and invoice settlement.
-- **ZiniPay Feature**: Real-world contributor payroll settling directly into native USDC across Ethereum, Solana, and Bitcoin.
+- **Primary Track: Social Money**  
+  Shared treasury releases on Sputnik DAO + Trezu, programmable contributor rewards, on-chain policy verification, and reputation-gated access tiers.
+- **Secondary Track: AI Security & Defense**  
+  The Three-Way Release Gate, rolling spend caps, per-recipient cooldown periods, canonical anti-replay normalization, prompt-injection defense, and fail-closed deliberation.
