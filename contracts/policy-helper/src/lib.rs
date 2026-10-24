@@ -1,7 +1,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault};
+use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise};
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
@@ -13,8 +13,10 @@ pub enum StorageKey {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct PolicyHelper {
-    /// Owner (the DAO or admin account that can update policy)
+    /// Owner (the admin account that can configure policy rules)
     owner: AccountId,
+    /// Designated Sputnik DAO account ID allowed to execute releases
+    dao_account_id: AccountId,
     /// Maximum NEAR (in yoctoNEAR) per single proposal
     per_proposal_cap: u128,
     /// Minimum seconds between releases to the same recipient
@@ -34,12 +36,14 @@ impl PolicyHelper {
     #[init]
     pub fn new(
         owner: AccountId,
+        dao_account_id: AccountId,
         per_proposal_cap: U128,
         cooldown_seconds: u64,
         min_reputation: u32,
     ) -> Self {
         Self {
             owner,
+            dao_account_id,
             per_proposal_cap: per_proposal_cap.0,
             cooldown_seconds,
             last_release: LookupMap::new(StorageKey::LastRelease),
@@ -49,26 +53,56 @@ impl PolicyHelper {
         }
     }
 
-    // ─── Policy checks ────────────────────────────────────────────────
+    // ─── Tier Multipliers ─────────────────────────────────────────────
 
-    /// Called by the agent before submitting a Sputnik proposal.
-    /// Returns true if all checks pass; panics with reason if not.
-    pub fn check_policy(
-        &self,
-        recipient: AccountId,
-        amount: U128,
-        cid: String,
-    ) -> bool {
-        // 1. Amount cap
+    /// Computes the effective per-proposal cap scaled by contributor reputation tier:
+    /// - Bronze (score 0-49): 1.0x (100% of base cap)
+    /// - Silver (score 50-79): 1.5x (150% of base cap)
+    /// - Gold (score >= 80): 2.0x (200% of base cap)
+    pub fn get_effective_cap(&self, recipient: &AccountId) -> u128 {
+        let score = self.reputation_scores.get(recipient).unwrap_or(0);
+        let multiplier_bp: u128 = if score >= 80 {
+            200
+        } else if score >= 50 {
+            150
+        } else {
+            100
+        };
+        (self.per_proposal_cap * multiplier_bp) / 100
+    }
+
+    // ─── Atomic Release & Policy Checks ──────────────────────────────
+
+    /// Called by the Sputnik DAO via a FunctionCall proposal to atomically verify policy,
+    /// mark the CID used, update the cooldown timestamp, and release payment to the recipient.
+    /// Double-release attempts with the same CID are blocked atomically.
+    #[payable]
+    pub fn release(&mut self, recipient: AccountId, amount: U128, cid: String) -> Promise {
+        self.assert_owner_or_dao();
+
+        // 1. Reputation gate
+        let rep = self.reputation_scores.get(&recipient).unwrap_or(0);
+        if self.min_reputation > 0 {
+            require!(
+                rep >= self.min_reputation,
+                format!(
+                    "Recipient reputation {} below minimum threshold {}",
+                    rep, self.min_reputation
+                )
+            );
+        }
+
+        // 2. Amount cap with reputation tier multiplier
+        let effective_cap = self.get_effective_cap(&recipient);
         require!(
-            amount.0 <= self.per_proposal_cap,
+            amount.0 <= effective_cap,
             format!(
-                "Amount {} exceeds per-proposal cap {}",
-                amount.0, self.per_proposal_cap
+                "Amount {} exceeds effective tier cap {} for recipient {}",
+                amount.0, effective_cap, recipient
             )
         );
 
-        // 2. Cooldown
+        // 3. Cooldown between releases
         if let Some(last_ts) = self.last_release.get(&recipient) {
             let elapsed_secs = (env::block_timestamp() - last_ts) / 1_000_000_000;
             require!(
@@ -80,13 +114,55 @@ impl PolicyHelper {
             );
         }
 
-        // 3. CID uniqueness (double-release prevention)
+        // 4. CID uniqueness (Anti-Replay / zero-double-spend)
         require!(
             !self.used_cids.contains(&cid),
             "CID already used — duplicate release attempt blocked"
         );
 
-        // 4. Reputation gate
+        // ATOMIC STATE RECORDING: mark CID used and record release timestamp
+        self.used_cids.insert(&cid);
+        self.last_release
+            .insert(&recipient, &env::block_timestamp());
+
+        // Verify funding source (attached deposit from DAO or contract treasury)
+        let attached = env::attached_deposit();
+        require!(
+            attached >= amount.0 || env::account_balance() >= amount.0,
+            "Insufficient funds to fulfill release payout"
+        );
+
+        // Execute transfer to recipient
+        Promise::new(recipient).transfer(amount.0)
+    }
+
+    /// Read-only check called by the agent or UI prior to filing a proposal.
+    pub fn check_policy(&self, recipient: AccountId, amount: U128, cid: String) -> bool {
+        let effective_cap = self.get_effective_cap(&recipient);
+        require!(
+            amount.0 <= effective_cap,
+            format!(
+                "Amount {} exceeds per-proposal effective cap {}",
+                amount.0, effective_cap
+            )
+        );
+
+        if let Some(last_ts) = self.last_release.get(&recipient) {
+            let elapsed_secs = (env::block_timestamp() - last_ts) / 1_000_000_000;
+            require!(
+                elapsed_secs >= self.cooldown_seconds,
+                format!(
+                    "Cooldown not elapsed. {} seconds remaining.",
+                    self.cooldown_seconds - elapsed_secs
+                )
+            );
+        }
+
+        require!(
+            !self.used_cids.contains(&cid),
+            "CID already used — duplicate release attempt blocked"
+        );
+
         if self.min_reputation > 0 {
             let rep = self.reputation_scores.get(&recipient).unwrap_or(0);
             require!(
@@ -101,16 +177,19 @@ impl PolicyHelper {
         true
     }
 
-    /// Called by the DAO (or agent) after a proposal is successfully executed.
-    /// Records the release and marks the CID as used.
+    /// Explicitly mark a CID used and update cooldown (Owner or designated DAO only).
     pub fn record_release(&mut self, recipient: AccountId, cid: String) {
         self.assert_owner_or_dao();
+        require!(
+            !self.used_cids.contains(&cid),
+            "CID already used — duplicate release attempt blocked"
+        );
         self.last_release
             .insert(&recipient, &env::block_timestamp());
         self.used_cids.insert(&cid);
     }
 
-    /// Update reputation score for an account (owner/DAO only).
+    /// Update reputation score for an account (Owner or designated DAO only).
     pub fn update_reputation(&mut self, account: AccountId, delta: i32) {
         self.assert_owner_or_dao();
         let current = self.reputation_scores.get(&account).unwrap_or(0) as i32;
@@ -119,6 +198,11 @@ impl PolicyHelper {
     }
 
     // ─── Admin ────────────────────────────────────────────────────────
+
+    pub fn set_dao_account_id(&mut self, dao_account_id: AccountId) {
+        self.assert_owner();
+        self.dao_account_id = dao_account_id;
+    }
 
     pub fn set_per_proposal_cap(&mut self, cap: U128) {
         self.assert_owner();
@@ -137,12 +221,18 @@ impl PolicyHelper {
 
     // ─── Views ────────────────────────────────────────────────────────
 
+    pub fn get_dao_account_id(&self) -> AccountId {
+        self.dao_account_id.clone()
+    }
+
     pub fn get_reputation(&self, account: AccountId) -> u32 {
         self.reputation_scores.get(&account).unwrap_or(0)
     }
 
     pub fn get_policy(&self) -> serde_json::Value {
         serde_json::json!({
+            "owner": self.owner.to_string(),
+            "dao_account_id": self.dao_account_id.to_string(),
             "per_proposal_cap": self.per_proposal_cap.to_string(),
             "cooldown_seconds": self.cooldown_seconds,
             "min_reputation": self.min_reputation,
@@ -165,8 +255,159 @@ impl PolicyHelper {
     fn assert_owner_or_dao(&self) {
         let caller = env::predecessor_account_id();
         require!(
-            caller == self.owner || caller.to_string().contains(".sputnik"),
-            "Only owner or DAO can call this"
+            caller == self.owner || caller == self.dao_account_id,
+            "Only owner or designated DAO can call this"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::testing_env;
+
+    fn get_context(predecessor: AccountId, attached_deposit: u128, block_ts: u64) -> VMContextBuilder {
+        let mut builder = VMContextBuilder::new();
+        builder
+            .predecessor_account_id(predecessor.clone())
+            .current_account_id("policy.testnet".parse().unwrap())
+            .signer_account_id(predecessor)
+            .attached_deposit(attached_deposit)
+            .block_timestamp(block_ts);
+        builder
+    }
+
+    fn setup_contract() -> (PolicyHelper, AccountId, AccountId) {
+        let owner: AccountId = "owner.testnet".parse().unwrap();
+        let dao: AccountId = "real-dao.sputnik-dao.testnet".parse().unwrap();
+        let cap = U128(10_000_000_000_000_000_000_000_000); // 10 NEAR
+        let cooldown = 3600; // 1 hour
+        let min_rep = 0;
+
+        let ctx = get_context(owner.clone(), 0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+
+        let contract = PolicyHelper::new(owner.clone(), dao.clone(), cap, cooldown, min_rep);
+        (contract, owner, dao)
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or designated DAO can call this")]
+    fn test_attacker_sputnik_evil_fails_update_reputation() {
+        let (mut contract, _, _) = setup_contract();
+        let attacker: AccountId = "x.sputnik-evil.testnet".parse().unwrap();
+
+        let ctx = get_context(attacker, 0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+
+        contract.update_reputation("victim.testnet".parse().unwrap(), 50);
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or designated DAO can call this")]
+    fn test_attacker_sputnik_evil_fails_record_release() {
+        let (mut contract, _, _) = setup_contract();
+        let attacker: AccountId = "x.sputnik-evil.testnet".parse().unwrap();
+
+        let ctx = get_context(attacker, 0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+
+        contract.record_release("victim.testnet".parse().unwrap(), "QmCID1".to_string());
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or designated DAO can call this")]
+    fn test_attacker_sputnik_evil_fails_release() {
+        let (mut contract, _, _) = setup_contract();
+        let attacker: AccountId = "x.sputnik-evil.testnet".parse().unwrap();
+
+        let ctx = get_context(attacker, 10_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        testing_env!(ctx.build());
+
+        contract.release(
+            "victim.testnet".parse().unwrap(),
+            U128(5_000_000_000_000_000_000_000_000),
+            "QmCID1".to_string(),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "CID already used — duplicate release attempt blocked")]
+    fn test_duplicate_cid_fails_second_time() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let amount = U128(5_000_000_000_000_000_000_000_000); // 5 NEAR
+        let cid = "QmUniqueCid123".to_string();
+
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+
+        // First release succeeds
+        contract.release(recipient.clone(), amount, cid.clone());
+        assert!(contract.cid_used(cid.clone()));
+
+        // Second release with same CID must fail
+        let ctx2 = get_context(dao, amount.0, 2_000_000_000_000);
+        testing_env!(ctx2.build());
+        contract.release(recipient, amount, cid);
+    }
+
+    #[test]
+    #[should_panic(expected = "Cooldown not elapsed")]
+    fn test_cooldown_enforced() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let amount = U128(2_000_000_000_000_000_000_000_000); // 2 NEAR
+
+        // Release at timestamp 1,000,000,000,000 ns (1000s)
+        let ctx1 = get_context(dao.clone(), amount.0, 1_000_000_000_000);
+        testing_env!(ctx1.build());
+        contract.release(recipient.clone(), amount, "QmCID_A".to_string());
+
+        // Attempt second release 100 seconds later (cooldown is 3600 seconds)
+        let ctx2 = get_context(dao, amount.0, 1_100_000_000_000);
+        testing_env!(ctx2.build());
+        contract.release(recipient, amount, "QmCID_B".to_string());
+    }
+
+    #[test]
+    #[should_panic(expected = "exceeds effective tier cap")]
+    fn test_cap_enforced_bronze() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "bronze_user.testnet".parse().unwrap();
+        // Bronze tier cap is 10 NEAR (10 * 10^24)
+        let over_cap = U128(11_000_000_000_000_000_000_000_000); // 11 NEAR
+
+        let ctx = get_context(dao, over_cap.0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient, over_cap, "QmCID_Bronze".to_string());
+    }
+
+    #[test]
+    fn test_tier_multipliers_silver_and_gold() {
+        let (mut contract, owner, _) = setup_contract();
+        let silver_user: AccountId = "silver.testnet".parse().unwrap();
+        let gold_user: AccountId = "gold.testnet".parse().unwrap();
+
+        // Owner sets reputation
+        let ctx_owner = get_context(owner, 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.update_reputation(silver_user.clone(), 60); // Silver tier (1.5x cap = 15 NEAR)
+        contract.update_reputation(gold_user.clone(), 90);   // Gold tier (2.0x cap = 20 NEAR)
+
+        // Silver requesting 14 NEAR (<= 15 NEAR) passes policy check
+        assert!(contract.check_policy(
+            silver_user,
+            U128(14_000_000_000_000_000_000_000_000),
+            "QmSilver".to_string()
+        ));
+
+        // Gold requesting 19 NEAR (<= 20 NEAR) passes policy check
+        assert!(contract.check_policy(
+            gold_user,
+            U128(19_000_000_000_000_000_000_000_000),
+            "QmGold".to_string()
+        ));
     }
 }
