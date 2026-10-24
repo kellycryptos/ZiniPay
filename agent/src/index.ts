@@ -231,15 +231,20 @@ async function runPropose(opts: ProposeOpts) {
       intentInfo = `~${quote.amountOut} on ${opts.crossChain} via NEAR Intents (quote: ${quote.quoteId})`;
       console.log(chalk.green(`  ✓ Intent route established: ${intentInfo}`));
     } else {
+      console.log(chalk.yellow('  [SIMULATION] Cross-chain intent swap payload simulated'));
       proposalKind = {
         Transfer: {
           token_id: '',
-          receiver_id: 'intent-relay.chaindefuser.near',
+          receiver_id: opts.recipient,
           amount: amountYocto.toString(),
-          msg: JSON.stringify({ destination: opts.crossChain, address: opts.crossChainAddress }),
+          msg: JSON.stringify({
+            destination: opts.crossChain,
+            address: opts.crossChainAddress,
+            simulated: true,
+          }),
         },
       };
-      intentInfo = `~${opts.amountNear} NEAR converted to USDC on ${opts.crossChain} via NEAR Intents`;
+      intentInfo = `[SIMULATION] ~${opts.amountNear} NEAR converted to ${opts.crossChainToken ?? 'USDC'} on ${opts.crossChain}`;
     }
   } else if (opts.plainTransfer) {
     console.log(chalk.yellow('  [FLAG: --plain-transfer] Using plain DAO Transfer proposal'));

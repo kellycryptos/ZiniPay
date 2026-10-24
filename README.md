@@ -1,7 +1,7 @@
 # ZiniPay 🪙🤖
 
 > **100% NEAR-Aligned Constrained Agent Layer for Community Treasuries**  
-> *Proof + Policy + Human Quorum* — Powered by **NEAR AI Cloud**, **NEAR Intents**, **Chain Signatures**, and **Sputnik DAO / Trezu**.
+> *Proof + Policy + Human Quorum* — Powered by **NEAR AI Cloud**, **NEAR Intents**, and **Sputnik DAO / Trezu** *(Chain Signatures planned)*.
 
 [![NEAR Protocol](https://img.shields.io/badge/NEAR-Protocol-black?logo=near)](https://near.org)
 [![Trezu](https://img.shields.io/badge/Trezu-Multisig-purple)](https://trezu.org)
@@ -18,7 +18,7 @@ Communities already use **[Trezu](https://trezu.org)** (built on **[Sputnik DAO 
 
 **ZiniPay does not rebuild the multisig.** It builds what communities actually do with it: **an autonomous, constrained agent release layer** where AI agents propose and audit contributor rewards and contractor disbursements under strict, human-set policy guardrails.
 
-The agent operates strictly under the **Requestor role** with a **restricted function-call key**—it can never drain funds, alter policy, or bypass human multi-sig governance.
+The agent operates strictly under the **Requestor role**—it can only file proposals for human multi-sig review and cannot execute payouts unilaterally.
 
 ---
 
@@ -26,11 +26,8 @@ The agent operates strictly under the **Requestor role** with a **restricted fun
 
 | Track | Qualification & Impact |
 |---|---|
-| 🏦 **Social Money** *(Primary)* | Shared budgets, programmable rewards, reputation-gated access, and collective governance on Sputnik DAO & Trezu. |
-| 🏢 **Autonomous Business** | Autonomous treasury management: agents deliberate, review deliverables, and queue constrained payouts under human-defined caps. |
-| 💸 **Agent Economy** | Agents autonomously evaluate work, score contributions, and route payments via **NEAR Intents** cross-chain. |
-| 🛡️ **AI Security & Defense** | **Three-Way Match verification**, spend limits, per-recipient cooldowns, anti-double-spend database, and function-call keys. |
-| 🌍 **Real-World Money** | Contributor payroll, cross-chain invoice settlements in native USDC (Ethereum/Solana/Bitcoin) without bridges. |
+| 🏦 **Social Money** *(Primary)* | Shared budgets, programmable rewards, reputation-gated access tiers, on-chain policy verification, and collective governance on Sputnik DAO & Trezu. |
+| 🛡️ **AI Security & Defense** *(Secondary)* | **Three-Way Match verification**, spend limits, per-recipient cooldowns, canonical anti-replay normalization, prompt-injection defense, and fail-closed deliberation. |
 
 ---
 
@@ -208,10 +205,10 @@ zinipay/
 ## 🔒 Security & Key Custody
 
 ZiniPay enforces strict non-custodial constraints:
-1. **No Master Access Keys**: The agent operates under a **restricted function-call key** limited exclusively to calling `add_proposal` with gas allowances.
-2. **Cannot Vote**: The agent does not belong to the Council/Finance voting groups—human multisig signers must approve proposals outside the fast-track tier.
-3. **Anti-Replay Enforced**: Deliverables are cryptographically fingerprinted in the local state database and `PolicyHelper` contract so identical CIDs cannot be rewarded twice.
-4. **Deterministic Cooldowns**: Rolling 24h limits prevent agent proposal floods.
+1. **Proposer Role Isolation**: The agent only holds permissions to call `add_proposal` (via a dedicated funded proposer account or a 0-bond restricted function-call key). It holds zero access keys to the DAO treasury account and cannot execute transfers unilaterally.
+2. **Cannot Vote**: The agent does not belong to Council/Finance voting groups—human multi-sig signers must review and approve proposals.
+3. **Anti-Replay Enforced**: Deliverables are canonically normalized and checked both off-chain in lowdb and on-chain in `PolicyHelper` so identical PRs or CIDs cannot be rewarded twice.
+4. **Deterministic Cooldowns & Tier Caps**: Rolling limits and reputation multipliers prevent proposal floods and enforce spending bounds.
 
 ---
 
