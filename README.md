@@ -168,6 +168,35 @@ Open [http://localhost:5173](http://localhost:5173) in your browser to view live
 
 ---
 
+## 🧪 Verified on testnet
+
+ZiniPay includes an automated, end-to-end verification script (`scripts/e2e-testnet.mjs`) that executes the complete on-chain lifecycle:
+1. Connects to NEAR Testnet RPC (`https://rpc.testnet.near.org`)
+2. Inspects Sputnik DAO v2 governance policy and proposal bonds
+3. Dispatches a real proposal signed by the agent with Three-Way Match attestation
+4. Casts a human council approval vote (`VoteApprove`)
+5. Verifies on-chain proposal state transition to `Approved`
+
+### Running the End-to-End Testnet Script
+
+Set your funded testnet credentials in `agent/.env` or export them:
+```bash
+export AGENT_ACCOUNT_ID="your-agent.testnet"
+export AGENT_PRIVATE_KEY="ed25519:..."
+export COUNCIL_ACCOUNT_ID="your-council.testnet"
+export COUNCIL_PRIVATE_KEY="ed25519:..."
+export DAO_CONTRACT_ID="your-dao.sputnik-dao.testnet"
+# Optional: on-chain policy helper contract
+export POLICY_CONTRACT_ID="policy.your-dao.testnet"
+
+npm run test:e2e
+```
+
+> **Verification Status & On-Chain Audit:**  
+> In accordance with hackathon anti-fabrication rules, transaction hashes are printed from live network execution only. If executed without live credentials, the script halts with an explicit error and code `1`. When run with your funded testnet accounts, the script outputs the exact NEARBlocks explorer links for both the proposal submission and council approval transactions.
+
+---
+
 ## 🛠️ Project Structure
 
 ```

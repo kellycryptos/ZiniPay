@@ -14,6 +14,7 @@
     "agent:dev": "npm --workspace=@zinipay/agent run dev",
     "agent:propose": "npm --workspace=@zinipay/agent run propose",
     "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
-    "setup:testnet": "node scripts/setup-testnet.mjs"
+    "setup:testnet": "node scripts/setup-testnet.mjs",
+    "test:e2e": "node scripts/e2e-testnet.mjs"
   }
 }
