@@ -193,6 +193,7 @@ async function runPropose(opts: ProposeOpts) {
     amountNear: opts.amountNear,
     recipientId: opts.recipient,
     recipientReputation: recipientRep,
+    dryRun: opts.dryRun,
   });
 
   console.log(`  Inspector Agent:   Score ${deliberation.inspector.score}/100 — "${deliberation.inspector.critique}"`);
