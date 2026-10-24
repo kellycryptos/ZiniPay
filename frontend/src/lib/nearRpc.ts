@@ -112,7 +112,7 @@ export async function fetchDaoProposals(
     if (total === 0) return [];
 
     const fromIndex = Math.max(0, total - limit);
-    const argsBase64 = Buffer.from(JSON.stringify({ from_index: fromIndex, limit })).toString('base64');
+    const argsBase64 = btoa(JSON.stringify({ from_index: fromIndex, limit }));
 
     const res = await axios.post(getRpcUrl(network), {
       jsonrpc: '2.0',
