@@ -15,6 +15,7 @@
  */
 
 import axios from 'axios';
+import type { ProposalKind } from './dao.js';
 
 export interface QuoteRequest {
   /** Token to send from NEAR treasury (e.g. "near" or "nep141:usdt.tether-token.near") */
@@ -99,7 +100,7 @@ export class NearIntents {
    * and 1Click handles the rest.
    */
   async buildCrossChainTransfer(req: QuoteRequest): Promise<{
-    kind: object;
+    kind: ProposalKind;
     intentDepositAddress: string;
     quote: QuoteResponse;
   }> {

@@ -1,7 +1,7 @@
 import { MultiAgentDeliberationEngine, verifyArtifact } from '../src/deliberation.js';
 import { DeliverableValidator } from '../src/validator.js';
 
-async function main() {
+export async function runDeliberationTests() {
   console.log('Testing Task 2 deliberation & validator fail-closed logic...');
 
   // Test 1: verifyArtifact fails on invalid deliverables
@@ -56,10 +56,12 @@ async function main() {
   console.assert(!valLive.approved, 'Validator must reject live request with mock key');
   console.log('✓ Test 4: Validator fails closed with mock key');
 
-  console.log('\nAll Task 2 tests passed successfully!');
+  console.log('All Deliberation tests passed successfully!\n');
 }
 
-main().catch((err) => {
-  console.error('Test failed:', err);
-  process.exit(1);
-});
+if (import.meta.url.endsWith(process.argv[1])) {
+  runDeliberationTests().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

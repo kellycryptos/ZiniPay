@@ -5,7 +5,7 @@
  *   1. Three-Way Match Verification:
  *      (a) Deliverable proof attached (CID/URL)
  *      (b) Stays under spend cap and cooldown
- *      (c) Anti-replay: verified not previously paid
+ *      (c) Anti-replay: verified not previously paid (canonical normalized key)
  *   2. Reputation-Tier Scaled Caps:
  *      - Bronze: 1.0x standard limit
  *      - Silver: 1.5x standard limit
@@ -35,7 +35,7 @@ export interface PolicyCheckInput {
 }
 
 export type PolicyResult =
-  | { ok: true; tier: ReputationTier; effectiveCapYocto: bigint }
+  | { ok: true; tier: ReputationTier; effectiveCapYocto: bigint; normalizedDeliverable: string }
   | { ok: false; reason: string };
 
 interface ProposalRecord {
@@ -50,10 +50,52 @@ interface ProposalRecord {
 
 interface DbSchema {
   proposals: ProposalRecord[];
-  paidDeliverables: Record<string, number>; // deliverable -> paidAt ms
+  paidDeliverables: Record<string, number>; // normalized deliverable -> paidAt ms
 }
 
-const DEFAULT_DB: DbSchema = { proposals: [], paidDeliverables: {} };
+const createDefaultDb = (): DbSchema => ({ proposals: [], paidDeliverables: {} });
+
+/**
+ * Normalizes a deliverable string to prevent replay bypasses:
+ * - Lowercases the host in URLs
+ * - Strips query strings (?...) and fragments (#...)
+ * - Strips trailing slashes
+ * - Canonicalizes GitHub PR URLs: https://github.com/owner/repo/pull/123 -> owner/repo#123
+ * - Canonicalizes IPFS CIDs: ipfs://<cid> -> <cid>
+ */
+export function normalizeDeliverable(raw: string): string {
+  let s = raw.trim();
+  if (!s) return '';
+
+  // 0. Already canonicalized GitHub PR format: owner/repo#number
+  const canonMatch = s.match(/^([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)#(\d+)$/);
+  if (canonMatch) {
+    return `${canonMatch[1].toLowerCase()}/${canonMatch[2].toLowerCase()}#${canonMatch[3]}`;
+  }
+
+  // 1. Canonicalize GitHub PR: https://github.com/owner/repo/pull/123
+  const ghMatch = s.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:[/?#].*)?$/i);
+  if (ghMatch) {
+    return `${ghMatch[1].toLowerCase()}/${ghMatch[2].toLowerCase()}#${ghMatch[3]}`;
+  }
+
+  // 2. Canonicalize IPFS CID: ipfs://<cid>
+  if (s.startsWith('ipfs://')) {
+    s = s.replace(/^ipfs:\/\//, '').split(/[/?#]/)[0];
+    return s.trim();
+  }
+
+  // 3. Generic HTTP/HTTPS URL
+  try {
+    const u = new URL(s);
+    const host = u.host.toLowerCase();
+    const pathname = u.pathname.replace(/\/+$/, '');
+    return `${u.protocol}//${host}${pathname}`;
+  } catch {
+    // 4. Fallback string: lowercase, strip query/fragment/trailing slash
+    return s.split(/[?#]/)[0].replace(/\/+$/, '').toLowerCase();
+  }
+}
 
 export class PolicyEngine {
   private db!: Low<DbSchema>;
@@ -67,27 +109,46 @@ export class PolicyEngine {
 
   async init() {
     const adapter = new JSONFile<DbSchema>(this.dbPath);
-    this.db = new Low(adapter, DEFAULT_DB);
+    this.db = new Low(adapter, createDefaultDb());
     await this.db.read();
+    if (!this.db.data) {
+      this.db.data = createDefaultDb();
+      await this.db.write();
+    }
   }
 
   private get data(): DbSchema {
-    return this.db.data ?? DEFAULT_DB;
+    if (!this.db.data) {
+      this.db.data = createDefaultDb();
+    }
+    return this.db.data;
   }
 
   check(input: PolicyCheckInput): PolicyResult {
     const tierInfo = getTierInfo(input.recipientReputation);
+    const normalized = normalizeDeliverable(input.deliverableCid);
 
     // 1. Deliverable must be non-empty (Three-Way Match Requirement A)
-    if (!input.deliverableCid?.trim()) {
+    if (!normalized) {
       return { ok: false, reason: 'Three-Way Match Failed: Deliverable proof is required (URL, CID, or commit).' };
     }
 
     // 2. Double-release prevention (Three-Way Match Requirement C: Anti-Replay)
-    if (this.data.paidDeliverables[input.deliverableCid]) {
+    if (this.data.paidDeliverables[normalized]) {
       return {
         ok: false,
-        reason: `Three-Way Match Failed: Deliverable "${input.deliverableCid}" has already been settled and paid.`,
+        reason: `Three-Way Match Failed: Deliverable "${normalized}" has already been settled and paid.`,
+      };
+    }
+
+    // Check if deliverable is already recorded in a previously submitted proposal
+    const alreadySubmitted = this.data.proposals.some(
+      (p) => normalizeDeliverable(p.deliverable) === normalized
+    );
+    if (alreadySubmitted) {
+      return {
+        ok: false,
+        reason: `Three-Way Match Failed: Deliverable "${normalized}" already has a recorded proposal.`,
       };
     }
 
@@ -144,7 +205,7 @@ export class PolicyEngine {
       };
     }
 
-    return { ok: true, tier: tierInfo.tier, effectiveCapYocto };
+    return { ok: true, tier: tierInfo.tier, effectiveCapYocto, normalizedDeliverable: normalized };
   }
 
   async recordProposal(opts: {
@@ -154,20 +215,23 @@ export class PolicyEngine {
     deliverableCid: string;
     tier: ReputationTier;
   }) {
+    const normalized = normalizeDeliverable(opts.deliverableCid);
     this.data.proposals.push({
       daoProposalId: opts.daoProposalId,
       recipient: opts.recipientId,
       amount: opts.amountYocto.toString(),
-      deliverable: opts.deliverableCid,
+      deliverable: normalized,
       createdAt: Date.now(),
       tier: opts.tier,
       threeWayMatch: true,
     });
-    await this.db.write();
+    // Mark deliverable paid and recorded when proposal is submitted to prevent replay
+    await this.markDeliverablePaid(normalized);
   }
 
   async markDeliverablePaid(deliverableCid: string) {
-    this.data.paidDeliverables[deliverableCid] = Date.now();
+    const normalized = normalizeDeliverable(deliverableCid);
+    this.data.paidDeliverables[normalized] = Date.now();
     await this.db.write();
   }
 

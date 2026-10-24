@@ -192,4 +192,34 @@ export class SputnikDAO {
   static parseNear(near: string): string {
     return utils.format.parseNearAmount(near) ?? '0';
   }
+
+  /**
+   * Helper to construct an atomic FunctionCall proposal into the policy contract
+   */
+  static buildPolicyReleaseProposal(opts: {
+    policyContractId: string;
+    recipientId: string;
+    amountYocto: string;
+    cid: string;
+  }): ProposalKind {
+    return {
+      FunctionCall: {
+        receiver_id: opts.policyContractId,
+        actions: [
+          {
+            method_name: 'release',
+            args: Buffer.from(
+              JSON.stringify({
+                recipient: opts.recipientId,
+                amount: opts.amountYocto,
+                cid: opts.cid,
+              })
+            ).toString('base64'),
+            deposit: opts.amountYocto,
+            gas: '150000000000000', // 150 TGas
+          },
+        ],
+      },
+    };
+  }
 }

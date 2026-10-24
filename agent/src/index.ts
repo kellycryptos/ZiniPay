@@ -13,7 +13,7 @@ import 'dotenv/config';
 import { Command } from 'commander';
 import chalk from 'chalk';
 
-import { SputnikDAO } from './dao.js';
+import { SputnikDAO, type ProposalKind } from './dao.js';
 import { PolicyEngine, type PolicyConfig } from './policy.js';
 import { MultiAgentDeliberationEngine } from './deliberation.js';
 import { ReputationLedger, getTierInfo } from './reputation.js';
@@ -36,6 +36,7 @@ function getConfig(dryRun: boolean = false) {
     accountId: getEnv('NEAR_ACCOUNT_ID', 'zinipay-agent.testnet'),
     privateKey: getEnv('NEAR_PRIVATE_KEY', 'ed25519:3D4YuaHz5ndfUXAUsafDbg16p8837eDemoKeyForDryRun'),
     daoContractId: getEnv('DAO_CONTRACT_ID', 'zinipay.sputnik-dao.testnet'),
+    policyContractId: process.env.POLICY_CONTRACT_ID ?? getEnv('POLICY_CONTRACT_ID', 'zinipay-policy.testnet'),
     proposalBond: process.env.PROPOSAL_BOND ?? '1000000000000000000000000',  // 1 NEAR
     dbPath: process.env.DB_PATH ?? './zinipay.json',
     openaiBaseUrl: process.env.OPENAI_BASE_URL ?? 'https://cloud-api.near.ai/v1',
@@ -73,6 +74,7 @@ program
   .option('--cross-chain <chain>', 'Route payment via NEAR Intents to another chain (e.g. "ethereum")')
   .option('--cross-chain-address <addr>', 'Recipient address on the destination chain')
   .option('--cross-chain-token <token>', 'Output token on the destination chain (default: USDC)')
+  .option('--plain-transfer', 'Submit a plain Transfer proposal instead of routing through policy contract')
   .option('--dry-run', 'Simulate three-way match and multi-agent deliberation without submitting tx')
   .action(async (opts) => {
     await runPropose({
@@ -83,6 +85,7 @@ program
       crossChain: opts.crossChain,
       crossChainAddress: opts.crossChainAddress,
       crossChainToken: opts.crossChainToken,
+      plainTransfer: !!opts.plainTransfer,
       dryRun: !!opts.dryRun,
     });
   });
@@ -126,6 +129,7 @@ interface ProposeOpts {
   crossChain?: string;
   crossChainAddress?: string;
   crossChainToken?: string;
+  plainTransfer?: boolean;
   dryRun: boolean;
 }
 
@@ -209,7 +213,7 @@ async function runPropose(opts: ProposeOpts) {
   // ── Step 3: Build Proposal Struct ─────────────────────────────────────────
   console.log(chalk.cyan('\n[3/4] Constructing Constrained Proposal for Sputnik DAO / Trezu...'));
 
-  let proposalKind: object;
+  let proposalKind: ProposalKind;
   let intentInfo: string | null = null;
 
   if (opts.crossChain && opts.crossChainAddress) {
@@ -237,7 +241,8 @@ async function runPropose(opts: ProposeOpts) {
       };
       intentInfo = `~${opts.amountNear} NEAR converted to USDC on ${opts.crossChain} via NEAR Intents`;
     }
-  } else {
+  } else if (opts.plainTransfer) {
+    console.log(chalk.yellow('  [FLAG: --plain-transfer] Using plain DAO Transfer proposal'));
     proposalKind = {
       Transfer: {
         token_id: '',
@@ -245,6 +250,14 @@ async function runPropose(opts: ProposeOpts) {
         amount: amountYocto.toString(),
       },
     };
+  } else {
+    console.log(chalk.cyan(`  Routing proposal through on-chain policy contract: ${cfg.policyContractId}`));
+    proposalKind = SputnikDAO.buildPolicyReleaseProposal({
+      policyContractId: cfg.policyContractId,
+      recipientId: opts.recipient,
+      amountYocto: amountYocto.toString(),
+      cid: policyResult.normalizedDeliverable,
+    });
   }
 
   const description = [
