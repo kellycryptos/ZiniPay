@@ -25,6 +25,7 @@ export const initialProposals: Proposal[] = [
     evidenceDetails: 'GitHub Repo: near-intents-router | PR #88 merged | 42 passing unit tests | Signed by committer ed25519:6c5d... | AI confidence 96/100',
     createdAt: '12 mins ago',
     status: 'pending_quorum',
+    simulated: true,
     policy: {
       withinCap: true,
       capLimit: '10.0 NEAR',
@@ -60,6 +61,7 @@ export const initialProposals: Proposal[] = [
     evidenceDetails: 'Benchmark SLA audit report pinned. Average latency < 35s. Zero-bridge atomic clearance verified via Defuse solver relay.',
     createdAt: '2 hours ago',
     status: 'pending_quorum',
+    simulated: true,
     policy: {
       withinCap: true,
       capLimit: '15.0 NEAR',
@@ -96,6 +98,7 @@ export const initialProposals: Proposal[] = [
     evidenceDetails: 'Figma token bundle inspected. Components tested with Tailwind token sync and accessible contrast ratios.',
     createdAt: '1 day ago',
     status: 'settled',
+    simulated: true,
     policy: {
       withinCap: true,
       capLimit: '10.0 NEAR',

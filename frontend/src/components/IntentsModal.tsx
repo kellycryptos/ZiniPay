@@ -12,16 +12,17 @@ interface IntentsModalProps {
 export function IntentsModal({ proposal, isOpen, onClose, onSettled }: IntentsModalProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [settledTx, setSettledTx] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen || !proposal) return null;
 
   const targetChain = proposal.settlement.targetChain.toUpperCase();
   const targetToken = proposal.settlement.targetToken;
   const quoteEstimate = proposal.settlement.quoteEstimate || `~${(Number(proposal.amountNear) * 4.6).toFixed(2)} USDC`;
-  const depositAddress = 'defuse-solver.near';
 
   const handleExecuteIntent = async () => {
     setIsExecuting(true);
+    setErrorMessage(null);
     try {
       const res = await fetch('/api/intents', {
         method: 'POST',
@@ -36,18 +37,24 @@ export function IntentsModal({ proposal, isOpen, onClose, onSettled }: IntentsMo
       });
 
       const data = await res.json();
-      const fakeTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-      setSettledTx(fakeTxHash);
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || 'Failed to obtain live quote from NEAR Intents.');
+        return;
+      }
 
-      if (onSettled) {
-        onSettled(proposal.id, fakeTxHash);
+      if (data.data?.txHash) {
+        setSettledTx(data.data.txHash);
+        if (onSettled) {
+          onSettled(proposal.id, data.data.txHash);
+        }
+      } else if (data.data?.deposit_address || data.data?.depositAddress) {
+        const addr = data.data.deposit_address || data.data.depositAddress;
+        setSettledTx(`Quote received. Deposit address: ${addr}`);
+      } else {
+        setErrorMessage('Upstream service returned a response without a transaction hash or deposit address.');
       }
-    } catch {
-      const fallbackTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-      setSettledTx(fallbackTx);
-      if (onSettled) {
-        onSettled(proposal.id, fallbackTx);
-      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to reach NEAR Intents service');
     } finally {
       setIsExecuting(false);
     }
@@ -113,23 +120,28 @@ export function IntentsModal({ proposal, isOpen, onClose, onSettled }: IntentsMo
             </div>
             <div className="text-gray-400 leading-relaxed space-y-1">
               <p>1. The Sputnik DAO council quorum approves the proposal.</p>
-              <p>2. Treasury transfer sends {proposal.amountNear} NEAR to intent relay: <span className="text-purple-300">{depositAddress}</span></p>
-              <p>3. 1Click Defuse market solvers atomically deliver {quoteEstimate} directly to the contributor's {targetChain} wallet.</p>
+              <p>2. Treasury transfer sends {proposal.amountNear} NEAR to the solver deposit address returned by 1Click.</p>
+              <p>3. 1Click Defuse market solvers deliver {quoteEstimate} directly to the contributor's {targetChain} wallet.</p>
             </div>
           </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/30 flex flex-col gap-1 text-red-400">
+              <div className="font-bold">Intent Route Failed:</div>
+              <div className="text-[11px] font-mono break-all">{errorMessage}</div>
+            </div>
+          )}
 
           {/* Settlement Status / Result */}
           {settledTx ? (
             <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                 <CheckCircle2 size={18} />
-                <span>Intent Settled Successfully!</span>
+                <span>Intent Route Initialized</span>
               </div>
-              <p className="text-gray-300 text-xs">
-                Funds released from Sputnik DAO treasury and delivered on {targetChain}.
-              </p>
               <div className="mt-1 p-2 bg-black/60 rounded font-mono text-[11px] text-gray-300 break-all border border-gray-800">
-                <span className="text-gray-500">Destination Tx: </span>
+                <span className="text-gray-500">Details: </span>
                 <span className="text-emerald-400">{settledTx}</span>
               </div>
             </div>

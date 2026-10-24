@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       methodName: 'add_proposal',
       args: {
         proposal: {
-          description: `${taskDescription} | ${deliberation.attestationSummary} | TEE-SIG: ${deliberation.teeVerification.signature}`,
+          description: `${taskDescription} | ${deliberation.attestationSummary}`,
           kind: {
             Transfer: {
               token_id: '',
@@ -84,8 +84,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       success: true,
-      message: 'Proposal successfully validated and prepared for Sputnik DAO submission.',
-      proposalId: Math.floor(Math.random() * 900) + 100,
+      simulated: true,
+      message: 'Proposal successfully validated and payload prepared for Sputnik DAO submission.',
       proposalPayload,
       deliberation,
       policy: policyResult,

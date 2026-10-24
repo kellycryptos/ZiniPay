@@ -50,6 +50,11 @@ export function ProposalCard({
       {/* Header Badges */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
+          {proposal.simulated && (
+            <span className="status-badge bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold text-[10px] tracking-wider">
+              SIMULATION
+            </span>
+          )}
           <span className={`status-badge border ${cfg.bg} ${cfg.color}`}>
             <StatusIcon size={12} />
             {cfg.label}

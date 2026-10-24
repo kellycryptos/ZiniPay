@@ -138,7 +138,18 @@ export function Navbar({
           }`}
         >
           <Wallet size={14} />
-          {connectedAccount ? `${connectedAccount}` : 'Connect Wallet'}
+          {connectedAccount ? (
+            <span className="flex items-center gap-1.5">
+              <span>{connectedAccount}</span>
+              {(connectedAccount.includes('judge-') || connectedAccount.includes('agent.') || connectedAccount === 'alice.testnet') && (
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                  SIMULATION
+                </span>
+              )}
+            </span>
+          ) : (
+            'Connect Wallet'
+          )}
         </button>
       </div>
     </header>

@@ -42,22 +42,22 @@ export function WalletModal({
       id: 'judge-council.testnet',
       label: 'Judge / Council Multi-Sig Lead',
       role: 'council' as const,
-      badge: 'Council Signer',
-      balance: '124.5 NEAR',
+      badge: 'SIMULATION',
+      balance: '124.5 NEAR (Simulated)',
     },
     {
       id: 'zinipay-agent.testnet',
       label: 'ZiniPay Agent (Function-Call Key)',
       role: 'agent' as const,
-      badge: 'Automated Agent',
-      balance: '0.25 NEAR',
+      badge: 'SIMULATION',
+      balance: '0.25 NEAR (Simulated)',
     },
     {
       id: 'alice.testnet',
       label: 'Alice (Gold Contributor)',
       role: 'contributor' as const,
-      badge: 'Gold Contributor',
-      balance: '45.0 NEAR',
+      badge: 'SIMULATION',
+      balance: '45.0 NEAR (Simulated)',
     },
   ];
 
@@ -130,9 +130,9 @@ export function WalletModal({
                 <div className="h-px bg-gray-800 flex-1"></div>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold">
+              <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
                 <Sparkles size={14} />
-                <span>Instant Hackathon Evaluation Profiles:</span>
+                <span>Evaluation Profiles (SIMULATION ONLY):</span>
               </div>
 
               <div className="flex flex-col gap-2">

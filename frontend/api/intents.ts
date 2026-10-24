@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const targetChain = destinationChain || 'ethereum';
     const targetToken = tokenOut || 'USDC';
 
-    // Call live NEAR Intents 1Click API if available, or generate verified solver quote
+    // Call live NEAR Intents 1Click API
     try {
       const response = await axios.post(
         'https://1click.chaindefuser.com/v1/quote',
@@ -28,10 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           token_in: tokenIn || 'near',
           amount_in: amountIn || '10000000000000000000000000',
           token_out: targetToken,
-          recipient_address: recipientAddress || '0x71C...B29',
+          recipient_address: recipientAddress || '',
           destination_chain: targetChain,
         },
-        { timeout: 3500 }
+        { timeout: 5000 }
       );
 
       return res.status(200).json({
@@ -39,21 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source: 'live-1click-defuse',
         data: response.data,
       });
-    } catch {
-      // Fallback deterministic quote for testnet simulations
-      const quoteId = `quote_${Date.now()}_zinipay_${Math.random().toString(36).substring(7)}`;
-      return res.status(200).json({
-        success: true,
-        source: 'zinipay-intents-relay',
-        data: {
-          quoteId,
-          depositAddress: 'defuse-solver.near',
-          estimatedAmountOut: '48.50 USDC',
-          destinationChain: targetChain,
-          recipientAddress: recipientAddress || '0x71C...B29',
-          estimatedTimeSeconds: 45,
-          expiresAt: Date.now() + 600000,
-        },
+    } catch (upstreamErr: any) {
+      return res.status(502).json({
+        success: false,
+        error: `NEAR Intents 1Click service unavailable: ${upstreamErr.response?.data?.message || upstreamErr.message}`,
       });
     }
   } catch (error: any) {

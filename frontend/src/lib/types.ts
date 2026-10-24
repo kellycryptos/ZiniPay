@@ -30,6 +30,7 @@ export type Proposal = {
   evidenceDetails: string;
   createdAt: string;
   status: 'pending_quorum' | 'approved' | 'settled' | 'rejected';
+  simulated?: boolean;
   policy: PolicyCheckStatus;
   settlement: SettlementRoute;
   votes: {

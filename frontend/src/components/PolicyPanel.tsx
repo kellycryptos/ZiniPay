@@ -28,10 +28,15 @@ export function PolicyPanel({ policy, daily }: Props) {
     <div className="card p-5 flex flex-col gap-5">
       {/* Three-Way Match Engine Card */}
       <div className="flex flex-col gap-2">
-        <h3 className="font-semibold text-sm text-gray-200 flex items-center gap-2">
-          <ShieldCheck size={16} className="text-emerald-400" />
-          Three-Way Match Verification
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm text-gray-200 flex items-center gap-2">
+            <ShieldCheck size={16} className="text-emerald-400" />
+            Three-Way Match Verification
+          </h3>
+          <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-mono font-bold">
+            SIMULATION DATA
+          </span>
+        </div>
         <p className="text-xs text-gray-400 leading-relaxed">
           Payouts require 3 independent clearances before proposal submission:
         </p>

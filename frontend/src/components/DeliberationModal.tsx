@@ -20,9 +20,6 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const teeSignature = `ed25519:sig_${proposal.id}_intel_tdx_zinipay_near_ai_cloud_attestation`;
-  const mrenclave = `0x9f83a21b44c8...zinipay_v1.0_${proposal.recipient}`;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-[#0E0E17] border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-sans">
@@ -35,9 +32,9 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">NEAR AI Cloud (TEE) Deliberation</h3>
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                  Intel TDX Pass
+                <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-mono font-bold">
+                  SIMULATION
                 </span>
               </div>
               <p className="text-xs text-gray-400 mt-0.5">Proposal #{proposal.id} · Multi-Agent Consensus Attestation</p>
@@ -144,31 +141,16 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
                 <div className="flex items-center justify-between">
                   <span className="text-white font-bold text-xs flex items-center gap-1.5">
                     <Cpu size={14} className="text-purple-400" />
-                    Confidential VM Enclave Details
+                    Hardware Enclave Status
                   </span>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    Hardware Verified
+                  <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                    SIMULATION (No Hardware TEE)
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-[11px]">
-                  <div className="p-2.5 bg-black/50 rounded-lg border border-gray-800">
-                    <div className="text-gray-500 text-[10px]">ENCLAVE TYPE</div>
-                    <div className="text-white mt-0.5">Intel TDX Trust Domain</div>
-                  </div>
-                  <div className="p-2.5 bg-black/50 rounded-lg border border-gray-800">
-                    <div className="text-gray-500 text-[10px]">CLOUD PLATFORM</div>
-                    <div className="text-white mt-0.5">NEAR AI Cloud (Private)</div>
-                  </div>
-                  <div className="p-2.5 bg-black/50 rounded-lg border border-gray-800 col-span-2">
-                    <div className="text-gray-500 text-[10px]">MRENCLAVE MEASUREMENT</div>
-                    <div className="text-purple-300 mt-0.5 break-all">{mrenclave}</div>
-                  </div>
+                <div className="p-3 bg-black/50 rounded-lg border border-gray-800 text-[11px] text-gray-300 leading-relaxed font-sans">
+                  <strong>Hardware TEE Notice:</strong> Real Intel TDX hardware attestation requires launching the agent inside an Intel TDX confidential virtual machine (e.g. on NEAR AI Cloud). In simulation/preview mode, multi-agent evaluation rules are evaluated in software, and synthetic cryptographic quotes are not generated.
                 </div>
-
-                <p className="text-[11px] text-gray-400 font-sans leading-relaxed">
-                  The deliberation code ran inside a hardware-isolated memory domain. Neither the cloud provider nor host OS could inspect or manipulate the deliberation weights or score calculations.
-                </p>
               </div>
             </div>
           )}
@@ -187,8 +169,6 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
               </div>
               <pre className="p-4 rounded-xl bg-black border border-gray-800 font-mono text-[11px] text-emerald-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">
                 {proposal.evidenceDetails}
-                {'\n\n'}
-                TEE-ATTESTATION: {teeSignature}
               </pre>
             </div>
           )}

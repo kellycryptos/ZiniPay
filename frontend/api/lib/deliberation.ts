@@ -1,5 +1,7 @@
 /**
- * deliberation.ts — Multi-Agent Deliberation & Cryptographic TEE Receipt Generator
+ * deliberation.ts — Multi-Agent Deliberation & Proof Evaluation
+ * Note: Never fabricates synthetic TEE quotes or cryptographic signatures.
+ * If running without active TEE enclave hardware, explicitly marks simulated: true.
  */
 
 import { getTierInfo, type ReputationTier } from './reputation.js';
@@ -28,6 +30,7 @@ export interface RiskReview {
 }
 
 export interface DeliberationReceipt {
+  simulated: boolean;
   consensusApproved: boolean;
   overallConfidence: number;
   match1_ScopeAligned: boolean;
@@ -36,26 +39,22 @@ export interface DeliberationReceipt {
   inspector: InspectorReview;
   riskArbiter: RiskReview;
   attestationSummary: string;
-  teeVerification: {
-    enclaveType: string;
-    intelTdxQuote: string;
-    signature: string;
-    timestamp: number;
-  };
+  teeVerification: null; // Explicitly null — no fake signatures or quotes
 }
 
 export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
   const tierInfo = getTierInfo(req.recipientReputation);
-  const amount = parseFloat(req.amountNear) || 10;
+  const amount = parseFloat(req.amountNear) || 0;
   
   const isSubstantive = req.deliverable.length > 5 && (
-    req.deliverable.startsWith('http') ||
+    req.deliverable.startsWith('http://') ||
+    req.deliverable.startsWith('https://') ||
     req.deliverable.startsWith('ipfs://') ||
     req.deliverable.startsWith('bafy') ||
     req.deliverable.startsWith('Qm')
   );
 
-  const score = isSubstantive ? Math.min(98, 85 + Math.floor(req.recipientReputation / 10)) : 65;
+  const score = isSubstantive ? Math.min(98, 85 + Math.floor(req.recipientReputation / 10)) : 40;
   const inspectorApproved = score >= 70;
   
   const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 
@@ -68,16 +67,13 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
   const match3_Policy = riskApproved;
 
   const consensusApproved = match1_Scope && match2_Proof && match3_Policy;
-  const overallConfidence = Math.round((score + (riskLevel === 'LOW' ? 96 : 80)) / 2);
+  const overallConfidence = Math.round((score + (riskLevel === 'LOW' ? 96 : riskLevel === 'MEDIUM' ? 80 : 40)) / 2);
 
-  const attestationSummary = `[Three-Way Match: ${consensusApproved ? '3/3 PASS' : 'FAIL'}] [Tier: ${tierInfo.tier}] Inspector: ${score}/100, Risk: ${riskLevel} | CID: ${req.deliverable}`;
-
-  // Synthetic cryptographic TEE attestation quote (simulating Intel TDX enclaves on NEAR AI Cloud)
-  const teeQuote = Buffer.from(
-    `INTEL-TDX-MRENCLAVE-ZINIPAY:${req.recipientId}:${req.deliverable}:${Date.now()}`
-  ).toString('base64');
+  const matchCount = (match1_Scope ? 1 : 0) + (match2_Proof ? 1 : 0) + (match3_Policy ? 1 : 0);
+  const attestationSummary = `[Three-Way Match: ${matchCount}/3 ${consensusApproved ? 'PASS' : 'FAIL'}] [Tier: ${tierInfo.tier}] Inspector: ${score}/100, Risk: ${riskLevel} | Deliverable: ${req.deliverable}`;
 
   return {
+    simulated: true, // Explicitly labeled simulation (no fake TEE enclave)
     consensusApproved,
     overallConfidence,
     match1_ScopeAligned: match1_Scope,
@@ -86,7 +82,7 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
     inspector: {
       approved: inspectorApproved,
       score,
-      critique: isSubstantive ? 'Substantive deliverable with valid CID & scope alignment' : 'Deliverable proof format questionable or shallow',
+      critique: isSubstantive ? 'Deliverable artifact format valid; scope alignment verified' : 'Deliverable proof format invalid or missing',
       artifactVerified: isSubstantive,
     },
     riskArbiter: {
@@ -97,11 +93,6 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
       policyNotes: `Requested ${amount} NEAR evaluated against ${tierInfo.tier} tier limits`,
     },
     attestationSummary,
-    teeVerification: {
-      enclaveType: 'Intel TDX Confidential VM (NEAR AI Cloud)',
-      intelTdxQuote: `0x${teeQuote}`,
-      signature: `ed25519:sig_${Date.now()}_zinipay_tee_attestation`,
-      timestamp: Date.now(),
-    },
+    teeVerification: null,
   };
 }
