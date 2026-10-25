@@ -49,7 +49,7 @@ When a proposal passes the council multi-sig vote in Sputnik DAO, the DAO execut
               .on_release_done(cid, recipient)
       )
   ```
-  - **On Success**: The payout is confirmed, logged, and the recipient's on-chain reputation score is automatically increased (+5 pts).
+  - **On Success**: The payout is confirmed, logged, and the recipient's on-chain reputation score is incremented (+5 pts) within the Bronze tier ceiling (capped at 19 pts). This ensures automated milestone settlements cannot quietly promote a contributor to Silver (20+) or Gold (60+) without explicit human review.
   - **On Failure**: If the transfer promise fails (e.g. nonexistent recipient account), `on_release_done` automatically catches the failure result, unburns the deliverable CID (`used_cids.remove(&cid)`), and clears the cooldown (`last_release.remove(&recipient)`).
   - **Manual Recovery**: As defense-in-depth, the owner recovery methods `unburn_cid` and `reset_cooldown` remain available for administrative interventions.
 
@@ -61,8 +61,8 @@ When a proposal passes the council multi-sig vote in Sputnik DAO, the DAO execut
 On NEAR Protocol, the agent operates under a restricted function-call access key scoped strictly to `add_proposal` on the Sputnik DAO. To uphold the principle of least privilege, the agent is intentionally forbidden from modifying policy parameters or reputation scores directly on `PolicyHelper`.
 
 Instead, on-chain reputation synchronization is handled through two verified paths:
-1. **Automated On-Chain Payout Callback (`on_release_done`)**: When Sputnik DAO approves a proposal, `PolicyHelper.release` is invoked. Upon confirmation of the payout transfer via the NEAR promise callback, `on_release_done` automatically increments the recipient's reputation score on-chain (+5 points per settled milestone).
-2. **DAO / Owner Administration**: The Sputnik DAO can vote on a `FunctionCall` proposal targeting `update_reputation(account, delta)`, or the contract owner can invoke `update_reputation` directly using their admin key.
+1. **Automated On-Chain Payout Callback (`on_release_done`)**: When Sputnik DAO approves a proposal, `PolicyHelper.release` is invoked. Upon confirmation of the payout transfer via the NEAR promise callback, `on_release_done` automatically increments the recipient's reputation score on-chain (+5 points per settled milestone), capped strictly at 19 (the Bronze ceiling). This prevents unvetted reputation creep.
+2. **DAO / Owner Administration for Tier Promotions**: Promoting a contributor to Silver tier (score 20–59, 1.5x cap) or Gold tier (score 60+, 2.0x cap) requires a human Sputnik DAO multi-sig vote or owner transaction calling `update_reputation(account, score)`. This ensures larger spend caps always require human governance approval.
 
 ### Pre-Flight `check_policy` Verification
 Before dispatching any proposal to the Sputnik DAO, the agent performs a read-only `check_policy` view call on `PolicyHelper`. If the proposed amount exceeds the contributor's on-chain tier cap, if the cooldown has not elapsed, or if the CID has already been settled, the agent immediately rejects the action and never submits a doomed proposal to the DAO.

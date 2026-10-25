@@ -1,9 +1,10 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseError};
+use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
 
 #[derive(BorshStorageKey, BorshSerialize)]
+#[borsh(crate = "near_sdk::borsh")]
 pub enum StorageKey {
     LastRelease,
     UsedCids,
@@ -12,6 +13,7 @@ pub enum StorageKey {
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[borsh(crate = "near_sdk::borsh")]
 pub struct PolicyHelper {
     /// Owner (the admin account that can configure policy rules)
     owner: AccountId,
@@ -127,7 +129,7 @@ impl PolicyHelper {
 
         // Verify funding source: require the attached deposit from the DAO proposal to cover the amount.
         // Dropped account_balance fallback to protect contract storage-reserved staking funds.
-        let attached = env::attached_deposit();
+        let attached = env::attached_deposit().as_yoctonear();
         require!(
             attached >= amount.0,
             format!(
@@ -138,10 +140,10 @@ impl PolicyHelper {
 
         // Execute transfer to recipient with callback to automatically handle rollback on failure
         Promise::new(recipient.clone())
-            .transfer(amount.0)
+            .transfer(NearToken::from_yoctonear(amount.0))
             .then(
                 Self::ext(env::current_account_id())
-                    .with_static_gas(Gas(5_000_000_000_000))
+                    .with_static_gas(Gas::from_tgas(5))
                     .on_release_done(cid, recipient)
             )
     }
@@ -163,7 +165,11 @@ impl PolicyHelper {
                     recipient, cid
                 ));
                 let current = self.reputation_scores.get(&recipient).unwrap_or(0);
-                self.reputation_scores.insert(&recipient, &(current + 5));
+                // Automated release payouts increase reputation within Bronze tier only (up to 19).
+                // Promotion to Silver (20+) and Gold (60+) requires manual council review via update_reputation to prevent unchecked reputation creep.
+                if current < 19 {
+                    self.reputation_scores.insert(&recipient, &(current + 5).min(19));
+                }
                 true
             }
             Err(_) => {
@@ -287,8 +293,8 @@ impl PolicyHelper {
         self.reputation_scores.get(&account).unwrap_or(0)
     }
 
-    pub fn get_policy(&self) -> serde_json::Value {
-        serde_json::json!({
+    pub fn get_policy(&self) -> near_sdk::serde_json::Value {
+        near_sdk::serde_json::json!({
             "owner": self.owner.to_string(),
             "dao_account_id": self.dao_account_id.to_string(),
             "per_proposal_cap": self.per_proposal_cap.to_string(),
@@ -331,7 +337,7 @@ mod tests {
             .predecessor_account_id(predecessor.clone())
             .current_account_id("policy.testnet".parse().unwrap())
             .signer_account_id(predecessor)
-            .attached_deposit(attached_deposit)
+            .attached_deposit(NearToken::from_yoctonear(attached_deposit))
             .block_timestamp(block_ts);
         builder
     }
@@ -406,9 +412,11 @@ mod tests {
         assert!(contract.cid_used(cid.clone()));
 
         // Second release with same CID must fail
-        let ctx2 = get_context(dao, amount.0, 2_000_000_000_000);
+        let ctx2 = get_context(dao.clone(), amount.0, 2_000_000_000_000);
         testing_env!(ctx2.build());
-        contract.release(recipient, amount, cid);
+        // Different recipient, so the cooldown does not fire first and the CID check is what blocks it
+        let other: AccountId = "bob.testnet".parse().unwrap();
+        contract.release(other, amount, cid);
     }
 
     #[test]
@@ -424,7 +432,7 @@ mod tests {
         contract.release(recipient.clone(), amount, "QmCID_A".to_string());
 
         // Attempt second release 100 seconds later (cooldown is 3600 seconds)
-        let ctx2 = get_context(dao, amount.0, 1_100_000_000_000);
+        let ctx2 = get_context(dao.clone(), amount.0, 1_100_000_000_000);
         testing_env!(ctx2.build());
         contract.release(recipient, amount, "QmCID_B".to_string());
     }
@@ -437,7 +445,7 @@ mod tests {
         // Bronze tier cap is 10 NEAR (10 * 10^24)
         let over_cap = U128(11_000_000_000_000_000_000_000_000); // 11 NEAR
 
-        let ctx = get_context(dao, over_cap.0, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), over_cap.0, 1_000_000_000_000);
         testing_env!(ctx.build());
         contract.release(recipient, over_cap, "QmCID_Bronze".to_string());
     }
@@ -508,7 +516,7 @@ mod tests {
         let amount = U128(2_000_000_000_000_000_000_000_000);
         let cid = "QmRecoverableCID".to_string();
 
-        let ctx = get_context(dao, amount.0, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
         testing_env!(ctx.build());
         contract.release(recipient.clone(), amount, cid.clone());
         assert!(contract.cid_used(cid.clone()));
@@ -532,7 +540,7 @@ mod tests {
         let recipient: AccountId = "bob.testnet".parse().unwrap();
         let cid = "QmSuccessCid".to_string();
 
-        let ctx = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
         testing_env!(ctx.build());
         contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
 
@@ -553,7 +561,7 @@ mod tests {
         let recipient: AccountId = "nonexistent.testnet".parse().unwrap();
         let cid = "QmFailedTransferCid".to_string();
 
-        let ctx = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
         testing_env!(ctx.build());
         contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
         assert!(contract.cid_used(cid.clone()));
@@ -569,8 +577,34 @@ mod tests {
         assert!(!contract.cid_used(cid.clone()));
 
         // Now the same CID can be tried again because rollback cleared it
-        let ctx2 = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_010_000_000_000);
+        let ctx2 = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_010_000_000_000);
         testing_env!(ctx2.build());
         assert!(contract.check_policy(recipient, U128(2_000_000_000_000_000_000_000_000), cid));
+    }
+
+    #[test]
+    fn test_on_release_done_reputation_caps_at_bronze() {
+        let (mut contract, owner, dao) = setup_contract();
+        let recipient: AccountId = "bob.testnet".parse().unwrap();
+
+        // Pre-set reputation to 18 (Bronze tier ceiling is 19)
+        let ctx_owner = get_context(owner, 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.update_reputation(recipient.clone(), 18);
+
+        // Release payment
+        let ctx = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), "QmCID_Cap".to_string());
+
+        // Payout success callback
+        let ctx_self = get_context("policy.testnet".parse().unwrap(), 0, 1_005_000_000_000);
+        testing_env!(ctx_self.build());
+        let ok_result: Result<(), PromiseError> = Ok(());
+        let res = contract.on_release_done("QmCID_Cap".to_string(), recipient.clone(), ok_result);
+        assert!(res);
+
+        // Rep should cap at 19 (Bronze ceiling) and not jump to 23 (Silver) without council vote
+        assert_eq!(contract.get_reputation(recipient), 19);
     }
 }
