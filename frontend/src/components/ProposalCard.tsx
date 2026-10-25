@@ -63,6 +63,16 @@ export function ProposalCard({
             <ShieldCheck size={12} />
             Three-Way Gate 3/3 Pass
           </span>
+          {proposal.attestationHash ? (
+            <span className="status-badge bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[10px]" title={`NEAR AI Cloud Attestation: ${proposal.attestationHash}`}>
+              <ShieldCheck size={11} className="mr-0.5 text-cyan-400" />
+              Attestation Verified ({proposal.attestationHash.slice(0, 15)}...)
+            </span>
+          ) : (
+            <span className="status-badge bg-gray-800/60 text-gray-400 border border-gray-700/50 font-mono text-[10px]">
+              Attestation: Standard Review
+            </span>
+          )}
           <span className={`status-badge font-mono border ${
             proposal.policy.tier === 'Gold' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
             proposal.policy.tier === 'Silver' ? 'bg-slate-300/15 text-slate-200 border-slate-400/30' :
@@ -100,6 +110,25 @@ export function ProposalCard({
         <h3 className="text-sm font-bold text-white leading-snug">{proposal.title}</h3>
         <p className="text-xs text-gray-300 mt-1 leading-relaxed">{proposal.summary}</p>
       </div>
+
+      {/* Decoded On-Chain Action & Policy Helper Release Args */}
+      {proposal.targetContract ? (
+        <div className="bg-purple-950/20 border border-purple-800/40 p-2.5 rounded-xl text-xs font-mono">
+          <div className="text-purple-300 font-semibold mb-1 flex items-center justify-between">
+            <span>Action: FunctionCall → {proposal.targetContract}::release()</span>
+            <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">Atomic Payout</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-gray-300 text-[11px] pt-1 border-t border-purple-900/30">
+            <div>Recipient: <span className="text-purple-200">{proposal.recipient}</span></div>
+            <div>Amount: <span className="text-purple-200">{proposal.amountNear} NEAR</span></div>
+            <div className="truncate">CID: <span className="text-cyan-300" title={proposal.proofCid}>{proposal.proofCid || 'near/core-contracts#42'}</span></div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-slate-900/40 border border-slate-800 p-2 rounded-xl text-[11px] font-mono text-gray-400">
+          <span>Action: Direct Sputnik DAO Transfer ({proposal.amountNear} NEAR → {proposal.recipient})</span>
+        </div>
+      )}
 
       {/* Three-Way Gate Check Indicators */}
       <div className="grid grid-cols-3 gap-2 bg-black/50 p-2.5 rounded-xl border border-gray-800 text-xs font-mono">

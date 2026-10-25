@@ -10,6 +10,7 @@ import { Navbar } from './components/Navbar.tsx';
 import { ThreeWayGate } from './components/ThreeWayGate.tsx';
 import { ProposalCard } from './components/ProposalCard.tsx';
 import { PolicyPanel } from './components/PolicyPanel.tsx';
+import { AttackAttemptsPanel } from './components/AttackAttemptsPanel.tsx';
 import { ActivityLog } from './components/ActivityLog.tsx';
 import { ProofModal } from './components/ProofModal.tsx';
 import { DeliberationModal } from './components/DeliberationModal.tsx';
@@ -695,6 +696,9 @@ export default function App() {
                   .reduce((sum, p) => sum + (parseFloat(p.amountNear) || 0), 0),
               }}
             />
+
+            {/* Blocked Attacks & Exploits Panel */}
+            <AttackAttemptsPanel />
 
             {/* Live Activity Log */}
             <ActivityLog activities={activities} />

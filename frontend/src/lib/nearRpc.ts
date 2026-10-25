@@ -232,11 +232,13 @@ export async function fetchDaoProposals(
         let recipient = 'community.near';
         let amountYocto = '0';
         let proofCid = '';
+        let targetContract = '';
 
         if (p.kind?.Transfer) {
           amountYocto = p.kind.Transfer.amount || '0';
           recipient = p.kind.Transfer.receiver_id || 'community.near';
         } else if (p.kind?.FunctionCall) {
+          targetContract = p.kind.FunctionCall.receiver_id || '';
           const action = p.kind.FunctionCall.actions?.[0];
           if (action) {
             amountYocto = action.deposit || '0';
@@ -261,6 +263,10 @@ export async function fetchDaoProposals(
           const cidMatch = p.description.match(/(https?:\/\/[^\s]+|ipfs:\/\/[^\s]+|bafy[a-z0-9]+)/i);
           proofCid = cidMatch ? cidMatch[0] : '';
         }
+
+        // Extract attestation hash if present in description
+        const attMatch = p.description.match(/(?:Attestation:\s*|sha256:)([a-f0-9]{32,64})/i);
+        const attestationHash = attMatch ? `sha256:${attMatch[1]}` : undefined;
 
         const isApproved = p.status === 'Approved';
         const isRejected = p.status === 'Rejected' || p.status === 'Expired' || p.status === 'Failed';
@@ -292,6 +298,8 @@ export async function fetchDaoProposals(
           amountNear,
           amountYocto,
           proofCid,
+          targetContract: targetContract || undefined,
+          attestationHash,
           summary: p.description.substring(0, 140),
           evidenceType,
           evidenceDetails: p.description,

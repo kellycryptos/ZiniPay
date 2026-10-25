@@ -31,6 +31,9 @@ export type Proposal = {
   createdAt: string;
   status: 'pending_quorum' | 'approved' | 'settled' | 'rejected';
   simulated?: boolean;
+  txHash?: string;
+  attestationHash?: string;
+  targetContract?: string;
   policy: PolicyCheckStatus;
   settlement: SettlementRoute;
   votes: {
@@ -38,6 +41,16 @@ export type Proposal = {
     reject: number;
     required: number;
   };
+};
+
+export type AttackAttempt = {
+  id: string;
+  timestamp: string;
+  vector: 'Replay CID' | 'Over-Cap Spend' | 'Unauthorized Release' | 'Stolen / Unmerged PR';
+  caller: string;
+  details: string;
+  rejectionReason: string;
+  blockedBy: 'PolicyHelper (On-Chain)' | 'Three-Way Match Agent' | 'NEAR AI Deliberation';
 };
 
 export type PolicyMetricsData = {
