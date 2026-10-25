@@ -268,7 +268,7 @@ export default function App() {
         recipient,
         amountNear: amount,
         amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
-        proofCid: deliverable || `bafybei${Math.random().toString(36).substring(2, 12)}`,
+        proofCid: deliverable || 'unspecified_deliverable',
         summary: `Verified via NEAR AI Cloud (TEE). Three-Way Match clearance confirmed.`,
         evidenceType: 'github_pr',
         evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: [Three-Way Match 3/3 PASS]`,

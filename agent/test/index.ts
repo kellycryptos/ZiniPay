@@ -1,5 +1,6 @@
 import { runDeliberationTests } from './deliberation.test.js';
 import { runPolicyTests } from './policy-task3.test.js';
+import { runIntentsLiveTests } from './intents-live.test.js';
 
 async function main() {
   console.log('--- Suite 1: Deliberation & Validator ---');
@@ -7,6 +8,9 @@ async function main() {
 
   console.log('--- Suite 2: Policy Normalization & Anti-Replay ---');
   await runPolicyTests();
+
+  console.log('--- Suite 3: NEAR Intents 1Click Live API ---');
+  await runIntentsLiveTests();
 
   console.log('All agent tests completed successfully!');
 }
