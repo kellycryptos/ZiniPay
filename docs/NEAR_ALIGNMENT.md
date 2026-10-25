@@ -12,7 +12,7 @@
 | **1. Sputnik DAO v2** | `near-daos/sputnik-dao-contract` | Uses native `add_proposal` (FunctionCall to policy helper or Transfer), `act_proposal`, and `get_policy`. Attaches `proposal_bond` if required by DAO policy. Operates on live instances (`*.sputnik-dao.near`) without rebuilding the base multisig. | [`agent/src/dao.ts`](../agent/src/dao.ts) |
 | **2. Trezu Operational Roles** | `docs.trezu.org` & `NEAR-DevHub/trezu` | The AI agent is assigned the **Requestor** role. It queues proposals under on-chain policy constraints; human members in **Finance** or **Governance** retain ultimate voting and veto authority. | [`agent/src/index.ts`](../agent/src/index.ts) |
 | **3. Proposer Sandboxing & Security** | NEAR Account Model (`docs.near.org`) | The agent only has permissions to file proposals. It cannot unilaterally release treasury funds. All payouts require human multi-sig quorum approval. | [`scripts/setup-testnet.mjs`](../scripts/setup-testnet.mjs) |
-| **4. NEAR AI Cloud** | `cloud-api.near.ai` (TEE Inference) | Multi-agent deliberation runs via `https://cloud-api.near.ai/v1` on open models (Llama 3.3 70B, DeepSeek). When credentials are absent, runs in explicit `--dry-run` simulation mode. | [`agent/src/deliberation.ts`](../agent/src/deliberation.ts) |
+| **4. NEAR AI Cloud** | `cloud-api.near.ai` | Multi-agent deliberation runs via `https://cloud-api.near.ai/v1` on open models (Llama 3.3 70B, DeepSeek). When credentials are absent, runs in explicit `--dry-run` simulation mode. | [`agent/src/deliberation.ts`](../agent/src/deliberation.ts) |
 | **5. NEAR Intents** | `1click.chaindefuser.com` (Defuse / 1Click) | Optional cross-chain payouts route through the NEAR Intents 1Click API for atomic settlement in native USDC on Ethereum, Solana, and Bitcoin. | [`agent/src/intents.ts`](../agent/src/intents.ts) |
 | **6. Social Money Track** | Hackathon Prompt: *"Build what communities do with Sputnik DAO & Trezu"* | Delivers **Three-Way Match releases**, **on-chain policy helper contract**, **reputation-tier scaling (Bronze/Silver/Gold)**, and anti-replay protection. | [`agent/src/policy.ts`](../agent/src/policy.ts) & [`contracts/policy-helper`](../contracts/policy-helper) |
 
@@ -97,7 +97,7 @@ In line with NEAR's User-Owned AI initiative:
 ## 5. NEAR Intents Alignment (`1click.chaindefuser.com`)
 
 Rather than forcing DAOs to manage cross-chain bridges:
-- **Protocol**: 1Click Intent Swap REST API (`https://1click.chaindefuser.com/v1/quote`).
+- **Protocol**: 1Click Intent Swap REST API (`https://1click.chaindefuser.com/v0/quote`).
 - **Mechanism**:
   1. The agent requests a quote to deliver foreign assets (e.g. USDC on Ethereum).
   2. The 1Click solver network generates a deposit address on NEAR.

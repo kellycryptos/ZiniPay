@@ -136,7 +136,7 @@ export function ProposalCard({
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-950/40 hover:bg-purple-900/50 text-purple-300 font-medium transition-colors border border-purple-500/30"
             >
               <Cpu size={13} className="text-purple-400" />
-              <span>TEE Deliberation</span>
+              <span>NEAR AI Deliberation</span>
             </button>
           )}
 

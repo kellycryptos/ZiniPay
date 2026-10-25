@@ -52,8 +52,8 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         <div className="flex border-b border-gray-800 px-5 bg-black/40 text-xs font-medium">
           {[
             { id: 'flow', label: 'Consensus Pipeline' },
-            { id: 'tee', label: 'Confidential TEE Enclave' },
-            { id: 'raw', label: 'Cryptographic Attestation' },
+            { id: 'tee', label: 'NEAR AI Cloud Execution' },
+            { id: 'raw', label: 'Deliberation Attestation' },
           ].map((t) => (
             <button
               key={t.id}
@@ -141,15 +141,15 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
                 <div className="flex items-center justify-between">
                   <span className="text-white font-bold text-xs flex items-center gap-1.5">
                     <Cpu size={14} className="text-purple-400" />
-                    Hardware Enclave Status
+                    NEAR AI Cloud Execution Status
                   </span>
                   <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                    SIMULATION (No Hardware TEE)
+                    SIMULATION (Inference Mode)
                   </span>
                 </div>
 
                 <div className="p-3 bg-black/50 rounded-lg border border-gray-800 text-[11px] text-gray-300 leading-relaxed font-sans">
-                  <strong>Hardware TEE Notice:</strong> Real Intel TDX hardware attestation requires launching the agent inside an Intel TDX confidential virtual machine (e.g. on NEAR AI Cloud). In simulation/preview mode, multi-agent evaluation rules are evaluated in software, and synthetic cryptographic quotes are not generated.
+                  <strong>Inference Execution:</strong> Multi-agent deliberation runs via NEAR AI Cloud (cloud-api.near.ai) using open models (Llama 3.3 70B, DeepSeek). In simulation/preview mode, multi-agent evaluation rules are evaluated in software, and synthetic cryptographic quotes are not generated.
                 </div>
               </div>
             </div>

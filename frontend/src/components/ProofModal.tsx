@@ -32,7 +32,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
               <h3 className="text-sm font-bold text-white font-mono flex items-center gap-2">
                 Deliverable Proof Inspector
                 <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded-full font-mono">
-                  TEE Signed
+                  Agent Deliberated
                 </span>
               </h3>
               <p className="text-xs text-gray-400">Verifiable artifact & agent deliberation trace</p>
@@ -76,7 +76,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
           <div>
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
               <Cpu className="w-3.5 h-3.5 text-purple-400" />
-              <span>NEAR AI Cloud (TEE) Verification Trace</span>
+              <span>NEAR AI Cloud Deliberation Trace</span>
             </div>
             <div className="p-3.5 rounded-xl bg-gray-950/80 border border-gray-800 text-xs text-gray-300 leading-relaxed font-mono">
               {proposal.evidenceDetails}

@@ -23,7 +23,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     features: [
       'Three-Way Match Verification (CID Proof, Caps, Anti-Replay)',
       'Dual-Agent Deliberation (Inspector + Risk Arbiter)',
-      'NEAR AI Cloud TEE Receipts (Intel TDX)',
+      'NEAR AI Cloud Deliberation (cloud-api.near.ai)',
       'NEAR Intents 1Click Multi-Chain Settlement',
       'Reputation Tier Scaling (Bronze, Silver, Gold)',
     ],

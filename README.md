@@ -47,7 +47,7 @@ ZiniPay enforces a **Three-Way Match** before any proposal can reach the DAO:
 
 ### 🤝 Multi-Agent Deliberation Pipeline
 
-Rather than relying on a single prompt, two specialized agents deliberate via **NEAR AI Cloud (TEE enclaves)**:
+Rather than relying on a single prompt, two specialized agents deliberate via **NEAR AI Cloud inference**:
 1. **Inspector Agent**: Audits deliverable completeness, inspects artifact links/CIDs, and scores technical depth (0–100).
 2. **Risk Arbiter Agent**: Evaluates treasury exposure, checks recipient history, and assigns **Reputation Tiers**.
 3. **Consensus Engine**: If both approve, an immutable attestation is generated and submitted on-chain via `add_proposal`.
@@ -62,7 +62,7 @@ Reputation dynamically gates payout parameters without manual admin overhead:
 |---|---|---|---|---|
 | **Bronze** | 0 – 19 pts | **1.0x** (Base: 10 NEAR) | 1.0x | Mandatory Human Multi-Sig Vote |
 | **Silver** | 20 – 59 pts | **1.5x** (15 NEAR) | 1.1x | Fast-Track Review |
-| **Gold** | 60+ pts | **2.0x** (20 NEAR) | 1.25x | Eligible for Micro Auto-Clearing |
+| **Gold** | 60+ pts | **2.0x** (20 NEAR) | 1.25x | Standard Council Quorum (Auto-Clearing Planned) |
 
 ---
 
@@ -74,7 +74,7 @@ flowchart LR
         C[Contributor] -->|1. Submit Work + Evidence| CLI[ZiniPay Agent CLI / UI]
     end
 
-    subgraph Deliberation ["NEAR AI Cloud (TEE) Deliberation"]
+    subgraph Deliberation ["NEAR AI Cloud Deliberation"]
         CLI -->|2. Technical Audit| INSP["Inspector Agent\n(Score & Artifact Check)"]
         CLI -->|2. Financial Guardrail| RISK["Risk Arbiter Agent\n(Exposure & Tier Scaling)"]
         INSP --> CONSENSUS["Consensus Engine\n(Three-Way Match Attestation)"]

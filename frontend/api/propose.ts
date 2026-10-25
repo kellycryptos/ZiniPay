@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // 3. Multi-agent deliberation & TEE receipt
+    // 3. Multi-agent deliberation via NEAR AI Cloud
     const deliberation = runDeliberation({
       taskDescription,
       deliverable: deliverableCid,

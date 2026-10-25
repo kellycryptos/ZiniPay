@@ -245,7 +245,7 @@ export default function App() {
         amountNear: amount,
         amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
         proofCid: deliverable,
-        summary: `Verified via NEAR AI Cloud (TEE). Three-Way Match clearance confirmed.`,
+        summary: `Deliberated via NEAR AI Cloud. Three-Way Match clearance confirmed.`,
         evidenceType: deliverable.includes('github') ? 'github_pr' : 'milestone_deliverable',
         evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${delib.attestationSummary} | Score: ${delib.inspector?.score}/100`,
         createdAt: 'Just now',
@@ -300,7 +300,7 @@ export default function App() {
         amountNear: amount,
         amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
         proofCid: deliverable || 'unspecified_deliverable',
-        summary: `Verified via NEAR AI Cloud (TEE). Three-Way Match clearance confirmed.`,
+        summary: `Deliberated via NEAR AI Cloud. Three-Way Match clearance confirmed.`,
         evidenceType: 'github_pr',
         evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: [Three-Way Match 3/3 PASS]`,
         createdAt: 'Just now',
@@ -537,7 +537,7 @@ export default function App() {
                       ZiniPay Three-Way Match Dispatcher
                     </h2>
                     <p className="text-xs text-gray-400 mt-1">
-                      The agent deliberates via NEAR AI Cloud (TEE), verifies anti-double-spend, scales by reputation tier, and attaches proof.
+                      The agent deliberates via NEAR AI Cloud, verifies anti-double-spend, scales by reputation tier, and attaches proof.
                     </p>
                   </div>
                   <span className="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full">
@@ -706,7 +706,7 @@ export default function App() {
                 { label: 'Trezu Treasury Dashboard', url: 'https://app.trezu.org' },
                 { label: 'Sputnik DAO Contracts', url: 'https://github.com/near-daos/sputnik-dao-contract' },
                 { label: 'NEAR Intents 1Click API', url: 'https://near-intents.org' },
-                { label: 'NEAR AI Cloud (TEE)', url: 'https://cloud.near.ai' },
+                { label: 'NEAR AI Cloud', url: 'https://cloud.near.ai' },
               ].map(({ label, url }) => (
                 <a
                   key={label}
