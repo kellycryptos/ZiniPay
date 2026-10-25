@@ -42,6 +42,7 @@ const councilAccountId = process.env.COUNCIL_ACCOUNT_ID;
 const councilPrivateKey = process.env.COUNCIL_PRIVATE_KEY;
 const daoContractId = process.env.DAO_CONTRACT_ID;
 const policyContractId = process.env.POLICY_CONTRACT_ID;
+const recipientAccountId = process.env.RECIPIENT_ACCOUNT_ID || councilAccountId || agentAccountId;
 
 console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -85,6 +86,7 @@ async function run() {
     console.error('     COUNCIL_ACCOUNT_ID=your-council.testnet');
     console.error('     COUNCIL_PRIVATE_KEY=ed25519:...');
     console.error('     DAO_CONTRACT_ID=your-dao.sputnik-dao.testnet');
+    console.error('     RECIPIENT_ACCOUNT_ID=your-recipient.testnet (must exist on-chain)');
     console.error('2. Re-run: node scripts/e2e-testnet.mjs');
     console.error('\nPer hackathon honesty rules, mock transactions and fake hashes are prohibited.\n');
     process.exit(1);
@@ -104,7 +106,20 @@ async function run() {
   const councilBalance = await councilAccount.getAccountBalance();
   console.log(`  ✓ Council balance: ${utils.format.formatNearAmount(councilBalance.available, 4)} NEAR`);
 
-  // 3. Inspect DAO policy
+  // 3. Verify recipient account exists on testnet early (fail closed)
+  console.log(`  Verifying recipient account exists on ${networkId}: ${recipientAccountId}...`);
+  try {
+    const recipientAccount = await agentNear.account(recipientAccountId);
+    const recipientBalance = await recipientAccount.getAccountBalance();
+    console.log(`  ✓ Recipient verified on-chain (${recipientAccountId}): ${utils.format.formatNearAmount(recipientBalance.available, 4)} NEAR`);
+  } catch (err) {
+    console.error(`\n❌ FAILED EARLY: Recipient account "${recipientAccountId}" does not exist on NEAR ${networkId}.`);
+    console.error(`   A payout transfer to a non-existent account will fail at execution.`);
+    console.error(`   Please provide a valid on-chain recipient in RECIPIENT_ACCOUNT_ID.\n`);
+    process.exit(1);
+  }
+
+  // 4. Inspect DAO policy
   console.log(`\n[2/5] Reading Sputnik DAO policy: ${daoContractId}...`);
   const daoPolicy = await agentAccount.viewFunction({
     contractId: daoContractId,
@@ -114,14 +129,34 @@ async function run() {
   const bondYocto = daoPolicy.proposal_bond || '1000000000000000000000000';
   console.log(`  ✓ DAO Proposal Bond: ${utils.format.formatNearAmount(bondYocto, 4)} NEAR`);
 
-  // 4. Check or Configure Policy Helper
-  let targetReceiver = daoContractId;
+  // 5. Check or Configure Policy Helper
   let proposalKind;
   const deliverableProof = 'https://github.com/near/core-contracts/pull/42';
   const payoutAmountYocto = utils.format.parseNearAmount('0.1') || '100000000000000000000000';
 
   if (policyContractId) {
     console.log(`\n[3/5] Targeting Policy Helper contract at ${policyContractId}...`);
+    // Pre-flight check_policy
+    try {
+      const allowed = await agentAccount.viewFunction({
+        contractId: policyContractId,
+        methodName: 'check_policy',
+        args: {
+          recipient: recipientAccountId,
+          amount: payoutAmountYocto,
+          cid: 'near/core-contracts#42',
+        },
+      });
+      if (!allowed) {
+        console.error(`\n❌ FAILED: PolicyHelper check_policy rejected the proposal parameters on ${policyContractId}.`);
+        process.exit(1);
+      }
+      console.log(`  ✓ On-chain check_policy passed on ${policyContractId}`);
+    } catch (err) {
+      console.error(`\n❌ FAILED: Pre-flight check_policy on ${policyContractId} failed:`, err.message);
+      process.exit(1);
+    }
+
     proposalKind = {
       FunctionCall: {
         receiver_id: policyContractId,
@@ -130,7 +165,7 @@ async function run() {
             method_name: 'release',
             args: Buffer.from(
               JSON.stringify({
-                recipient: agentAccountId,
+                recipient: recipientAccountId,
                 amount: payoutAmountYocto,
                 cid: 'near/core-contracts#42',
               })
@@ -142,11 +177,11 @@ async function run() {
       },
     };
   } else {
-    console.log(`\n[3/5] Using Sputnik DAO direct payout proposal format (Transfer)...`);
+    console.log(`\n[3/5] Using Sputnik DAO direct payout format (Transfer)...`);
     proposalKind = {
       Transfer: {
         token_id: '',
-        receiver_id: agentAccountId,
+        receiver_id: recipientAccountId,
         amount: payoutAmountYocto,
       },
     };
