@@ -1,7 +1,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise};
+use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, Gas, PanicOnDefault, Promise, PromiseError};
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
@@ -136,8 +136,46 @@ impl PolicyHelper {
             )
         );
 
-        // Execute transfer to recipient
-        Promise::new(recipient).transfer(amount.0)
+        // Execute transfer to recipient with callback to automatically handle rollback on failure
+        Promise::new(recipient.clone())
+            .transfer(amount.0)
+            .then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(Gas(5_000_000_000_000))
+                    .on_release_done(cid, recipient)
+            )
+    }
+
+    /// Callback invoked after the payout transfer promise completes.
+    /// If the transfer succeeded, logs confirmation and awards on-chain reputation.
+    /// If the transfer failed, unmarks the CID and clears the cooldown automatically.
+    #[private]
+    pub fn on_release_done(
+        &mut self,
+        cid: String,
+        recipient: AccountId,
+        #[callback_result] call_result: Result<(), PromiseError>,
+    ) -> bool {
+        match call_result {
+            Ok(_) => {
+                env::log_str(&format!(
+                    "Release payout confirmed for recipient {} on CID {}",
+                    recipient, cid
+                ));
+                let current = self.reputation_scores.get(&recipient).unwrap_or(0);
+                self.reputation_scores.insert(&recipient, &(current + 5));
+                true
+            }
+            Err(_) => {
+                env::log_str(&format!(
+                    "Transfer promise failed for recipient {}. Automatically rolling back CID {} and cooldown.",
+                    recipient, cid
+                ));
+                self.used_cids.remove(&cid);
+                self.last_release.remove(&recipient);
+                false
+            }
+        }
     }
 
     /// Read-only check called by the agent or UI prior to filing a proposal.
@@ -486,5 +524,53 @@ mod tests {
         contract.reset_cooldown(recipient.clone());
 
         assert!(!contract.cid_used(cid));
+    }
+
+    #[test]
+    fn test_on_release_done_success_increments_reputation() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "bob.testnet".parse().unwrap();
+        let cid = "QmSuccessCid".to_string();
+
+        let ctx = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
+
+        // Context for callback: predecessor is current contract
+        let ctx_self = get_context("policy.testnet".parse().unwrap(), 0, 1_005_000_000_000);
+        testing_env!(ctx_self.build());
+
+        let ok_result: Result<(), PromiseError> = Ok(());
+        let res = contract.on_release_done(cid.clone(), recipient.clone(), ok_result);
+        assert!(res);
+        assert!(contract.cid_used(cid));
+        assert_eq!(contract.get_reputation(recipient), 5);
+    }
+
+    #[test]
+    fn test_on_release_done_failure_rolls_back_cid_and_cooldown() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "nonexistent.testnet".parse().unwrap();
+        let cid = "QmFailedTransferCid".to_string();
+
+        let ctx = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
+        assert!(contract.cid_used(cid.clone()));
+
+        // Context for callback: predecessor is current contract
+        let ctx_self = get_context("policy.testnet".parse().unwrap(), 0, 1_005_000_000_000);
+        testing_env!(ctx_self.build());
+
+        let err_result: Result<(), PromiseError> = Err(PromiseError::Failed);
+        let res = contract.on_release_done(cid.clone(), recipient.clone(), err_result);
+        assert!(!res);
+        // State must be rolled back: CID unburned, cooldown cleared!
+        assert!(!contract.cid_used(cid.clone()));
+
+        // Now the same CID can be tried again because rollback cleared it
+        let ctx2 = get_context(dao, 2_000_000_000_000_000_000_000_000, 1_010_000_000_000);
+        testing_env!(ctx2.build());
+        assert!(contract.check_policy(recipient, U128(2_000_000_000_000_000_000_000_000), cid));
     }
 }

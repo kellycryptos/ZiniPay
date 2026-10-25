@@ -38,12 +38,20 @@ When a proposal passes the council multi-sig vote in Sputnik DAO, the DAO execut
   3. Cooldown period since last release to that recipient
   4. CID anti-replay (`!used_cids.contains(cid)`)
 - **State Committed Before Transfer**: The CID is added to `used_cids` and the timestamp is recorded in `last_release` **before** the outgoing transfer promise (`Promise::new(recipient).transfer(amount)`) is dispatched.
-- **Failed Transfer Handling & Owner Recovery**:
-  In NEAR's asynchronous cross-contract call model, if an external transfer fails (e.g., recipient account is deleted or invalid), the attached funds are refunded to the contract balance.
-  - To prevent double-spend exploits, the CID remains **burned** by default.
-  - If a human admin audits the failed transfer and verifies the contributor was not paid, the owner account can invoke the recovery functions:
-    - `unburn_cid(cid)`: Re-enables the deliverable CID for a future valid payout proposal.
-    - `reset_cooldown(recipient)`: Clears the cooldown for the affected recipient.
+- **Automated Callback with State Rollback (`on_release_done`)**:
+  `release` chains a private promise callback:
+  ```rust
+  Promise::new(recipient.clone())
+      .transfer(amount.0)
+      .then(
+          Self::ext(env::current_account_id())
+              .with_static_gas(Gas(5_000_000_000_000))
+              .on_release_done(cid, recipient)
+      )
+  ```
+  - **On Success**: The payout is confirmed, logged, and the recipient's on-chain reputation score is automatically increased (+5 pts).
+  - **On Failure**: If the transfer promise fails (e.g. nonexistent recipient account), `on_release_done` automatically catches the failure result, unburns the deliverable CID (`used_cids.remove(&cid)`), and clears the cooldown (`last_release.remove(&recipient)`).
+  - **Manual Recovery**: As defense-in-depth, the owner recovery methods `unburn_cid` and `reset_cooldown` remain available for administrative interventions.
 
 ---
 
