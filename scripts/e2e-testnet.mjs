@@ -148,12 +148,12 @@ async function run() {
 
   // ── Step 2: Stolen PR Attack Scenario ─────────────────────────────────────
   console.log(`\n[2/8] Testing Stolen / Unmerged PR Scenario (Agent Gate)...`);
-  // Use real, confirmed-merged PRs from near/near-sdk-rs to test genuine author mismatch:
-  // - PR #1651 (merged 2026-10-23, author: vsavchyn-dev)
-  // - PR #1649 (merged 2026-10-19, author: r-near)
-  const thirdPartyPr = recipientGithubHandle.toLowerCase() === 'vsavchyn-dev'
-    ? 'https://github.com/near/near-sdk-rs/pull/1649'
-    : 'https://github.com/near/near-sdk-rs/pull/1651';
+  // If STOLEN_PR_URL is set in .env (e.g. from a second GitHub account you own), use it.
+  // Otherwise default to confirmed merged PRs from near/near-sdk-rs (#1651 / #1649).
+  const thirdPartyPr = process.env.STOLEN_PR_URL
+    || (recipientGithubHandle.toLowerCase() === 'vsavchyn-dev'
+      ? 'https://github.com/near/near-sdk-rs/pull/1649'
+      : 'https://github.com/near/near-sdk-rs/pull/1651');
 
   console.log(`  Attempting submission with third-party PR: ${thirdPartyPr}`);
   const stolenCheck = await verifyArtifact(thirdPartyPr, recipientAccountId, recipientGithubHandle);
