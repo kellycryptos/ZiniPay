@@ -63,10 +63,18 @@ export function ProposalCard({
             <ShieldCheck size={12} />
             Three-Way Gate 3/3 Pass
           </span>
-          {proposal.attestationHash ? (
-            <span className="status-badge bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[10px]" title={`NEAR AI Cloud Attestation: ${proposal.attestationHash}`}>
+          {proposal.attestationStatus === 'report_received' ? (
+            <span
+              className="status-badge bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[10px]"
+              title="Attestation report received from NEAR AI Cloud (cloud-api.near.ai). Intel TDX DCAP hardware quote not independently verified."
+            >
               <ShieldCheck size={11} className="mr-0.5 text-cyan-400" />
-              Attestation Verified ({proposal.attestationHash.slice(0, 15)}...)
+              Attestation report received (not independently verified)
+            </span>
+          ) : proposal.attestationStatus === 'verified' ? (
+            <span className="status-badge bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[10px]">
+              <ShieldCheck size={11} className="mr-0.5 text-emerald-400" />
+              Attestation verified
             </span>
           ) : (
             <span className="status-badge bg-gray-800/60 text-gray-400 border border-gray-700/50 font-mono text-[10px]">
@@ -121,7 +129,7 @@ export function ProposalCard({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-gray-300 text-[11px] pt-1 border-t border-purple-900/30">
             <div>Recipient: <span className="text-purple-200">{proposal.recipient}</span></div>
             <div>Amount: <span className="text-purple-200">{proposal.amountNear} NEAR</span></div>
-            <div className="truncate">CID: <span className="text-cyan-300" title={proposal.proofCid}>{proposal.proofCid || 'near/core-contracts#42'}</span></div>
+            <div className="truncate">CID: <span className="text-cyan-300" title={proposal.proofCid}>{proposal.proofCid || 'N/A'}</span></div>
           </div>
         </div>
       ) : (

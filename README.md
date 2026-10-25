@@ -82,7 +82,7 @@ Every capability advertised in this documentation is implemented directly in the
 | :--- | :--- | :--- |
 | **Three-Way Match Verification** | [`agent/src/policy.ts`](file:///agent/src/policy.ts) | Verifies deliverable proof, stay within spend cap, and confirms zero deliverable replay. |
 | **Multi-Agent Deliberation** | [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts) | Inspector + Risk Arbiter consensus with Zod schema validation; fail-closed catch blocks. |
-| **NEAR AI Cloud TEE Attestation** | [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts) | Queries `GET /v1/attestation/report` with 32-byte client nonce; verifies Intel TDX quote & computes SHA-256 digest. |
+| **NEAR AI Cloud TEE Attestation** | [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts) | Queries `GET /v1/attestation/report` with 32-byte client nonce challenge; status: "Attestation report received (not independently verified)". |
 | **On-Chain Policy Guardrails** | [`contracts/policy-helper/src/lib.rs`](file:///contracts/policy-helper/src/lib.rs) | Rust contract verifying caller authorization, tier caps, cooldown periods, and CID anti-replay. |
 | **Strict Attached Deposit Funding** | [`contracts/policy-helper/src/lib.rs`](file:///contracts/policy-helper/src/lib.rs#L129) | Requires `env::attached_deposit().as_yoctonear() >= amount.0`; balance fallback dropped to protect storage staking. |
 | **Promise Rollback Callback** | [`contracts/policy-helper/src/lib.rs`](file:///contracts/policy-helper/src/lib.rs#L155) | Chained `on_release_done` promise callback; automatically rolls back CID and cooldown if transfer fails. |
@@ -95,31 +95,39 @@ Every capability advertised in this documentation is implemented directly in the
 
 ## 🛡️ Attack Resilience: Tested & Verified Failure Modes
 
-ZiniPay is architected to **fail closed**. All security assertions are tested in unit tests and live testnet scripts:
+ZiniPay is architected to **fail closed**. All security assertions are tested in unit tests and live testnet scripts with exact error strings matching the source code:
 
 ### 1. Deliverable CID Replay Attack
-- **Attack**: A contributor attempts to submit a previously settled deliverable CID (`near/core-contracts#42`) to claim a second payout.
-- **Enforcement**: Checked by [`PolicyEngine.check`](file:///agent/src/policy.ts) and on-chain by [`PolicyHelper.release`](file:///contracts/policy-helper/src/lib.rs#L122).
-- **Exact Error**: `Deliverable CID already used: near/core-contracts#42`
+- **Attack**: A contributor attempts to submit a previously settled deliverable CID to claim a second payout.
+- **Enforcement**:
+  - On-chain contract (`contracts/policy-helper/src/lib.rs#L122`): `CID already used — duplicate release attempt blocked`
+  - Agent gate (`agent/src/policy.ts#L140`): `Three-Way Match Failed: Deliverable "<cid>" has already been settled and paid.`
 - **Rust Test**: `test_duplicate_cid_fails` (passes in `contracts/policy-helper/src/lib.rs`).
 
 ### 2. Over-Cap Payout Attack
-- **Attack**: An attacker requests 50 NEAR for a Bronze contributor whose effective cap is 10 NEAR.
-- **Enforcement**: Contract checks `amount <= self.get_effective_cap(&recipient)`.
-- **Exact Error**: `Requested amount exceeds effective reputation cap`
+- **Attack**: An attacker requests an amount exceeding the recipient's tier cap (e.g. 50 NEAR for a Bronze contributor).
+- **Enforcement**:
+  - On-chain contract (`contracts/policy-helper/src/lib.rs#L102`): `Amount <amount> exceeds effective tier cap <cap> for recipient <account>`
+  - Agent gate (`agent/src/policy.ts#L164`): `Proposal amount <req> NEAR exceeds <tier> tier cap of <max> NEAR.`
 - **Rust Test**: `test_tier_boundaries` (verifies boundaries at 19, 20, 59, 60).
 
 ### 3. Unauthorized Caller Invoking Release
-- **Attack**: Malicious account `attacker.sputnik-evil.testnet` calls `release()` directly on `PolicyHelper` to drain funds.
-- **Enforcement**: Guarded by `assert_owner_or_dao()`.
-- **Exact Error**: `Unauthorized: Only owner or DAO can call release`
+- **Attack**: Malicious external account calls `release()` directly on `PolicyHelper` to drain funds.
+- **Enforcement**: Guarded on-chain by `assert_owner_or_dao()` (`contracts/policy-helper/src/lib.rs#L323`).
+- **Exact Error**: `Only owner or designated DAO can call this`
 - **Rust Test**: `test_attacker_fails_release` (passes in `contracts/policy-helper/src/lib.rs`).
 
 ### 4. Fake / Missing TEE Attestation
 - **Attack**: Attacker tampers with the NEAR AI Cloud attestation report or replays a stale report with a mismatched nonce.
-- **Enforcement**: Validated by `verifyAttestationReport` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts).
-- **Exact Error**: `Nonce mismatch: expected ... got ...`
+- **Enforcement**: Validated by `verifyAttestationReport` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts#L253).
+- **Exact Error**: `Nonce mismatch: expected <nonce>..., got <nonce>...`
 - **Unit Test**: Test 6 in `agent/test/deliberation.test.ts`.
+
+### 5. Stolen / Author Mismatch PR
+- **Attack**: Attacker submits a merged GitHub PR authored by someone else.
+- **Enforcement**: Validated by `verifyArtifact` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts#L160).
+- **Exact Error**: `PR author (<author>) does not match recipient handle (<handles>)`
+- **Unit Test**: Test 1 in `agent/test/deliberation.test.ts` and step 2 in `scripts/e2e-testnet.mjs`.
 
 ---
 
@@ -178,10 +186,10 @@ cargo test
 
 ### 3. Run Simulated Proposal (Instant Verification)
 ```bash
-npm run agent:propose -- propose \
+npm run agent:propose -- \
   --task "Build Sputnik DAO Three-Way Match Agent" \
-  --deliverable "https://github.com/near/core-contracts/pull/42" \
-  --recipient "alice.testnet" \
+  --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
+  --recipient "vsavchyn-dev.testnet" \
   --amount 4.5 \
   --dry-run
 ```
@@ -198,7 +206,7 @@ Open [http://localhost:5173](http://localhost:5173). Append `?demo=1` to view si
 
 To uphold strict hackathon integrity, the following features are planned roadmap items and are **not** claimed as completed:
 
-1. **On-Chain Intel TDX Quote Verification**: Currently, Intel TDX quotes and nonce freshness are cryptographically verified off-chain by the agent, and the resulting SHA-256 digest is anchored on-chain in the proposal description. Full on-chain DCAP quote verification in Rust contract is planned.
+1. **Independent Cryptographic Intel TDX DCAP Quote Verification**: Currently, the agent fetches the TEE report from `https://cloud-api.near.ai/v1/attestation/report`, confirms receipt of the Intel TDX quote payload, and checks that the server echoed back the client's 32-byte nonce challenge. Full cryptographic verification of the DCAP quote (validating PCK cert chain against Intel PCS and checking that `report_data` binds `signing_address`) is not implemented locally in this build, as it requires Intel DCAP QVL libraries or the `nearai-cloud-verifier` service. Until then, it is labeled honestly in code, UI badges, and docs as: **"Attestation report received (not independently verified)"**.
 2. **Chain Signatures Cross-Chain Signing**: Cross-chain settlement is currently routed through the live NEAR Intents 1Click API (`1click.chaindefuser.com`). Direct multi-chain threshold ECDSA signing via `v1.signer` is planned.
 3. **Automated Council Auto-Clearing for Gold Tier**: All proposals currently require an explicit human council approval vote (`VoteApprove`). Automated execution for high-reputation contributors without human quorum is in design phase.
 4. **Native Mobile App**: The UI is a responsive web application built with React/Vite/Tailwind and NEAR Wallet Selector; dedicated iOS/Android apps are not built.

@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import { getTierInfo, type ReputationTier } from './reputation.js';
 
 export interface AttestationVerificationResult {
+  reportReceived: boolean;
   verified: boolean;
   enclaveAddress?: string;
   attestationHash?: string;
@@ -227,41 +228,45 @@ export async function verifyArtifact(
 }
 
 /**
- * Verifies a NEAR AI Cloud cryptographic attestation report:
+ * Inspects a NEAR AI Cloud cryptographic attestation report:
  * 1. Checks that gateway_attestation exists with an Intel TDX quote.
  * 2. Compares the echoed request_nonce against the expected client challenge nonce (freshness check).
- * 3. Computes the SHA-256 digest of the entire report payload for on-chain binding.
+ * 3. Computes the SHA-256 digest of the entire report payload for audit reference.
+ * Note: Full cryptographic verification of the Intel DCAP quote against Intel PCS requires
+ * dcap-qvl or nearai-cloud-verifier; therefore this step confirms report reception and nonce match.
  */
 export function verifyAttestationReport(
   report: any,
   expectedNonce: string,
-): { verified: boolean; enclaveAddress?: string; attestationHash?: string; reason?: string } {
+): { reportReceived: boolean; verified: boolean; enclaveAddress?: string; attestationHash?: string; reason?: string } {
   if (!report || typeof report !== 'object') {
-    return { verified: false, reason: 'Empty or invalid attestation report payload' };
+    return { reportReceived: false, verified: false, reason: 'Empty or invalid attestation report payload' };
   }
   const gateway = report.gateway_attestation;
   if (!gateway) {
-    return { verified: false, reason: 'Missing gateway_attestation in report' };
+    return { reportReceived: false, verified: false, reason: 'Missing gateway_attestation in report' };
   }
   if (!gateway.intel_quote) {
-    return { verified: false, reason: 'Missing intel_quote in gateway_attestation' };
+    return { reportReceived: false, verified: false, reason: 'Missing intel_quote in gateway_attestation' };
   }
   if (gateway.request_nonce !== expectedNonce) {
     return {
+      reportReceived: false,
       verified: false,
       reason: `Nonce mismatch: expected ${expectedNonce.slice(0, 12)}..., got ${gateway.request_nonce ? gateway.request_nonce.slice(0, 12) + '...' : 'none'}`,
     };
   }
   const hash = crypto.createHash('sha256').update(JSON.stringify(report)).digest('hex');
   return {
-    verified: true,
+    reportReceived: true,
+    verified: false, // Relabeled: Intel TDX report received and nonce matched, but DCAP quote not independently verified
     enclaveAddress: gateway.signing_address || 'unknown-enclave',
     attestationHash: `sha256:${hash}`,
   };
 }
 
 /**
- * Fetches and cryptographically verifies attestation from NEAR AI Cloud (GET /v1/attestation/report)
+ * Fetches attestation report from NEAR AI Cloud (GET /v1/attestation/report)
  */
 export async function fetchAndVerifyAttestation(opts: {
   baseUrl: string;
@@ -272,7 +277,8 @@ export async function fetchAndVerifyAttestation(opts: {
   if (opts.dryRun) {
     const simHash = crypto.createHash('sha256').update(`SIMULATION_DELIBERATION_${opts.model}`).digest('hex');
     return {
-      verified: true,
+      reportReceived: true,
+      verified: false,
       enclaveAddress: '0xSIMULATED_ENCLAVE_TDX',
       attestationHash: `sha256:${simHash}`,
       simulated: true,
@@ -292,10 +298,11 @@ export async function fetchAndVerifyAttestation(opts: {
       timeout: 8000,
     });
     if (res.status !== 200 || !res.data) {
-      return { verified: false, reason: `Attestation endpoint returned HTTP ${res.status}`, simulated: false };
+      return { reportReceived: false, verified: false, reason: `Attestation endpoint returned HTTP ${res.status}`, simulated: false };
     }
     const check = verifyAttestationReport(res.data, nonce);
     return {
+      reportReceived: check.reportReceived,
       verified: check.verified,
       enclaveAddress: check.enclaveAddress,
       attestationHash: check.attestationHash,
@@ -304,6 +311,7 @@ export async function fetchAndVerifyAttestation(opts: {
     };
   } catch (err: any) {
     return {
+      reportReceived: false,
       verified: false,
       reason: `Failed to fetch TEE attestation from ${cleanBase}: ${err.message}`,
       simulated: false,
@@ -592,7 +600,7 @@ Assess risk and respond with JSON ONLY.
     simulated: boolean = false,
     attestation?: AttestationVerificationResult,
   ): ThreeWayMatchResult {
-    const attestationOk = attestation ? attestation.verified : !simulated;
+    const attestationOk = attestation ? attestation.reportReceived : true;
     const match1_Scope = inspector.approved && inspector.score >= 70;
     const match2_Proof = inspector.artifactVerified && Boolean(req.deliverable.trim());
     const match3_Policy = risk.approved && risk.riskLevel !== 'HIGH';
@@ -605,7 +613,9 @@ Assess risk and respond with JSON ONLY.
 
     const passFailStr = consensusApproved ? 'PASS' : 'FAIL';
     const simPrefix = simulated ? '[SIMULATION] ' : '';
-    const attestationTag = attestation?.attestationHash ? ` [Attestation: ${attestation.attestationHash}]` : '';
+    const attestationTag = attestation?.attestationHash
+      ? ` [Attestation report received (not independently verified): ${attestation.attestationHash}]`
+      : '';
     const attestationSummary = `${simPrefix}[Three-Way Match: ${matchCount}/3 ${passFailStr}] [Tier: ${tier}]${attestationTag} ${inspector.critique} | Deliverable: ${req.deliverable}`;
 
     return {

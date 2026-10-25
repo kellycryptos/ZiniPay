@@ -15,7 +15,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
   >
   > Welcome to ZiniPay—the 100% NEAR-aligned constrained agent layer for Sputnik DAO and Trezu.
   >
-  > In the first 30 seconds, let's look at a real transaction on NEARBlocks. Here is Proposal #42 on our Sputnik DAO. Notice the proposal description: it includes a cryptographically verified SHA-256 attestation digest from NEAR AI Cloud.
+  > In the first 30 seconds, let's look at a real transaction on NEARBlocks. Here is Proposal #42 on our Sputnik DAO. Notice the proposal description: it includes an attestation reference digest from NEAR AI Cloud, labeled honestly as 'Attestation report received (not independently verified)'.
   >
   > The proposal wasn't a loose transfer—it was an atomic FunctionCall targeting our Rust `PolicyHelper` contract. When the human council voted VoteApprove, the DAO attached the exact payout deposit, `release` validated the spend cap and CID uniqueness, transferred the funds to the contributor, and chained an on-chain callback that automatically updated the contributor's reputation score. Everything you see here happened on NEAR testnet."*
 
@@ -27,10 +27,10 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
 - **Screen**: Terminal split-screen (VS Code / CLI)
 - **Command to Run**:
   ```bash
-  npm run agent:propose -- propose \
+  npm run agent:propose -- \
     --task "Build Sputnik DAO Three-Way Match Agent" \
-    --deliverable "https://github.com/near/core-contracts/pull/42" \
-    --recipient "alice.testnet" \
+    --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
+    --recipient "vsavchyn-dev.testnet" \
     --amount 4.5 \
     --dry-run
   ```
@@ -38,9 +38,9 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
   > *"Behind the proposal is our dual-agent deliberation pipeline. In the terminal, our agent runs the Three-Way Match:
   > First, the Inspector Agent verifies technical depth and authenticates the GitHub PR status.
   > Second, the Risk Arbiter evaluates treasury exposure against the contributor's reputation tier.
-  > Third, the engine challenges NEAR AI Cloud's attestation endpoint with a fresh 32-byte cryptographic nonce, verifying that the model inference ran inside a genuine Intel TDX hardware enclave.
+  > Third, the engine challenges NEAR AI Cloud's attestation endpoint with a fresh 32-byte cryptographic nonce, confirming receipt of the TEE hardware enclave report.
   >
-  > And most importantly, ZiniPay fails closed. Let's see what happens during an exploit attempt—if an attacker replays a previously paid CID, requests funds above their tier cap, or provides a tampered attestation quote, the transaction is rejected instantly with an on-chain panic. No funds can ever leave the treasury without meeting all three gates."*
+  > And most importantly, ZiniPay fails closed. Let's see what happens during an exploit attempt—if an attacker replays a previously paid CID, requests funds above their tier cap, or provides an invalid deliverable, the transaction is rejected instantly with an on-chain panic. No funds can ever leave the treasury without meeting all three gates."*
 
 ---
 
@@ -50,7 +50,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
 - **Screen**: Browser on ZiniPay Dashboard ([http://localhost:5173](http://localhost:5173))
 - **Actions on Screen**:
   1. Highlight the **"Three-Way Release Gate"** indicators (`Scope Verified`, `Cap ≤ Limit`, `Zero Replay`).
-  2. Point out the **"Attestation Verified"** badge with the cryptographic hash.
+  2. Point out the **"Attestation report received (not independently verified)"** badge.
   3. Scroll to the **"Attack Attempts & Blocked Exploits"** panel in the right sidebar.
 - **Voiceover**:
   > *"On the ZiniPay dashboard, council members and contributors see live data straight from Sputnik DAO RPC.
@@ -68,7 +68,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
 | Step | Command Line Execution |
 | :--- | :--- |
 | **Run E2E On-Chain Test** | `npm run test:e2e` |
-| **Run Deliberation CLI** | `npm run agent:propose -- propose -t "Task" -d "https://github.com/near/core-contracts/pull/42" -r "alice.testnet" -a 4.5 --dry-run` |
+| **Run Deliberation CLI** | `npm run agent:propose -- --task "Task" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient "vsavchyn-dev.testnet" --amount 4.5 --dry-run` |
 | **Run Agent Unit Tests** | `npm test --prefix agent` |
 | **Start Frontend** | `npm run frontend:dev` |
 

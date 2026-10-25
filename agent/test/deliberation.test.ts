@@ -67,9 +67,10 @@ export async function runDeliberationTests() {
     },
   };
   const validAtt = verifyAttestationReport(validReport, testNonce);
-  console.assert(validAtt.verified, 'Attestation with matching nonce must verify');
+  console.assert(validAtt.reportReceived, 'Attestation with matching nonce must receive report');
+  console.assert(!validAtt.verified, 'DCAP quote must be labeled unverified without PCS cert chain check');
   console.assert(validAtt.attestationHash?.startsWith('sha256:'), 'Attestation hash must be sha256:');
-  console.log('✓ Test 5: Attestation report with fresh nonce passes verification');
+  console.log('✓ Test 5: Attestation report with fresh nonce received and labeled unverified without PCS check');
 
   // Test 6: verifyAttestationReport fails closed on tampered / replayed report
   const tamperedReport = {

@@ -33,6 +33,8 @@ export type Proposal = {
   simulated?: boolean;
   txHash?: string;
   attestationHash?: string;
+  attestationStatus?: 'unverified' | 'report_received' | 'verified';
+  attestationReason?: string;
   targetContract?: string;
   policy: PolicyCheckStatus;
   settlement: SettlementRoute;
@@ -46,11 +48,12 @@ export type Proposal = {
 export type AttackAttempt = {
   id: string;
   timestamp: string;
-  vector: 'Replay CID' | 'Over-Cap Spend' | 'Unauthorized Release' | 'Stolen / Unmerged PR';
+  vector: string;
   caller: string;
   details: string;
   rejectionReason: string;
-  blockedBy: 'PolicyHelper (On-Chain)' | 'Three-Way Match Agent' | 'NEAR AI Deliberation';
+  blockedBy: string;
+  simulated?: boolean;
 };
 
 export type PolicyMetricsData = {

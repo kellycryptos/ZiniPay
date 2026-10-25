@@ -18,6 +18,7 @@ import { PolicyEngine, type PolicyConfig } from './policy.js';
 import { MultiAgentDeliberationEngine } from './deliberation.js';
 import { ReputationLedger, getTierInfo } from './reputation.js';
 import { NearIntents } from './intents.js';
+import { logAttackEvent } from './attackLogger.js';
 
 // ─── Lazy Config Helper ──────────────────────────────────────────────────────
 
@@ -181,6 +182,18 @@ async function runPropose(opts: ProposeOpts) {
 
   if (!policyResult.ok) {
     console.log(chalk.red(`\n  ✗ THREE-WAY MATCH FAILED: ${policyResult.reason}`));
+    logAttackEvent({
+      vector: policyResult.reason.includes('already been settled') || policyResult.reason.includes('already has a recorded proposal')
+        ? 'Replay Deliverable'
+        : policyResult.reason.includes('exceeds')
+        ? 'Over-Cap Spend'
+        : 'Invalid Deliverable',
+      caller: opts.recipient,
+      details: `Requested ${opts.amountNear} NEAR for deliverable '${opts.deliverable}'`,
+      rejectionReason: policyResult.reason,
+      blockedBy: 'PolicyEngine (Agent Gate)',
+      simulated: opts.dryRun,
+    });
     process.exit(1);
   }
 
@@ -207,6 +220,20 @@ async function runPropose(opts: ProposeOpts) {
   if (!deliberation.consensusApproved) {
     console.log(chalk.red('\n  ✗ Deliberation Consensus REJECTED the deliverable. Proposal halted.'));
     await reputation.recordProposalRejected(opts.recipient, deliberation.inspector.critique);
+    logAttackEvent({
+      vector: deliberation.inspector.critique.includes('PR author')
+        ? 'Stolen / Author Mismatch PR'
+        : deliberation.inspector.critique.includes('not merged')
+        ? 'Unmerged PR'
+        : deliberation.inspector.critique.includes('Attestation')
+        ? 'Failed Attestation'
+        : 'Deliberation Rejection',
+      caller: opts.recipient,
+      details: `Deliverable: '${opts.deliverable}' | Task: '${opts.task}'`,
+      rejectionReason: deliberation.inspector.critique,
+      blockedBy: 'DeliberationEngine (Inspector/Attestation Gate)',
+      simulated: opts.dryRun,
+    });
     process.exit(1);
   }
 
@@ -288,6 +315,14 @@ async function runPropose(opts: ProposeOpts) {
     });
     if (!onChainCheck.ok) {
       console.log(chalk.red(`\n  ✗ ON-CHAIN POLICY REJECTED PROPOSAL: ${onChainCheck.reason}`));
+      logAttackEvent({
+        vector: 'On-Chain Policy Rejection',
+        caller: opts.recipient,
+        details: `check_policy rejected deliverable '${policyResult.normalizedDeliverable}'`,
+        rejectionReason: onChainCheck.reason || 'On-chain check_policy returned false',
+        blockedBy: 'PolicyHelper (On-Chain Pre-Flight)',
+        simulated: opts.dryRun,
+      });
       console.log(chalk.red('  Aborting submission to prevent filing proposals that cannot be executed.'));
       process.exit(1);
     }

@@ -2,14 +2,16 @@
 /**
  * scripts/e2e-testnet.mjs
  *
- * Real End-to-End Testnet Verification:
- *   1. Pre-flight verification (Account existence, balances, on-chain check_policy view call)
- *   2. Real deliverable proposal submission (FunctionCall proposal to Sputnik DAO v2)
- *   3. Council multi-sig approval vote & payout verification (Recipient balance increase check)
- *   4. Reputation retrieval (get_reputation view call)
- *   5. Council Tier Promotion (update_reputation -> Silver tier, demonstrating cap change from 10 to 15 NEAR)
- *   6. Three Live Attack Scenarios (Replay CID, Over-cap spend, Unauthorized caller)
- *   7. Summary table of all real transactions with NEARBlocks explorer links
+ * Real End-to-End Testnet Verification with Agent Pipeline:
+ *   1. Pre-flight verification (Account existence, balances, required env vars)
+ *   2. Stolen PR Attack Scenario: Agent must reject third-party PR before any tx is broadcast
+ *   3. Real Agent Pipeline: verifyArtifact, MultiAgentDeliberationEngine, policy pre-flight
+ *   4. Sputnik DAO v2 Proposal Creation: Dispatches agent's deliberated FunctionCall proposal
+ *   5. Council Multi-Sig Approval Vote: VoteApprove + on-chain recipient payout check
+ *   6. Reputation & Tier Promotion: Council updates reputation -> Silver tier (10 -> 15 NEAR cap)
+ *   7. Three Contract Attack Scenarios (Replay CID, Over-cap, Unauthorized caller)
+ *   8. Audit logging: appends all real blocked attacks to attack_events.jsonl
+ *   9. Final summary table of all real transactions with NEARBlocks explorer links
  *
  * Honesty Rules:
  *   - No fake hashes, fake accounts, or fabricated proofs.
@@ -19,8 +21,10 @@
 import { connect, KeyPair, keyStores, utils } from 'near-api-js';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 import dotenv from 'dotenv';
+
+import { verifyArtifact, MultiAgentDeliberationEngine } from '../agent/dist/deliberation.js';
+import { logAttackEvent } from '../agent/dist/attackLogger.js';
 
 // Load agent/.env if it exists
 const envPath = path.join(process.cwd(), 'agent', '.env');
@@ -41,6 +45,9 @@ const councilPrivateKey = process.env.COUNCIL_PRIVATE_KEY;
 const daoContractId = process.env.DAO_CONTRACT_ID;
 const policyContractId = process.env.POLICY_CONTRACT_ID;
 const recipientAccountId = process.env.RECIPIENT_ACCOUNT_ID || councilAccountId || agentAccountId;
+
+const githubPrUrl = process.env.GITHUB_PR_URL;
+const recipientGithubHandle = process.env.RECIPIENT_GITHUB_HANDLE;
 
 console.log(`
 ╔══════════════════════════════════════════════════════════╗
@@ -72,7 +79,7 @@ function recordTx(action, txHash) {
 }
 
 async function run() {
-  console.log(`[1/7] Pre-Flight: Verifying testnet accounts and balances on ${networkId}...`);
+  console.log(`[1/8] Pre-Flight: Verifying testnet accounts and deliverable credentials on ${networkId}...`);
 
   const missing = [];
   if (!agentAccountId || !agentPrivateKey || agentPrivateKey.includes('YOUR_') || agentPrivateKey.includes('DemoKey')) {
@@ -84,12 +91,18 @@ async function run() {
   if (!daoContractId || daoContractId.includes('your-dao')) {
     missing.push('DAO_CONTRACT_ID');
   }
+  if (!githubPrUrl || githubPrUrl.includes('example.com') || githubPrUrl.includes('zinipay/core')) {
+    missing.push('GITHUB_PR_URL (a real merged GitHub PR URL that you authored)');
+  }
+  if (!recipientGithubHandle || recipientGithubHandle.includes('YOUR_')) {
+    missing.push('RECIPIENT_GITHUB_HANDLE (your GitHub username matching the author of GITHUB_PR_URL)');
+  }
 
   if (missing.length > 0) {
-    console.error('\n❌ FAILED LOUDLY: Missing required funded testnet credentials:');
+    console.error('\n❌ FAILED LOUDLY: Missing required funded testnet credentials or deliverable info:');
     missing.forEach((m) => console.error(`   - ${m}`));
     console.error('\nTo run a real on-chain testnet flow:');
-    console.error('1. Export your funded testnet credentials or set them in agent/.env:');
+    console.error('1. Export your funded testnet credentials in agent/.env:');
     console.error('     NEAR_ACCOUNT_ID=your-agent.testnet');
     console.error('     NEAR_PRIVATE_KEY=ed25519:...');
     console.error('     COUNCIL_ACCOUNT_ID=your-council.testnet');
@@ -97,6 +110,8 @@ async function run() {
     console.error('     DAO_CONTRACT_ID=your-dao.sputnik-dao.testnet');
     console.error('     POLICY_CONTRACT_ID=your-policy.testnet');
     console.error('     RECIPIENT_ACCOUNT_ID=your-recipient.testnet (must exist on-chain)');
+    console.error('     GITHUB_PR_URL=https://github.com/your-org/your-repo/pull/1 (merged PR)');
+    console.error('     RECIPIENT_GITHUB_HANDLE=your-handle (matches author of PR)');
     console.error('2. Re-run: node scripts/e2e-testnet.mjs');
     console.error('\nPer hackathon honesty rules, mock transactions and fake hashes are prohibited.\n');
     process.exit(1);
@@ -131,8 +146,68 @@ async function run() {
     process.exit(1);
   }
 
-  // 4. Inspect Sputnik DAO policy & bond
-  console.log(`\n[2/7] Inspecting Sputnik DAO policy: ${daoContractId}...`);
+  // ── Step 2: Stolen PR Attack Scenario ─────────────────────────────────────
+  console.log(`\n[2/8] Testing Stolen / Unmerged PR Scenario (Agent Gate)...`);
+  // Use real, confirmed-merged PRs from near/near-sdk-rs to test genuine author mismatch:
+  // - PR #1651 (merged 2026-10-23, author: vsavchyn-dev)
+  // - PR #1649 (merged 2026-10-19, author: r-near)
+  const thirdPartyPr = recipientGithubHandle.toLowerCase() === 'vsavchyn-dev'
+    ? 'https://github.com/near/near-sdk-rs/pull/1649'
+    : 'https://github.com/near/near-sdk-rs/pull/1651';
+
+  console.log(`  Attempting submission with third-party PR: ${thirdPartyPr}`);
+  const stolenCheck = await verifyArtifact(thirdPartyPr, recipientAccountId, recipientGithubHandle);
+  if (stolenCheck.verified) {
+    console.error(`  ❌ SECURITY FAILURE: Agent accepted a deliverable authored by someone else!`);
+    process.exit(1);
+  }
+
+  console.log(`  ✓ Stolen PR BLOCKED by agent: ${stolenCheck.reason}`);
+  logAttackEvent({
+    vector: 'Stolen / Author Mismatch PR',
+    caller: recipientAccountId,
+    details: `Deliverable: '${thirdPartyPr}' with claimed recipient handle '${recipientGithubHandle}'`,
+    rejectionReason: stolenCheck.reason,
+    blockedBy: 'DeliberationEngine (Artifact Verification)',
+    simulated: false,
+  });
+  console.log(`  ✓ Logged blocked attack to attack_events.jsonl. Zero transactions broadcast.`);
+
+  // ── Step 3: Real Agent Pipeline ───────────────────────────────────────────
+  console.log(`\n[3/8] Running Real Agent Pipeline on Contributor PR: ${githubPrUrl}...`);
+  const artifactCheck = await verifyArtifact(githubPrUrl, recipientAccountId, recipientGithubHandle);
+  if (!artifactCheck.verified) {
+    console.error(`\n❌ FAILED: Contributor deliverable verification failed: ${artifactCheck.reason}`);
+    console.error(`   Ensure the PR is merged and author matches ${recipientGithubHandle}.`);
+    process.exit(1);
+  }
+  console.log(`  ✓ Deliverable artifact verified: ${artifactCheck.reason}`);
+
+  const deliberationEngine = new MultiAgentDeliberationEngine({
+    baseUrl: process.env.OPENAI_BASE_URL || 'https://cloud-api.near.ai/v1',
+    apiKey: process.env.OPENAI_API_KEY || 'mock-key-for-dry-run',
+    model: process.env.OPENAI_MODEL || 'meta-llama/Llama-3.3-70B-Instruct',
+  });
+
+  const deliberation = await deliberationEngine.deliberate({
+    taskDescription: 'Verified community contribution on GitHub',
+    deliverable: githubPrUrl,
+    amountNear: '0.1',
+    recipientId: recipientAccountId,
+    recipientReputation: 0,
+    recipientGithub: recipientGithubHandle,
+    dryRun: !process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('YOUR_'),
+  });
+
+  if (!deliberation.consensusApproved) {
+    console.error(`\n❌ FAILED: Agent deliberation rejected proposal: ${deliberation.inspector.critique}`);
+    process.exit(1);
+  }
+  console.log(`  ✓ Multi-agent deliberation consensus APPROVED (Confidence: ${deliberation.overallConfidence}%)`);
+  console.log(`  ✓ Attestation summary: "${deliberation.attestationSummary}"`);
+
+  // ── Step 4: Pre-flight on-chain policy check & DAO Inspection ─────────────
+  console.log(`\n[4/8] Inspecting Sputnik DAO policy and on-chain check_policy...`);
   const daoPolicy = await agentAccount.viewFunction({
     contractId: daoContractId,
     methodName: 'get_policy',
@@ -141,14 +216,13 @@ async function run() {
   const bondYocto = daoPolicy.proposal_bond || '1000000000000000000000000';
   console.log(`  ✓ DAO Proposal Bond: ${utils.format.formatNearAmount(bondYocto, 4)} NEAR`);
 
-  // 5. Pre-flight Policy Helper Checks
-  const deliverableProof = 'https://github.com/near/core-contracts/pull/42';
-  const canonicalCid = 'near/core-contracts#42';
+  const prParts = githubPrUrl.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i);
+  const canonicalCid = prParts ? `${prParts[1]}/${prParts[2]}#${prParts[3]}` : githubPrUrl;
   const payoutAmountYocto = utils.format.parseNearAmount('0.1') || '100000000000000000000000';
   let proposalKind;
 
   if (policyContractId) {
-    console.log(`\n  Checking Policy Helper contract at ${policyContractId}...`);
+    console.log(`  Checking Policy Helper contract at ${policyContractId}...`);
     try {
       const allowed = await agentAccount.viewFunction({
         contractId: policyContractId,
@@ -164,13 +238,6 @@ async function run() {
         process.exit(1);
       }
       console.log(`  ✓ Pre-flight view check_policy passed on ${policyContractId}`);
-
-      const policyConfig = await agentAccount.viewFunction({
-        contractId: policyContractId,
-        methodName: 'get_policy',
-        args: {},
-      });
-      console.log(`  ✓ PolicyHelper config: Cap=${utils.format.formatNearAmount(policyConfig.per_proposal_cap, 2)} NEAR, Cooldown=${policyConfig.cooldown_seconds}s`);
     } catch (err) {
       console.error(`\n❌ FAILED: Pre-flight check_policy on ${policyContractId} failed:`, err.message);
       process.exit(1);
@@ -196,7 +263,6 @@ async function run() {
       },
     };
   } else {
-    console.log(`\n  Using Sputnik DAO direct payout format (Transfer)...`);
     proposalKind = {
       Transfer: {
         token_id: '',
@@ -206,10 +272,9 @@ async function run() {
     };
   }
 
-  // ── Step 3: Submit Real Proposal ──────────────────────────────────────────
-  console.log(`\n[3/7] Submitting real proposal via agent account (${agentAccountId})...`);
-  const attestationDigest = crypto.createHash('sha256').update(`E2E_DELIBERATION_${canonicalCid}_${recipientAccountId}`).digest('hex');
-  const description = `[Three-Way Match: 3/3 PASS] [Tier: Bronze] [Attestation: sha256:${attestationDigest}] E2E Verification | Deliverable: ${deliverableProof}`;
+  // ── Step 5: Submit Real Proposal to DAO ────────────────────────────────────
+  console.log(`\n[5/8] Submitting proposal to Sputnik DAO via agent account (${agentAccountId})...`);
+  const description = `${deliberation.attestationSummary} | E2E Live Verification`;
 
   const proposeResult = await agentAccount.functionCall({
     contractId: daoContractId,
@@ -234,8 +299,8 @@ async function run() {
   console.log(`  Tx Hash: ${proposeTxHash}`);
   console.log(`  Explorer: ${explorerUrl}/txns/${proposeTxHash}`);
 
-  // ── Step 4: Council Vote & Execution ──────────────────────────────────────
-  console.log(`\n[4/7] Approving proposal #${proposalId} via council account (${councilAccountId})...`);
+  // ── Step 6: Council Vote & Payout Confirmation ─────────────────────────────
+  console.log(`\n[6/8] Approving proposal #${proposalId} via council account (${councilAccountId})...`);
   const voteResult = await councilAccount.functionCall({
     contractId: daoContractId,
     methodName: 'act_proposal',
@@ -261,12 +326,12 @@ async function run() {
     const diff = recipientBalanceAfter - recipientBalanceBefore;
     console.log(`  ✓ Recipient balance increased by +${utils.format.formatNearAmount(diff.toString(), 4)} NEAR`);
   } else {
-    console.log(`  ℹ Note: Balance increase pending final block execution or offset by gas.`);
+    console.log(`  ℹ Note: Balance increase pending final block execution or offset by account activity.`);
   }
 
-  // ── Step 5: Check Reputation ──────────────────────────────────────────────
+  // ── Step 7: Reputation & Council Tier Promotion ───────────────────────────
   if (policyContractId) {
-    console.log(`\n[5/7] Querying on-chain reputation for ${recipientAccountId}...`);
+    console.log(`\n[7/8] Querying on-chain reputation for ${recipientAccountId}...`);
     const currentRep = await agentAccount.viewFunction({
       contractId: policyContractId,
       methodName: 'get_reputation',
@@ -274,8 +339,7 @@ async function run() {
     });
     console.log(`  ✓ On-chain reputation score: ${currentRep} pts`);
 
-    // Council / Owner Tier Promotion
-    console.log(`\n  Executing Council Promotion Step (promoting contributor to Silver tier)...`);
+    console.log(`  Executing Council Promotion Step (promoting contributor to Silver tier)...`);
     const initialCap = await agentAccount.viewFunction({
       contractId: policyContractId,
       methodName: 'get_effective_cap',
@@ -306,9 +370,9 @@ async function run() {
     console.log(`  ✓ Silver Tier Cap: ${utils.format.formatNearAmount(newCap, 2)} NEAR (1.5x multiplier active!)`);
   }
 
-  // ── Step 6: Three Live Attack Scenarios ────────────────────────────────────
+  // ── Step 8: Three Contract Attack Scenarios ───────────────────────────────
   if (policyContractId) {
-    console.log(`\n[6/7] Testing Attack Scenarios (Must Fail Closed)...`);
+    console.log(`\n[8/8] Testing Contract Attack Scenarios (Must Fail Closed)...`);
 
     // Attack 1: Replay attack (Duplicate CID)
     console.log(`  Attack Scenario 1: Replaying identical CID (${canonicalCid})...`);
@@ -326,9 +390,25 @@ async function run() {
         console.error(`  ❌ SECURITY FAILURE: Policy contract allowed duplicate CID replay!`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 1 BLOCKED: check_policy rejected replayed CID (anti-replay active)`);
+      console.log(`  ✓ Attack 1 BLOCKED: check_policy returned false for replayed CID`);
+      logAttackEvent({
+        vector: 'Replay CID',
+        caller: recipientAccountId,
+        details: `Attempted replay of deliverable CID '${canonicalCid}'`,
+        rejectionReason: 'CID already used — duplicate release attempt blocked',
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
     } catch (err) {
       console.log(`  ✓ Attack 1 BLOCKED with on-chain panic: ${err.message}`);
+      logAttackEvent({
+        vector: 'Replay CID',
+        caller: recipientAccountId,
+        details: `Attempted replay of deliverable CID '${canonicalCid}'`,
+        rejectionReason: err.message,
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
     }
 
     // Attack 2: Over-cap attack
@@ -341,20 +421,36 @@ async function run() {
         args: {
           recipient: recipientAccountId,
           amount: excessiveAmount,
-          cid: 'near/core-contracts#999',
+          cid: `${canonicalCid}-overcap`,
         },
       });
       if (allowedOverCap) {
         console.error(`  ❌ SECURITY FAILURE: Policy contract allowed over-cap payout!`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 2 BLOCKED: check_policy rejected excessive amount (spend cap active)`);
+      console.log(`  ✓ Attack 2 BLOCKED: check_policy returned false for excessive amount`);
+      logAttackEvent({
+        vector: 'Over-Cap Spend',
+        caller: recipientAccountId,
+        details: `Requested 50.0 NEAR exceeding Silver cap (15.0 NEAR)`,
+        rejectionReason: 'Amount exceeds effective tier cap',
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
     } catch (err) {
       console.log(`  ✓ Attack 2 BLOCKED with on-chain panic: ${err.message}`);
+      logAttackEvent({
+        vector: 'Over-Cap Spend',
+        caller: recipientAccountId,
+        details: `Requested 50.0 NEAR exceeding Silver cap (15.0 NEAR)`,
+        rejectionReason: err.message,
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
     }
 
     // Attack 3: Unauthorized caller calling release directly
-    console.log(`  Attack Scenario 3: Unauthorized caller calling release()...`);
+    console.log(`  Attack Scenario 3: Unauthorized caller invoking release()...`);
     try {
       await agentAccount.functionCall({
         contractId: policyContractId,
@@ -362,7 +458,7 @@ async function run() {
         args: {
           recipient: recipientAccountId,
           amount: payoutAmountYocto,
-          cid: 'near/core-contracts#unauthorized',
+          cid: `${canonicalCid}-unauthorized`,
         },
         gas: BigInt('100000000000000'),
         attachedDeposit: BigInt(payoutAmountYocto),
@@ -371,11 +467,20 @@ async function run() {
       process.exit(1);
     } catch (err) {
       console.log(`  ✓ Attack 3 BLOCKED with expected authorization panic:`);
-      console.log(`     ${err.message.split('\n')[0]}`);
+      const firstLine = err.message.split('\n')[0];
+      console.log(`     ${firstLine}`);
+      logAttackEvent({
+        vector: 'Unauthorized Caller',
+        caller: agentAccountId,
+        details: `Non-owner / non-DAO account called release() directly`,
+        rejectionReason: firstLine,
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
     }
   }
 
-  // ── Step 7: Final Summary Table ───────────────────────────────────────────
+  // ── Step 9: Final Summary Table ───────────────────────────────────────────
   console.log(`\n========================================================================`);
   console.log(`              ZINIPAY TESTNET VERIFICATION SUMMARY                      `);
   console.log(`========================================================================`);
@@ -385,6 +490,8 @@ async function run() {
   console.log(`Agent Account:       ${agentAccountId}`);
   console.log(`Council Account:     ${councilAccountId}`);
   console.log(`Recipient Account:   ${recipientAccountId}`);
+  console.log(`Contributor PR:      ${githubPrUrl}`);
+  console.log(`GitHub Handle:       @${recipientGithubHandle}`);
   console.log(`------------------------------------------------------------------------`);
   console.log(`VERIFIED TRANSACTIONS ON EXPLORER:`);
   realTransactions.forEach((t, i) => {
@@ -393,7 +500,7 @@ async function run() {
     console.log(`      Link:    ${t.url}`);
   });
   console.log(`========================================================================\n`);
-  console.log(`✓ All 7 e2e testnet phases completed successfully with zero fabricated data!\n`);
+  console.log(`✓ All e2e testnet phases completed successfully with zero fabricated data!\n`);
 }
 
 run().catch((err) => {

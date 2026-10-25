@@ -12,7 +12,7 @@
     "frontend:build": "cd frontend && npm run build",
     "agent:build": "cd agent && npm run build",
     "agent:dev": "npm --workspace=@zinipay/agent run dev",
-    "agent:propose": "npm --workspace=@zinipay/agent run propose",
+    "agent:propose": "tsx agent/src/index.ts propose",
     "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
     "setup:testnet": "node scripts/setup-testnet.mjs",
     "test:e2e": "node scripts/e2e-testnet.mjs"

@@ -30,7 +30,7 @@ ZiniPay adheres to this principle:
     ```json
     {
       "proposal": {
-        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: near/core-contracts#42 | Confidence: 95%",
+        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: near/near-sdk-rs#1651 | Confidence: 95%",
         "kind": {
           "FunctionCall": {
             "receiver_id": "policy.zinipay.testnet",

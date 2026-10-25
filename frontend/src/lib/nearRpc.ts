@@ -264,9 +264,13 @@ export async function fetchDaoProposals(
           proofCid = cidMatch ? cidMatch[0] : '';
         }
 
-        // Extract attestation hash if present in description
-        const attMatch = p.description.match(/(?:Attestation:\s*|sha256:)([a-f0-9]{32,64})/i);
+        // Extract attestation hash and status if present in description
+        const attMatch = p.description.match(/(?:Attestation[^:]*:\s*|sha256:)([a-f0-9]{32,64})/i);
         const attestationHash = attMatch ? `sha256:${attMatch[1]}` : undefined;
+        const attestationStatus: 'report_received' | 'unverified' = attMatch ? 'report_received' : 'unverified';
+        const attestationReason = attMatch
+          ? 'Attestation report received (not independently verified)'
+          : 'No attestation report attached';
 
         const isApproved = p.status === 'Approved';
         const isRejected = p.status === 'Rejected' || p.status === 'Expired' || p.status === 'Failed';
@@ -300,6 +304,8 @@ export async function fetchDaoProposals(
           proofCid,
           targetContract: targetContract || undefined,
           attestationHash,
+          attestationStatus,
+          attestationReason,
           summary: p.description.substring(0, 140),
           evidenceType,
           evidenceDetails: p.description,

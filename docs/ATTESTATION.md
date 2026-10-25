@@ -90,43 +90,19 @@ The response is a JSON object containing cryptographic hardware quotes and ident
 
 ---
 
-## 4. Verification Workflow in ZiniPay
+## 4. Attestation Status & Relabeling in ZiniPay
 
-In ZiniPay's multi-agent deliberation engine (`agent/src/deliberation.ts`):
+> **Current Implementation Status**:  
+> `Attestation report received (not independently verified)`
 
-```
-┌─────────────────────────────────┐
-│  MultiAgentDeliberationEngine   │
-└────────────────┬────────────────┘
-                 │ 1. Generate 32-byte Cryptographic Nonce
-                 ▼
-┌────────────────────────────────────────────────────────┐
-│  GET /v1/attestation/report?nonce={nonce}&model={model}│
-└────────────────┬───────────────────────────────────────┘
-                 │ 2. Return Attestation Report
-                 ▼
-┌────────────────────────────────────────────────────────┐
-│  Cryptographic Verification:                           │
-│  - Verify report.gateway_attestation exists            │
-│  - Verify report.gateway_attestation.request_nonce     │
-│    matches client nonce                                │
-│  - Verify intel_quote is valid TDX quote               │
-│  - Compute Attestation Digest:                         │
-│    sha256(JSON.stringify(report))                      │
-└────────────────┬───────────────────────────────────────┘
-                 │ 3. Fail-Closed Check
-                 ├──────────────────────────────┐
-                 │ Valid                        │ Invalid / Tampered / Missing
-                 ▼                              ▼
-┌────────────────────────────────┐ ┌────────────────────────────────┐
-│ Deliberation Continues         │ │ Fail-Closed:                   │
-│ - Embed attestation hash in    │ │ - Deliberation rejected        │
-│   on-chain proposal description│ │ - No DAO proposal submitted    │
-│   [Attestation: sha256:...]    │ │ - Attempt logged in attack log │
-└────────────────────────────────┘ └────────────────────────────────┘
-```
+In ZiniPay's multi-agent deliberation engine ([`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts)):
+1. **Fresh Nonce Challenge**: The agent generates a 32-byte cryptographic nonce challenge and requests `GET /v1/attestation/report?nonce={nonce}` from `https://cloud-api.near.ai/v1`.
+2. **Freshness & Header Check**: The engine verifies that `gateway_attestation` is returned, confirms the presence of `intel_quote`, and ensures the echoed `request_nonce` exactly matches the challenge nonce.
+3. **Audit Reference Hash**: It computes `sha256(JSON.stringify(report))` and records the digest in the proposal metadata and description as `[Attestation report received (not independently verified): sha256:...]`.
+4. **Honest Boundary**: Full cryptographic verification of the Intel TDX DCAP hardware quote (validating PCK certificate chains against Intel PCS and ensuring `report_data` binds `signing_address`) is not implemented locally in this monorepo build, as it requires Intel DCAP QVL libraries or the `nearai-cloud-verifier` service. Until full DCAP verification is wired in, all code, UI badges, and documentation explicitly state:  
+   **"Attestation report received (not independently verified)"**.
 
 ### **Fail-Closed Guarantees**
 1. **No Fake Quotes**: If `OPENAI_API_KEY` is not provided or live network access to `cloud-api.near.ai` is absent, the agent runs strictly in `--dry-run` simulation mode and outputs explicit `[SIMULATION]` tags. It **never** fabricates fake TEE quotes or synthetic ed25519 signatures.
 2. **Tamper Resistance**: If the returned nonce does not match, or if any field of the report is tampered with, deliberation halts immediately and marks `consensusApproved: false`.
-3. **Auditability**: The SHA-256 digest of the verified attestation report is embedded directly into the Sputnik DAO proposal description (`[Attestation: sha256:<digest>]`), enabling council members and the public to verify the inference proof against NEAR AI Cloud on-chain.
+3. **Auditability**: The SHA-256 digest of the received attestation report is embedded directly into the Sputnik DAO proposal description (`[Attestation report received (not independently verified): sha256:<digest>]`), enabling council members and auditors to verify the inference proof against NEAR AI Cloud on-chain.
