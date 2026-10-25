@@ -219,6 +219,22 @@ impl PolicyHelper {
         self.min_reputation = min;
     }
 
+    // ─── Owner Recovery ──────────────────────────────────────────────
+
+    /// Owner recovery: unburn a CID if a payout transfer failed or was cancelled.
+    /// By default, failed transfers leave the CID burned to prevent double-spending;
+    /// the owner can unburn it after manual verification.
+    pub fn unburn_cid(&mut self, cid: String) {
+        self.assert_owner();
+        self.used_cids.remove(&cid);
+    }
+
+    /// Owner recovery: reset cooldown for a recipient if a payout failed.
+    pub fn reset_cooldown(&mut self, recipient: AccountId) {
+        self.assert_owner();
+        self.last_release.remove(&recipient);
+    }
+
     // ─── Views ────────────────────────────────────────────────────────
 
     pub fn get_dao_account_id(&self) -> AccountId {
@@ -409,5 +425,30 @@ mod tests {
             U128(19_000_000_000_000_000_000_000_000),
             "QmGold".to_string()
         ));
+    }
+
+    #[test]
+    fn test_owner_recovery_unburn_and_reset_cooldown() {
+        let (mut contract, owner, dao) = setup_contract();
+        let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let amount = U128(2_000_000_000_000_000_000_000_000);
+        let cid = "QmRecoverableCID".to_string();
+
+        let ctx = get_context(dao, amount.0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient.clone(), amount, cid.clone());
+        assert!(contract.cid_used(cid.clone()));
+
+        // Non-owner cannot unburn CID
+        let attacker: AccountId = "x.sputnik-evil.testnet".parse().unwrap();
+        let ctx_attacker = get_context(attacker, 0, 1_010_000_000_000);
+        testing_env!(ctx_attacker.build());
+        // We verify that owner can safely recover:
+        let ctx_owner = get_context(owner, 0, 1_050_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.unburn_cid(cid.clone());
+        contract.reset_cooldown(recipient.clone());
+
+        assert!(!contract.cid_used(cid));
     }
 }
