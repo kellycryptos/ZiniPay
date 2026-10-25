@@ -114,20 +114,14 @@ async function run() {
   const bondYocto = daoPolicy.proposal_bond || '1000000000000000000000000';
   console.log(`  ✓ DAO Proposal Bond: ${utils.format.formatNearAmount(bondYocto, 4)} NEAR`);
 
-  // 4. Check or Deploy Policy Helper
+  // 4. Check or Configure Policy Helper
   let targetReceiver = daoContractId;
   let proposalKind;
   const deliverableProof = 'https://github.com/near/core-contracts/pull/42';
   const payoutAmountYocto = utils.format.parseNearAmount('0.1') || '100000000000000000000000';
 
-  const wasmPath = path.join(process.cwd(), 'contracts', 'policy-helper', 'res', 'policy_helper.wasm');
-  if (policyContractId && fs.existsSync(wasmPath)) {
-    console.log(`\n[3/5] Deploying Policy Helper contract to ${policyContractId}...`);
-    const wasmBinary = fs.readFileSync(wasmPath);
-    const deployTx = await agentAccount.deployContract(wasmBinary);
-    console.log(`  ✓ Policy contract deployed! Tx: ${deployTx.transaction.hash}`);
-    console.log(`    ${explorerUrl}/txns/${deployTx.transaction.hash}`);
-
+  if (policyContractId) {
+    console.log(`\n[3/5] Targeting Policy Helper contract at ${policyContractId}...`);
     proposalKind = {
       FunctionCall: {
         receiver_id: policyContractId,
@@ -148,7 +142,7 @@ async function run() {
       },
     };
   } else {
-    console.log(`\n[3/5] Using Sputnik DAO direct payout proposal format...`);
+    console.log(`\n[3/5] Using Sputnik DAO direct payout proposal format (Transfer)...`);
     proposalKind = {
       Transfer: {
         token_id: '',
