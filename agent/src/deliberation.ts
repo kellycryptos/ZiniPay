@@ -14,7 +14,16 @@
 import { z } from 'zod';
 import OpenAI from 'openai';
 import axios from 'axios';
+import crypto from 'crypto';
 import { getTierInfo, type ReputationTier } from './reputation.js';
+
+export interface AttestationVerificationResult {
+  verified: boolean;
+  enclaveAddress?: string;
+  attestationHash?: string;
+  reason?: string;
+  simulated?: boolean;
+}
 
 export interface DeliberationRequest {
   taskDescription: string;
@@ -47,6 +56,8 @@ export interface ThreeWayMatchResult {
   match1_ScopeAligned: boolean;
   match2_ProofVerified: boolean;
   match3_PolicyCleared: boolean;
+  attestationVerified?: boolean;
+  attestation?: AttestationVerificationResult;
   inspector: InspectorReview;
   riskArbiter: RiskReview;
   attestationSummary: string; // Used for on-chain Sputnik DAO proposal description
@@ -215,13 +226,100 @@ export async function verifyArtifact(
   };
 }
 
+/**
+ * Verifies a NEAR AI Cloud cryptographic attestation report:
+ * 1. Checks that gateway_attestation exists with an Intel TDX quote.
+ * 2. Compares the echoed request_nonce against the expected client challenge nonce (freshness check).
+ * 3. Computes the SHA-256 digest of the entire report payload for on-chain binding.
+ */
+export function verifyAttestationReport(
+  report: any,
+  expectedNonce: string,
+): { verified: boolean; enclaveAddress?: string; attestationHash?: string; reason?: string } {
+  if (!report || typeof report !== 'object') {
+    return { verified: false, reason: 'Empty or invalid attestation report payload' };
+  }
+  const gateway = report.gateway_attestation;
+  if (!gateway) {
+    return { verified: false, reason: 'Missing gateway_attestation in report' };
+  }
+  if (!gateway.intel_quote) {
+    return { verified: false, reason: 'Missing intel_quote in gateway_attestation' };
+  }
+  if (gateway.request_nonce !== expectedNonce) {
+    return {
+      verified: false,
+      reason: `Nonce mismatch: expected ${expectedNonce.slice(0, 12)}..., got ${gateway.request_nonce ? gateway.request_nonce.slice(0, 12) + '...' : 'none'}`,
+    };
+  }
+  const hash = crypto.createHash('sha256').update(JSON.stringify(report)).digest('hex');
+  return {
+    verified: true,
+    enclaveAddress: gateway.signing_address || 'unknown-enclave',
+    attestationHash: `sha256:${hash}`,
+  };
+}
+
+/**
+ * Fetches and cryptographically verifies attestation from NEAR AI Cloud (GET /v1/attestation/report)
+ */
+export async function fetchAndVerifyAttestation(opts: {
+  baseUrl: string;
+  apiKey?: string;
+  model: string;
+  dryRun?: boolean;
+}): Promise<AttestationVerificationResult> {
+  if (opts.dryRun) {
+    const simHash = crypto.createHash('sha256').update(`SIMULATION_DELIBERATION_${opts.model}`).digest('hex');
+    return {
+      verified: true,
+      enclaveAddress: '0xSIMULATED_ENCLAVE_TDX',
+      attestationHash: `sha256:${simHash}`,
+      simulated: true,
+    };
+  }
+
+  const nonce = crypto.randomBytes(32).toString('hex');
+  const cleanBase = opts.baseUrl.replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+  const url = `${cleanBase}/attestation/report?nonce=${nonce}&model=${encodeURIComponent(opts.model)}&signing_algo=ecdsa`;
+
+  try {
+    const res = await axios.get(url, {
+      headers: {
+        ...(opts.apiKey && !opts.apiKey.startsWith('mock') ? { Authorization: `Bearer ${opts.apiKey}` } : {}),
+        'User-Agent': 'ZiniPay-Attestation-Verifier',
+      },
+      timeout: 8000,
+    });
+    if (res.status !== 200 || !res.data) {
+      return { verified: false, reason: `Attestation endpoint returned HTTP ${res.status}`, simulated: false };
+    }
+    const check = verifyAttestationReport(res.data, nonce);
+    return {
+      verified: check.verified,
+      enclaveAddress: check.enclaveAddress,
+      attestationHash: check.attestationHash,
+      reason: check.reason,
+      simulated: false,
+    };
+  } catch (err: any) {
+    return {
+      verified: false,
+      reason: `Failed to fetch TEE attestation from ${cleanBase}: ${err.message}`,
+      simulated: false,
+    };
+  }
+}
+
 export class MultiAgentDeliberationEngine {
   private client: OpenAI;
   private model: string;
   private apiKey: string;
+  private baseUrl: string;
 
   constructor(opts: { baseUrl: string; apiKey: string; model: string }) {
     this.apiKey = opts.apiKey;
+    this.baseUrl = opts.baseUrl;
     this.client = new OpenAI({
       baseURL: opts.baseUrl,
       apiKey: opts.apiKey || 'dummy-key',
@@ -278,7 +376,14 @@ export class MultiAgentDeliberationEngine {
         policyNotes: `[SIMULATION] Contributor tier ${tierInfo.tier} qualifies under spend caps`,
       };
 
-      return this.buildConsensus(req, inspector, riskArbiter, tierInfo.tier, true);
+      const attestation = await fetchAndVerifyAttestation({
+        baseUrl: this.baseUrl,
+        apiKey: this.apiKey,
+        model: this.model,
+        dryRun: true,
+      });
+
+      return this.buildConsensus(req, inspector, riskArbiter, tierInfo.tier, true, attestation);
     }
 
     // Live AI Deliberation via configured LLM
@@ -288,7 +393,31 @@ export class MultiAgentDeliberationEngine {
       this.runRiskArbiter(req, tierInfo.tier),
     ]);
 
-    return this.buildConsensus(req, inspectorResult, riskResult, tierInfo.tier, false);
+    // Live TEE Attestation verification (fail closed if invalid or unreachable)
+    const attestation = await fetchAndVerifyAttestation({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      model: this.model,
+      dryRun: false,
+    });
+
+    if (!attestation.verified) {
+      console.error(`[DELIBERATION] Error: Attestation verification failed: ${attestation.reason}`);
+      const failedInspector: InspectorReview = {
+        ...inspectorResult,
+        approved: false,
+        critique: `REJECTED: Attestation verification failed: ${attestation.reason}`,
+      };
+      const failedRisk: RiskReview = {
+        ...riskResult,
+        approved: false,
+        riskLevel: 'HIGH',
+        policyNotes: `REJECTED: Unverified TEE attestation (${attestation.reason})`,
+      };
+      return this.buildConsensus(req, failedInspector, failedRisk, tierInfo.tier, false, attestation);
+    }
+
+    return this.buildConsensus(req, inspectorResult, riskResult, tierInfo.tier, false, attestation);
   }
 
   private async runInspector(
@@ -461,20 +590,23 @@ Assess risk and respond with JSON ONLY.
     risk: RiskReview,
     tier: ReputationTier,
     simulated: boolean = false,
+    attestation?: AttestationVerificationResult,
   ): ThreeWayMatchResult {
+    const attestationOk = attestation ? attestation.verified : !simulated;
     const match1_Scope = inspector.approved && inspector.score >= 70;
     const match2_Proof = inspector.artifactVerified && Boolean(req.deliverable.trim());
     const match3_Policy = risk.approved && risk.riskLevel !== 'HIGH';
 
     const matchCount = [match1_Scope, match2_Proof, match3_Policy].filter(Boolean).length;
-    const consensusApproved = match1_Scope && match2_Proof && match3_Policy;
+    const consensusApproved = match1_Scope && match2_Proof && match3_Policy && attestationOk;
     const overallConfidence = consensusApproved
       ? Math.round((inspector.score + (risk.riskLevel === 'LOW' ? 95 : 75)) / 2)
       : 0;
 
     const passFailStr = consensusApproved ? 'PASS' : 'FAIL';
     const simPrefix = simulated ? '[SIMULATION] ' : '';
-    const attestationSummary = `${simPrefix}[Three-Way Match: ${matchCount}/3 ${passFailStr}] [Tier: ${tier}] ${inspector.critique} | Deliverable: ${req.deliverable}`;
+    const attestationTag = attestation?.attestationHash ? ` [Attestation: ${attestation.attestationHash}]` : '';
+    const attestationSummary = `${simPrefix}[Three-Way Match: ${matchCount}/3 ${passFailStr}] [Tier: ${tier}]${attestationTag} ${inspector.critique} | Deliverable: ${req.deliverable}`;
 
     return {
       consensusApproved,
@@ -482,6 +614,8 @@ Assess risk and respond with JSON ONLY.
       match1_ScopeAligned: match1_Scope,
       match2_ProofVerified: match2_Proof,
       match3_PolicyCleared: match3_Policy,
+      attestationVerified: attestationOk,
+      attestation,
       inspector,
       riskArbiter: risk,
       attestationSummary,

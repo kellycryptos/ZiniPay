@@ -1,4 +1,4 @@
-import { MultiAgentDeliberationEngine, verifyArtifact } from '../src/deliberation.js';
+import { MultiAgentDeliberationEngine, verifyArtifact, verifyAttestationReport } from '../src/deliberation.js';
 import { DeliverableValidator } from '../src/validator.js';
 
 export async function runDeliberationTests() {
@@ -55,6 +55,42 @@ export async function runDeliberationTests() {
   });
   console.assert(!valLive.approved, 'Validator must reject live request with mock key');
   console.log('✓ Test 4: Validator fails closed with mock key');
+
+  // Test 5: verifyAttestationReport succeeds with valid matching report
+  const testNonce = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+  const validReport = {
+    gateway_attestation: {
+      intel_quote: '0400000000000000905e2634b3...',
+      request_nonce: testNonce,
+      signing_address: '0x3a9fB06B9229eE9f430D4e2aFe2D76020c29a8a3',
+      signing_algo: 'ecdsa',
+    },
+  };
+  const validAtt = verifyAttestationReport(validReport, testNonce);
+  console.assert(validAtt.verified, 'Attestation with matching nonce must verify');
+  console.assert(validAtt.attestationHash?.startsWith('sha256:'), 'Attestation hash must be sha256:');
+  console.log('✓ Test 5: Attestation report with fresh nonce passes verification');
+
+  // Test 6: verifyAttestationReport fails closed on tampered / replayed report
+  const tamperedReport = {
+    gateway_attestation: {
+      intel_quote: '0400000000000000905e2634b3...',
+      request_nonce: 'replayed-or-tampered-nonce-0000000000000000000000000000000000000000',
+      signing_address: '0x3a9fB06B9229eE9f430D4e2aFe2D76020c29a8a3',
+    },
+  };
+  const tamperedAtt = verifyAttestationReport(tamperedReport, testNonce);
+  console.assert(!tamperedAtt.verified, 'Attestation with tampered nonce must fail');
+  console.assert(tamperedAtt.reason?.includes('Nonce mismatch'), 'Failure reason must cite nonce mismatch');
+
+  const missingQuoteReport = {
+    gateway_attestation: {
+      request_nonce: testNonce,
+    },
+  };
+  const missingAtt = verifyAttestationReport(missingQuoteReport, testNonce);
+  console.assert(!missingAtt.verified, 'Attestation without intel_quote must fail');
+  console.log('✓ Test 6: Tampered attestation fails closed with explicit reason');
 
   console.log('All Deliberation tests passed successfully!\n');
 }
