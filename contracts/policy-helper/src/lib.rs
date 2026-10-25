@@ -125,11 +125,15 @@ impl PolicyHelper {
         self.last_release
             .insert(&recipient, &env::block_timestamp());
 
-        // Verify funding source (attached deposit from DAO or contract treasury)
+        // Verify funding source: require the attached deposit from the DAO proposal to cover the amount.
+        // Dropped account_balance fallback to protect contract storage-reserved staking funds.
         let attached = env::attached_deposit();
         require!(
-            attached >= amount.0 || env::account_balance() >= amount.0,
-            "Insufficient funds to fulfill release payout"
+            attached >= amount.0,
+            format!(
+                "Insufficient attached deposit: attached {} yoctoNEAR, release payout requires {} yoctoNEAR",
+                attached, amount.0
+            )
         );
 
         // Execute transfer to recipient

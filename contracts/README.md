@@ -22,14 +22,14 @@ When a proposal passes the council multi-sig vote in Sputnik DAO, the DAO execut
 - **Target Contract**: `policy-helper.testnet`
 - **Method**: `release(recipient, amount, cid)`
 - **Attached Deposit**: The DAO attaches the exact payout amount (`attachedDeposit = amount`).
-- **Alternative (Pre-Funded Treasury Pool)**: The DAO or community can alternatively fund the `policy-helper` contract directly. `release` checks:
+- **Tightened Funding Requirement**: To protect storage-staked funds and prevent treasury drift, `release` strictly requires `env::attached_deposit() >= amount.0`:
   ```rust
   require!(
-      attached >= amount.0 || env::account_balance() >= amount.0,
-      "Insufficient funds to fulfill release payout"
+      attached >= amount.0,
+      "Insufficient attached deposit: attached deposit must cover release payout"
   );
   ```
-  This guarantees that the contract can pay out either via attached deposit from the DAO or from its own treasury balance.
+  The loose `account_balance` fallback was dropped to prevent payouts from dipping into the contract's storage-staked balance.
 
 ### 2. Fund Safety & State Commit Invariants
 - **Atomic Guardrails**: Before transferring any funds, `release` enforces:
