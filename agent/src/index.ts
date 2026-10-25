@@ -277,6 +277,23 @@ async function runPropose(opts: ProposeOpts) {
   // ── Step 4: Submit Proposal ───────────────────────────────────────────────
   console.log(chalk.cyan('\n[4/4] Submitting to DAO Treasury (Requestor role)...'));
 
+  // Pre-flight on-chain policy check (if targeting policy contract)
+  if (!opts.plainTransfer && cfg.policyContractId && !opts.dryRun) {
+    console.log(chalk.cyan(`  Performing pre-flight check_policy on ${cfg.policyContractId}...`));
+    const onChainCheck = await dao.checkPolicyOnChain({
+      policyContractId: cfg.policyContractId,
+      recipientId: opts.recipient,
+      amountYocto: amountYocto.toString(),
+      cid: policyResult.normalizedDeliverable,
+    });
+    if (!onChainCheck.ok) {
+      console.log(chalk.red(`\n  ✗ ON-CHAIN POLICY REJECTED PROPOSAL: ${onChainCheck.reason}`));
+      console.log(chalk.red('  Aborting submission to prevent filing proposals that cannot be executed.'));
+      process.exit(1);
+    }
+    console.log(chalk.green('  ✓ On-chain policy check passed (tier cap, cooldown, CID uniqueness)'));
+  }
+
   if (opts.dryRun) {
     console.log(chalk.yellow('\n  ┌─────────────────────────────────────────────────────────────┐'));
     console.log(chalk.yellow('  │                 THREE-WAY MATCH PASS REPORT                 │'));

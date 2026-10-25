@@ -131,6 +131,33 @@ export class SputnikDAO {
   }
 
   /**
+   * Pre-flight view check against PolicyHelper on-chain before filing proposal.
+   * Prevents filing proposals that the policy contract would reject at release.
+   */
+  async checkPolicyOnChain(opts: {
+    policyContractId: string;
+    recipientId: string;
+    amountYocto: string;
+    cid: string;
+  }): Promise<{ ok: boolean; reason?: string }> {
+    const account = await this.getAccount();
+    try {
+      const allowed = await account.viewFunction({
+        contractId: opts.policyContractId,
+        methodName: 'check_policy',
+        args: {
+          recipient: opts.recipientId,
+          amount: opts.amountYocto,
+          cid: opts.cid,
+        },
+      });
+      return { ok: Boolean(allowed) };
+    } catch (err: any) {
+      return { ok: false, reason: err.message || 'On-chain policy rejected proposal' };
+    }
+  }
+
+  /**
    * Vote on a proposal. Requires the account to have the right role.
    */
   async actProposal(id: number, action: VoteAction): Promise<void> {
