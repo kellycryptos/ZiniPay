@@ -56,14 +56,14 @@ impl PolicyHelper {
     // ─── Tier Multipliers ─────────────────────────────────────────────
 
     /// Computes the effective per-proposal cap scaled by contributor reputation tier:
-    /// - Bronze (score 0-49): 1.0x (100% of base cap)
-    /// - Silver (score 50-79): 1.5x (150% of base cap)
-    /// - Gold (score >= 80): 2.0x (200% of base cap)
+    /// - Bronze (score 0-19): 1.0x (100% of base cap)
+    /// - Silver (score 20-59): 1.5x (150% of base cap)
+    /// - Gold (score >= 60): 2.0x (200% of base cap)
     pub fn get_effective_cap(&self, recipient: &AccountId) -> u128 {
         let score = self.reputation_scores.get(recipient).unwrap_or(0);
-        let multiplier_bp: u128 = if score >= 80 {
+        let multiplier_bp: u128 = if score >= 60 {
             200
-        } else if score >= 50 {
+        } else if score >= 20 {
             150
         } else {
             100
@@ -409,8 +409,8 @@ mod tests {
         // Owner sets reputation
         let ctx_owner = get_context(owner, 0, 1_000_000_000_000);
         testing_env!(ctx_owner.build());
-        contract.update_reputation(silver_user.clone(), 60); // Silver tier (1.5x cap = 15 NEAR)
-        contract.update_reputation(gold_user.clone(), 90);   // Gold tier (2.0x cap = 20 NEAR)
+        contract.update_reputation(silver_user.clone(), 30); // Silver tier (1.5x cap = 15 NEAR)
+        contract.update_reputation(gold_user.clone(), 75);   // Gold tier (2.0x cap = 20 NEAR)
 
         // Silver requesting 14 NEAR (<= 15 NEAR) passes policy check
         assert!(contract.check_policy(
@@ -425,6 +425,38 @@ mod tests {
             U128(19_000_000_000_000_000_000_000_000),
             "QmGold".to_string()
         ));
+    }
+
+    #[test]
+    fn test_reputation_tier_boundaries() {
+        let (mut contract, owner, _) = setup_contract();
+        let u19: AccountId = "u19.testnet".parse().unwrap();
+        let u20: AccountId = "u20.testnet".parse().unwrap();
+        let u59: AccountId = "u59.testnet".parse().unwrap();
+        let u60: AccountId = "u60.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner, 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.update_reputation(u19.clone(), 19);
+        contract.update_reputation(u20.clone(), 20);
+        contract.update_reputation(u59.clone(), 59);
+        contract.update_reputation(u60.clone(), 60);
+
+        // Boundary 19: Bronze (1.0x = 10 NEAR)
+        assert_eq!(contract.get_effective_cap(&u19), 10_000_000_000_000_000_000_000_000);
+        assert!(contract.check_policy(u19.clone(), U128(10_000_000_000_000_000_000_000_000), "cid19".to_string()));
+
+        // Boundary 20: Silver (1.5x = 15 NEAR)
+        assert_eq!(contract.get_effective_cap(&u20), 15_000_000_000_000_000_000_000_000);
+        assert!(contract.check_policy(u20.clone(), U128(15_000_000_000_000_000_000_000_000), "cid20".to_string()));
+
+        // Boundary 59: Silver (1.5x = 15 NEAR)
+        assert_eq!(contract.get_effective_cap(&u59), 15_000_000_000_000_000_000_000_000);
+        assert!(contract.check_policy(u59.clone(), U128(15_000_000_000_000_000_000_000_000), "cid59".to_string()));
+
+        // Boundary 60: Gold (2.0x = 20 NEAR)
+        assert_eq!(contract.get_effective_cap(&u60), 20_000_000_000_000_000_000_000_000);
+        assert!(contract.check_policy(u60.clone(), U128(20_000_000_000_000_000_000_000_000), "cid60".to_string()));
     }
 
     #[test]
