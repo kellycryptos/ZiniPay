@@ -71,58 +71,67 @@ export function useNearDao() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
+    const isDemo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
+
     if (!DAO_CONTRACT || DAO_CONTRACT === 'your-dao.sputnik-dao.testnet') {
-      // Demo mock proposals if contract not configured yet
-      setProposals([
-        {
-          id: 104,
-          proposer: 'zinipay-agent.testnet',
-          description: 'Deliverable validated: Q4 Developer documentation & tutorials | Deliverable: https://github.com/community/docs/pull/42 | Agent confidence: 96/100',
-          kind: {
-            Transfer: {
-              token_id: '',
-              receiver_id: 'alice.testnet',
-              amount: '5000000000000000000000000', // 5 NEAR
+      if (isDemo) {
+        // Only return demo mock proposals when explicit ?demo=1 flag is provided
+        setProposals([
+          {
+            id: 104,
+            proposer: 'zinipay-agent.testnet',
+            description: 'Deliverable validated: Q4 Developer documentation & tutorials | Deliverable: https://github.com/community/docs/pull/42 | Agent confidence: 96/100',
+            kind: {
+              Transfer: {
+                token_id: '',
+                receiver_id: 'alice.testnet',
+                amount: '5000000000000000000000000', // 5 NEAR
+              },
             },
+            status: 'InProgress',
+            vote_counts: { council: [1, 0] },
+            votes: { 'lead.testnet': 'Approve' },
+            submission_time: (Date.now() * 1_000_000).toString(),
           },
-          status: 'InProgress',
-          vote_counts: { council: [1, 0] },
-          votes: { 'lead.testnet': 'Approve' },
-          submission_time: (Date.now() * 1_000_000).toString(),
-        },
-        {
-          id: 103,
-          proposer: 'zinipay-agent.testnet',
-          description: 'Community Bounty #12: Smart contract security audit summary | Deliverable: ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | Agent confidence: 92/100',
-          kind: {
-            Transfer: {
-              token_id: '',
-              receiver_id: 'bob-auditor.testnet',
-              amount: '12000000000000000000000000', // 12 NEAR
+          {
+            id: 103,
+            proposer: 'zinipay-agent.testnet',
+            description: 'Community Bounty #12: Smart contract security audit summary | Deliverable: ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi | Agent confidence: 92/100',
+            kind: {
+              Transfer: {
+                token_id: '',
+                receiver_id: 'bob-auditor.testnet',
+                amount: '12000000000000000000000000', // 12 NEAR
+              },
             },
+            status: 'Approved',
+            vote_counts: { council: [3, 0] },
+            votes: { 'lead.testnet': 'Approve', 'finance.testnet': 'Approve' },
+            submission_time: ((Date.now() - 86400000) * 1_000_000).toString(),
           },
-          status: 'Approved',
-          vote_counts: { council: [3, 0] },
-          votes: { 'lead.testnet': 'Approve', 'finance.testnet': 'Approve' },
-          submission_time: ((Date.now() - 86400000) * 1_000_000).toString(),
-        },
-        {
-          id: 102,
-          proposer: 'council-member.testnet',
-          description: 'Trezu multichain operations budget renewal for Q4',
-          kind: {
-            Transfer: {
-              token_id: '',
-              receiver_id: 'operations.testnet',
-              amount: '50000000000000000000000000', // 50 NEAR
+          {
+            id: 102,
+            proposer: 'council-member.testnet',
+            description: 'Trezu multichain operations budget renewal for Q4',
+            kind: {
+              Transfer: {
+                token_id: '',
+                receiver_id: 'operations.testnet',
+                amount: '50000000000000000000000000', // 50 NEAR
+              },
             },
+            status: 'Approved',
+            vote_counts: { council: [3, 0] },
+            votes: {},
+            submission_time: ((Date.now() - 172800000) * 1_000_000).toString(),
           },
-          status: 'Approved',
-          vote_counts: { council: [3, 0] },
-          votes: {},
-          submission_time: ((Date.now() - 172800000) * 1_000_000).toString(),
-        },
-      ]);
+        ]);
+        setError(null);
+      } else {
+        // Honest empty state when not configured and not in demo mode
+        setProposals([]);
+        setError('DAO contract not configured. Set VITE_DAO_CONTRACT_ID or append ?demo=1 to view simulation data.');
+      }
       setLoading(false);
       return;
     }
@@ -137,6 +146,7 @@ export function useNearDao() {
       setPolicy(pol);
       setError(null);
     } catch (e) {
+      setProposals([]);
       setError((e as Error).message);
     } finally {
       setLoading(false);

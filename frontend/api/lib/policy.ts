@@ -1,5 +1,13 @@
 /**
  * policy.ts — Spend Policy Engine with Reputation-Tier Scaling & Three-Way Match
+ *
+ * NOTE ON SERVERLESS ARCHITECTURE:
+ * Vercel serverless routes are stateless per invocation and do NOT maintain
+ * persistent state (such as local lowdb files or memory caches) across requests.
+ * Canonical state—including CID uniqueness (anti-replay), recipient cooldown timestamps,
+ * and contributor reputation scores—is permanently recorded and enforced on-chain
+ * in the PolicyHelper smart contract (`contracts/policy-helper`). Serverless routes
+ * perform stateless pre-flight policy evaluation prior to transaction broadcast.
  */
 
 import { getTierInfo, type ReputationTier } from './reputation.js';
@@ -18,10 +26,40 @@ export const DEFAULT_POLICY_CONFIG: PolicyConfig = {
   minReputationScore: 0,
 };
 
-// Known paid deliverables cache to enforce CID anti-replay
-const paidDeliverablesCache = new Set<string>([
-  'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-]);
+export async function checkOnChainCidUsed(
+  policyContractId: string,
+  cid: string,
+  network: 'testnet' | 'mainnet' = 'testnet'
+): Promise<boolean> {
+  if (!policyContractId || policyContractId.includes('your-dao')) return false;
+  const rpcUrl = network === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://rpc.testnet.near.org';
+  try {
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'zinipay-cid-check',
+        method: 'query',
+        params: {
+          request_type: 'call_function',
+          finality: 'final',
+          account_id: policyContractId,
+          method_name: 'cid_used',
+          args_base64: Buffer.from(JSON.stringify({ cid })).toString('base64'),
+        },
+      }),
+    });
+    const json = (await res.json()) as any;
+    if (json.result?.result) {
+      const decoded = new TextDecoder().decode(new Uint8Array(json.result.result));
+      return Boolean(JSON.parse(decoded));
+    }
+  } catch (err) {
+    console.warn('Failed to query on-chain cid_used:', err);
+  }
+  return false;
+}
 
 export interface PolicyEvaluation {
   allowed: boolean;
@@ -30,6 +68,7 @@ export interface PolicyEvaluation {
   effectiveCapNear: number;
   cooldownHours: number;
   antiReplayPassed: boolean;
+  onChainEnforced?: boolean;
 }
 
 export function evaluatePolicy(
@@ -55,19 +94,7 @@ export function evaluatePolicy(
     };
   }
 
-  // 2. Anti-replay check
-  if (paidDeliverablesCache.has(deliverableCid.trim())) {
-    return {
-      allowed: false,
-      reason: `Three-Way Match Failed: Deliverable proof ${deliverableCid} has already been paid (double-spend protection).`,
-      tier: tierInfo.tier,
-      effectiveCapNear,
-      cooldownHours: config.cooldownHours,
-      antiReplayPassed: false,
-    };
-  }
-
-  // 3. Spend cap check
+  // 2. Spend cap check
   if (amountNear > effectiveCapNear) {
     return {
       allowed: false,

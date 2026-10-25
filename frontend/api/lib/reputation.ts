@@ -45,8 +45,10 @@ export interface ReputationEntry {
   lastActivity: number;
 }
 
-// In-memory cache for serverless environment
-const memoryLedger: Record<string, ReputationEntry> = {
+// Default fallback ledger for stateless pre-flight evaluation.
+// NOTE: Canonical reputation persistence is maintained on-chain via `PolicyHelper` (get_reputation).
+// Serverless instances do not persist state across invocations.
+const defaultFallbackLedger: Record<string, ReputationEntry> = {
   'alice.testnet': {
     accountId: 'alice.testnet',
     score: 85,
@@ -73,9 +75,44 @@ const memoryLedger: Record<string, ReputationEntry> = {
   },
 };
 
+export async function getOnChainReputation(
+  policyContractId: string,
+  accountId: string,
+  network: 'testnet' | 'mainnet' = 'testnet'
+): Promise<number> {
+  if (!policyContractId || policyContractId.includes('your-dao')) return 0;
+  const rpcUrl = network === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://rpc.testnet.near.org';
+  try {
+    const res = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 'zinipay-onchain-rep',
+        method: 'query',
+        params: {
+          request_type: 'call_function',
+          finality: 'final',
+          account_id: policyContractId,
+          method_name: 'get_reputation',
+          args_base64: Buffer.from(JSON.stringify({ account: accountId })).toString('base64'),
+        },
+      }),
+    });
+    const json = (await res.json()) as any;
+    if (json.result?.result) {
+      const decoded = new TextDecoder().decode(new Uint8Array(json.result.result));
+      return Number(JSON.parse(decoded));
+    }
+  } catch (err) {
+    console.warn('Failed to query on-chain reputation:', err);
+  }
+  return 0;
+}
+
 export function getReputation(accountId: string): ReputationEntry {
-  if (memoryLedger[accountId]) {
-    return memoryLedger[accountId];
+  if (defaultFallbackLedger[accountId]) {
+    return defaultFallbackLedger[accountId];
   }
   const entry: ReputationEntry = {
     accountId,
@@ -85,6 +122,5 @@ export function getReputation(accountId: string): ReputationEntry {
     approvedProposals: 1,
     lastActivity: Date.now(),
   };
-  memoryLedger[accountId] = entry;
   return entry;
 }

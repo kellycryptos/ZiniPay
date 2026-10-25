@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { runDeliberation } from './lib/deliberation.js';
-import { evaluatePolicy } from './lib/policy.js';
+import { evaluatePolicy, checkOnChainCidUsed } from './lib/policy.js';
 import { getReputation } from './lib/reputation.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -29,6 +29,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reputation = getReputation(recipientId);
 
     // 2. Policy check
+    const policyContractId = process.env.POLICY_CONTRACT_ID || process.env.VITE_POLICY_CONTRACT_ID;
+    if (policyContractId) {
+      const isCidUsed = await checkOnChainCidUsed(policyContractId, deliverableCid);
+      if (isCidUsed) {
+        return res.status(400).json({
+          success: false,
+          error: `Three-Way Match Failed: Deliverable proof ${deliverableCid} has already been settled on-chain (zero-double-spend protection).`,
+        });
+      }
+    }
+
     const policyResult = evaluatePolicy(
       recipientId,
       parseFloat(amountNear),

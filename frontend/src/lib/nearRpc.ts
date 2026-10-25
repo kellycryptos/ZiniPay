@@ -18,6 +18,14 @@ export interface DaoOnChainPolicy {
   bounty_forgiveness_period: string;
 }
 
+export interface PolicyContractState {
+  owner: string;
+  dao_account_id: string;
+  per_proposal_cap: string;
+  cooldown_seconds: number;
+  min_reputation: number;
+}
+
 export interface DaoOnChainProposal {
   id: number;
   proposer: string;
@@ -83,6 +91,95 @@ export async function fetchDaoPolicy(daoId: string, network: 'testnet' | 'mainne
   return null;
 }
 
+export async function fetchPolicyContractConfig(
+  policyContractId: string,
+  network: 'testnet' | 'mainnet'
+): Promise<PolicyContractState | null> {
+  if (!policyContractId || policyContractId.includes('your-dao')) return null;
+  try {
+    const res = await axios.post(getRpcUrl(network), {
+      jsonrpc: '2.0',
+      id: 'zinipay-policy-config',
+      method: 'query',
+      params: {
+        request_type: 'call_function',
+        finality: 'final',
+        account_id: policyContractId,
+        method_name: 'get_policy',
+        args_base64: 'e30=',
+      },
+    });
+
+    if (res.data.result?.result) {
+      const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
+      return JSON.parse(decoded) as PolicyContractState;
+    }
+  } catch (err) {
+    console.warn(`Failed to fetch policy contract config for ${policyContractId}:`, err);
+  }
+  return null;
+}
+
+export async function fetchOnChainReputation(
+  policyContractId: string,
+  accountId: string,
+  network: 'testnet' | 'mainnet'
+): Promise<number> {
+  if (!policyContractId || !accountId) return 0;
+  try {
+    const res = await axios.post(getRpcUrl(network), {
+      jsonrpc: '2.0',
+      id: 'zinipay-rep',
+      method: 'query',
+      params: {
+        request_type: 'call_function',
+        finality: 'final',
+        account_id: policyContractId,
+        method_name: 'get_reputation',
+        args_base64: btoa(JSON.stringify({ account: accountId })),
+      },
+    });
+
+    if (res.data.result?.result) {
+      const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
+      return Number(JSON.parse(decoded));
+    }
+  } catch (err) {
+    console.warn(`Failed to fetch reputation for ${accountId}:`, err);
+  }
+  return 0;
+}
+
+export async function checkOnChainCidUsed(
+  policyContractId: string,
+  cid: string,
+  network: 'testnet' | 'mainnet'
+): Promise<boolean> {
+  if (!policyContractId || !cid) return false;
+  try {
+    const res = await axios.post(getRpcUrl(network), {
+      jsonrpc: '2.0',
+      id: 'zinipay-cid-used',
+      method: 'query',
+      params: {
+        request_type: 'call_function',
+        finality: 'final',
+        account_id: policyContractId,
+        method_name: 'cid_used',
+        args_base64: btoa(JSON.stringify({ cid })),
+      },
+    });
+
+    if (res.data.result?.result) {
+      const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
+      return Boolean(JSON.parse(decoded));
+    }
+  } catch (err) {
+    console.warn(`Failed to check cid_used for ${cid}:`, err);
+  }
+  return false;
+}
+
 export async function fetchDaoProposals(
   daoId: string,
   network: 'testnet' | 'mainnet',
@@ -132,15 +229,38 @@ export async function fetchDaoProposals(
       const rawList = JSON.parse(decoded) as DaoOnChainProposal[];
 
       return rawList.map((p) => {
-        const transfer = p.kind?.Transfer;
-        const amountYocto = transfer?.amount || '0';
-        const amountNear = (Number(BigInt(amountYocto) / 10n ** 22n) / 100).toFixed(2);
-        const recipient = transfer?.receiver_id || 'community.near';
+        let recipient = 'community.near';
+        let amountYocto = '0';
+        let proofCid = '';
 
-        // Check if description contains ZiniPay / CID metadata
-        const hasCid = p.description.includes('ipfs://') || p.description.includes('bafy') || p.description.includes('http');
-        const cidMatch = p.description.match(/(https?:\/\/[^\s]+|ipfs:\/\/[^\s]+|bafy[a-z0-9]+)/i);
-        const proofCid = cidMatch ? cidMatch[0] : 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
+        if (p.kind?.Transfer) {
+          amountYocto = p.kind.Transfer.amount || '0';
+          recipient = p.kind.Transfer.receiver_id || 'community.near';
+        } else if (p.kind?.FunctionCall) {
+          const action = p.kind.FunctionCall.actions?.[0];
+          if (action) {
+            amountYocto = action.deposit || '0';
+            if (action.args) {
+              try {
+                const decodedStr = atob(action.args);
+                const decodedArgs = JSON.parse(decodedStr);
+                if (decodedArgs.recipient) recipient = decodedArgs.recipient;
+                if (decodedArgs.amount) amountYocto = decodedArgs.amount;
+                if (decodedArgs.cid) proofCid = decodedArgs.cid;
+              } catch {
+                // Ignore decoding errors
+              }
+            }
+          }
+        }
+
+        const amountNear = (Number(BigInt(amountYocto) / 10n ** 22n) / 100).toFixed(2);
+
+        // Check if description contains ZiniPay / CID metadata if not found in args
+        if (!proofCid) {
+          const cidMatch = p.description.match(/(https?:\/\/[^\s]+|ipfs:\/\/[^\s]+|bafy[a-z0-9]+)/i);
+          proofCid = cidMatch ? cidMatch[0] : '';
+        }
 
         const isApproved = p.status === 'Approved';
         const isRejected = p.status === 'Rejected' || p.status === 'Expired' || p.status === 'Failed';

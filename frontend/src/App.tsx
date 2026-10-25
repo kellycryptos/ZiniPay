@@ -17,8 +17,16 @@ import { IntentsModal } from './components/IntentsModal.tsx';
 import { WalletModal } from './components/WalletModal.tsx';
 import { initialProposals, mockPolicyMetrics, initialActivities } from './lib/mockData.ts';
 import { Proposal, ActivityEvent } from './lib/types.ts';
-import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles, RefreshCw } from 'lucide-react';
-import { fetchDaoProposals, fetchDaoTreasuryBalance, fetchDaoPolicy } from './lib/nearRpc.ts';
+import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
+import {
+  fetchDaoProposals,
+  fetchDaoTreasuryBalance,
+  fetchDaoPolicy,
+  fetchPolicyContractConfig,
+  fetchOnChainReputation,
+  PolicyContractState,
+  DaoOnChainPolicy,
+} from './lib/nearRpc.ts';
 import { signAndSendDaoVote } from './lib/wallet.ts';
 
 const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
@@ -52,13 +60,20 @@ const PRESETS = [
 ];
 
 export default function App() {
+  const isDemoMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>((import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet');
   const [daoContract, setDaoContract] = useState(import.meta.env.VITE_DAO_CONTRACT_ID || 'genesis.sputnikv2.testnet');
+  const [policyContractId, setPolicyContractId] = useState(import.meta.env.VITE_POLICY_CONTRACT_ID || '');
   const [treasuryBalance, setTreasuryBalance] = useState<number>(45.8);
   const [isLoadingOnChain, setIsLoadingOnChain] = useState<boolean>(false);
+  const [daoError, setDaoError] = useState<string | null>(null);
+  const [onChainPolicy, setOnChainPolicy] = useState<PolicyContractState | null>(null);
+  const [daoPolicy, setDaoPolicy] = useState<DaoOnChainPolicy | null>(null);
+  const [contributorReputation, setContributorReputation] = useState<number | null>(null);
 
-  const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
-  const [activities, setActivities] = useState<ActivityEvent[]>(initialActivities);
+  // Initialize with mock data ONLY if ?demo=1 flag is explicitly present
+  const [proposals, setProposals] = useState<Proposal[]>(() => isDemoMode ? initialProposals : []);
+  const [activities, setActivities] = useState<ActivityEvent[]>(() => isDemoMode ? initialActivities : []);
   const [filter, setFilter] = useState<'all' | 'pending' | 'settled' | 'intents'>('all');
   const [tab, setTab] = useState<'proposals' | 'propose'>('proposals');
   const [activeRole, setActiveRole] = useState<'council' | 'agent' | 'contributor'>('council');
@@ -69,25 +84,41 @@ export default function App() {
   const [connectedAccount, setConnectedAccount] = useState<string | null>('judge-council.testnet');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Load real proposals and balance from NEAR RPC
+  // Load real proposals and policy from NEAR RPC
   const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
     setIsLoadingOnChain(true);
+    setDaoError(null);
     try {
-      const [liveBalance, liveProps] = await Promise.all([
+      const [liveBalance, liveProps, liveDaoPol] = await Promise.all([
         fetchDaoTreasuryBalance(targetDao, targetNet),
-        fetchDaoProposals(targetDao, targetNet, 15),
+        fetchDaoProposals(targetDao, targetNet, 25),
+        fetchDaoPolicy(targetDao, targetNet),
       ]);
 
-      if (liveBalance > 0) {
-        setTreasuryBalance(liveBalance);
+      setTreasuryBalance(liveBalance);
+      setDaoPolicy(liveDaoPol);
+
+      if (policyContractId) {
+        const onChain = await fetchPolicyContractConfig(policyContractId, targetNet);
+        setOnChainPolicy(onChain);
+        if (connectedAccount) {
+          const rep = await fetchOnChainReputation(policyContractId, connectedAccount, targetNet);
+          setContributorReputation(rep);
+        }
       }
 
-      if (liveProps.length > 0) {
+      if (!isDemoMode) {
         setProposals(liveProps);
-        showToast(`Loaded ${liveProps.length} live proposals from ${targetDao} (${targetNet})`);
+        if (liveProps.length > 0) {
+          showToast(`Loaded ${liveProps.length} live proposals from ${targetDao} (${targetNet})`);
+        }
       }
     } catch (err: any) {
       console.warn('RPC query:', err);
+      setDaoError(err.message || 'Failed to query Sputnik DAO on NEAR RPC');
+      if (!isDemoMode) {
+        setProposals([]);
+      }
     } finally {
       setIsLoadingOnChain(false);
     }
@@ -95,7 +126,7 @@ export default function App() {
 
   React.useEffect(() => {
     loadLiveDaoData();
-  }, [network, daoContract]);
+  }, [network, daoContract, policyContractId, connectedAccount]);
 
   // Proposal builder form state
   const [task, setTask] = useState('Build Sputnik DAO Three-Way Match Integration');
@@ -389,6 +420,26 @@ export default function App() {
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
       />
 
+      {/* ── Simulation Mode Banner ────────────────────────────────────────── */}
+      {isDemoMode && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 px-6 py-2.5 text-xs font-mono flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>
+              <strong>SIMULATION MODE ACTIVE (?demo=1)</strong>: Displaying mock proposals and simulated metrics.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              window.location.search = '';
+            }}
+            className="text-[11px] text-amber-400/90 underline hover:text-white transition-colors"
+          >
+            Switch to Live NEAR Testnet RPC
+          </button>
+        </div>
+      )}
+
       {/* ── Main Content Area ───────────────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
         {/* Three-Way Release Gate Visualizer Banner */}
@@ -459,8 +510,18 @@ export default function App() {
                 ))}
 
                 {filteredProposals.length === 0 && (
-                  <div className="text-center text-gray-500 py-16 text-sm border border-dashed border-gray-800 rounded-2xl font-mono">
-                    No proposals matching this filter. Dispatch a new proposal to see the Three-Way Gate in action.
+                  <div className="text-center text-gray-400 py-16 px-6 border border-dashed border-gray-800 rounded-2xl font-mono flex flex-col items-center gap-3">
+                    <ShieldCheck className="w-8 h-8 text-purple-400/80" />
+                    <div className="font-semibold text-white">
+                      {isDemoMode ? 'No simulated proposals match this filter.' : `No proposals found on ${daoContract} (${network})`}
+                    </div>
+                    <p className="text-xs text-gray-500 max-w-md">
+                      {isDemoMode
+                        ? 'Switch proposal filter tabs or dispatch a new test payout.'
+                        : daoError
+                        ? `RPC Notice: ${daoError}. Verify network connection or DAO contract ID.`
+                        : `Connected to Sputnik DAO v2. Use the Three-Way Match Dispatcher tab to file a proposal, or append ?demo=1 to view sample simulation data.`}
+                    </p>
                   </div>
                 )}
               </div>
@@ -616,6 +677,11 @@ export default function App() {
           {/* Right Column: Policy Gauges & Activity Stream */}
           <div className="w-full lg:w-96 flex flex-col gap-6 shrink-0">
             <PolicyPanel
+              policyState={onChainPolicy}
+              daoPolicy={daoPolicy}
+              policyContractId={policyContractId}
+              reputationScore={contributorReputation}
+              isSimulated={isDemoMode}
               policy={{
                 maxSpendPerProposalNear: mockPolicyMetrics.perProposalCapNear,
                 maxSpendPerDayNear: mockPolicyMetrics.dailyCapNear,
@@ -623,8 +689,10 @@ export default function App() {
                 minReputationScore: mockPolicyMetrics.minReputation,
               }}
               daily={{
-                count: 3,
-                totalNear: mockPolicyMetrics.dailySpentNear,
+                count: proposals.filter((p) => p.status === 'settled' || p.status === 'approved').length,
+                totalNear: proposals
+                  .filter((p) => p.status === 'settled' || p.status === 'approved')
+                  .reduce((sum, p) => sum + (parseFloat(p.amountNear) || 0), 0),
               }}
             />
 
