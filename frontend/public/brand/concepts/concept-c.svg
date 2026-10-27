@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Concept C: Verification Seal Z -->
+  <!-- Square cryptographic stamp frame with corner brackets -->
+  <path d="M3 9V3h6M23 3h6v6M3 23v6h6M23 29h6v-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+  <!-- Central Z with checkmark confirmation terminal -->
+  <path d="M8 8h15.5v3.5L12 21h7l4-5" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

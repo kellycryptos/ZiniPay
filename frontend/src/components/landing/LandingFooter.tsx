@@ -12,6 +12,11 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
         {/* Brand & Mission */}
         <div className="flex flex-col gap-2 max-w-sm">
           <div className="flex items-center gap-2">
+            <img
+              src="/brand/logo-mark.svg"
+              alt="ZiniPay Logo"
+              className="w-5 h-5 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-0.5"
+            />
             <span className="font-extrabold text-sm tracking-tight text-white font-sans">
               ZiniPay
             </span>

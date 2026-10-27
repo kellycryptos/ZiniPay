@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Concept A: Three-Gate Ledger Z -->
+  <!-- Top bar (Proof Gate) -->
+  <path d="M4 4h24v5H4z" fill="currentColor"/>
+  <!-- Middle bar (Policy Gate) -->
+  <path d="M7 13.5h18v5H7z" fill="currentColor"/>
+  <!-- Bottom bar (Quorum Gate) -->
+  <path d="M4 23h24v5H4z" fill="currentColor"/>
+  <!-- Diagonal linking beam -->
+  <path d="M23 9h5l-19 14h-5z" fill="currentColor"/>
+</svg>

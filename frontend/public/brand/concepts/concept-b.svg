@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Concept B: Notched Receipt Z -->
+  <!-- Outer receipt card with side notches and serrated tear, punched with a stencil Z -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M5 3h22v10a3 3 0 0 0 0 6v10l-3.67-2.5L19.67 29 16 26.5 12.33 29 8.67 26.5 5 29V19a3 3 0 0 0 0-6V3zm4 5h14v4l-8.5 7H23v4H9v-4l8.5-7H9V8z" fill="currentColor"/>
+</svg>

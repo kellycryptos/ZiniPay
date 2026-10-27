@@ -53,9 +53,11 @@ export function Navbar({
             <ArrowLeft size={15} />
           </button>
 
-          <div className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] flex items-center justify-center font-mono font-bold text-white text-xs shrink-0">
-            ZP
-          </div>
+          <img
+            src="/brand/logo-mark.svg"
+            alt="ZiniPay Logo"
+            className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-1 shrink-0"
+          />
 
           <div>
             <div className="flex items-center gap-2">

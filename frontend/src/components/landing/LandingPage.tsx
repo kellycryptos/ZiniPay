@@ -20,9 +20,11 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] flex items-center justify-center text-white font-mono font-bold text-sm">
-              ZP
-            </div>
+            <img
+              src="/brand/logo-mark.svg"
+              alt="ZiniPay Logo"
+              className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-1 shrink-0"
+            />
             <div>
               <span className="font-extrabold text-base tracking-tight text-white font-sans">
                 ZiniPay
