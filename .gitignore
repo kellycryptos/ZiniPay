@@ -8,3 +8,6 @@ target/
 
 zinipay/
 *.tsbuildinfo
+screenshots/
+frontend/scripts/
+

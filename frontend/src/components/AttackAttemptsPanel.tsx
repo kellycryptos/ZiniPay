@@ -19,7 +19,7 @@ const SIMULATED_ATTACKS: AttackAttempt[] = [
     vector: 'Over-Cap Spend',
     caller: 'demo-requester.testnet',
     details: 'Simulated 50.0 NEAR payout request for Bronze tier contributor',
-    rejectionReason: 'Amount 50000000000000000000000000 exceeds effective tier cap 10000000000000000000000000 for recipient demo-requester.testnet',
+    rejectionReason: 'Amount exceeds effective tier cap 10.0 NEAR for recipient demo-requester.testnet',
     blockedBy: 'PolicyHelper (On-Chain)',
     simulated: true,
   },
@@ -39,28 +39,33 @@ export function AttackAttemptsPanel() {
   const isDemo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
   const [attacks, setAttacks] = useState<AttackAttempt[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAttacks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/data/attack_events.jsonl');
       if (res.ok) {
         const text = await res.text();
         const lines = text.trim().split('\n').filter(Boolean);
-        const parsed = lines.map((l) => JSON.parse(l));
-        setAttacks(parsed.reverse());
-        return;
+        if (lines.length > 0) {
+          const parsed = lines.map((l) => JSON.parse(l));
+          setAttacks(parsed.reverse());
+          return;
+        }
       }
-      // If no live file and ?demo=1, use simulated entries
+      // If empty and ?demo=1, use simulated entries with SIMULATION badges
       if (isDemo) {
         setAttacks(SIMULATED_ATTACKS);
       } else {
         setAttacks([]);
       }
-    } catch {
+    } catch (err: any) {
       if (isDemo) {
         setAttacks(SIMULATED_ATTACKS);
       } else {
+        setError(err.message || 'Failed to read attack log');
         setAttacks([]);
       }
     } finally {
@@ -73,71 +78,83 @@ export function AttackAttemptsPanel() {
   }, [isDemo]);
 
   return (
-    <div className="card p-5 border border-red-500/20 bg-red-950/10 rounded-2xl flex flex-col gap-4">
-      <div className="flex items-center justify-between border-b border-red-500/20 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30">
-            <ShieldAlert size={18} />
-          </div>
+    <div className="ledger-card p-5 border-[var(--border-subtle)] flex flex-col gap-4 font-mono text-xs">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+        <div className="flex items-center gap-2">
+          <ShieldAlert size={16} className="text-[var(--color-blocked)]" />
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <span>Attack Attempts & Blocked Exploits</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+            <h3 className="font-bold text-sm text-white font-sans flex items-center gap-2">
+              <span>Blocked Attacks</span>
+              <span className="tag-blocked text-[10px]">
                 Fail-Closed Active
               </span>
             </h3>
-            <p className="text-xs text-gray-400">
-              Real-time audit log of replayed CIDs, spend cap violations, and unauthorized callers blocked by ZiniPay.
+            <p className="text-[11px] text-[var(--text-muted)] mt-0.5 font-mono">
+              Audit log of replayed CIDs, over-caps, and unapproved callers.
             </p>
           </div>
         </div>
 
         <button
+          type="button"
           onClick={fetchAttacks}
           disabled={loading}
-          className="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-          title="Refresh attack log"
+          className="p-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)]"
+          title="Refresh attack audit log"
         >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {attacks.length === 0 ? (
-        <div className="p-6 text-center text-xs text-gray-400 font-mono">
-          No attack attempts recorded. All policy constraints remain green.
+      {/* Loading state */}
+      {loading ? (
+        <div className="p-6 text-center text-xs text-[var(--text-muted)] animate-pulse">
+          Reading attack event log...
+        </div>
+      ) : error ? (
+        <div className="p-4 rounded bg-[var(--color-blocked-bg)] border border-[var(--color-blocked-border)] text-[var(--color-blocked)] text-xs">
+          Error loading attack event log: {error}
+        </div>
+      ) : attacks.length === 0 ? (
+        /* Empty state with specific text */
+        <div className="p-6 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded">
+          No attack attempts recorded on testnet. All contract policy checks clean.
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">
           {attacks.map((att) => (
             <div
               key={att.id}
-              className="p-3 rounded-xl bg-black/40 border border-red-500/20 flex flex-col gap-1.5 text-xs font-mono"
+              className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--color-blocked-border)] flex flex-col gap-1.5"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {att.simulated && (
-                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 text-[9px] tracking-wider">
+                    <span className="tag-pending text-[9px] font-bold">
                       SIMULATION
                     </span>
                   )}
-                  <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold border border-red-500/30 text-[10px]">
+                  <span className="tag-blocked text-[10px]">
                     {att.vector}
                   </span>
-                  <span className="text-gray-400 text-[11px]">Caller: <strong className="text-gray-200">{att.caller}</strong></span>
+                  <span className="text-[var(--text-muted)] text-[10px]">
+                    Caller: <strong className="text-white">{att.caller}</strong>
+                  </span>
                 </div>
-                <span className="text-[10px] text-gray-500">{att.timestamp}</span>
+                <span className="text-[10px] text-[var(--text-muted)]">{att.timestamp}</span>
               </div>
 
-              <div className="text-gray-300 text-[11px] leading-relaxed">
+              <div className="text-slate-300 text-[11px] leading-relaxed">
                 {att.details}
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-gray-800/60 text-[10px]">
-                <div className="flex items-center gap-1 text-red-400">
+              <div className="flex items-center justify-between pt-1 border-t border-[var(--border-subtle)] text-[10px]">
+                <div className="flex items-center gap-1 text-[var(--color-blocked)] truncate max-w-[200px]">
                   <AlertTriangle size={11} className="shrink-0" />
-                  <span className="truncate">Rejection: <strong>{att.rejectionReason}</strong></span>
+                  <span className="truncate">{att.rejectionReason}</span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-400 shrink-0">
+                <div className="flex items-center gap-1 text-[var(--color-passed)] shrink-0">
                   <CheckCircle size={11} />
                   <span>{att.blockedBy}</span>
                 </div>

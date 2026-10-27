@@ -14,11 +14,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     version: '1.0.0',
     service: 'ZiniPay Agent Layer & Deliberation Engine',
     network: 'near-testnet',
-    sputnikDao: 'genesis.sputnikv2.testnet',
+    sputnikDao: process.env.VITE_DAO_CONTRACT_ID || process.env.DAO_CONTRACT_ID || '',
     contracts: {
       sputnikDaoFactory: 'sputnikv2.testnet',
-      sputnikDaoContract: 'genesis.sputnikv2.testnet',
-      policyGuard: 'zinipay-policy.testnet',
+      sputnikDaoContract: process.env.VITE_DAO_CONTRACT_ID || process.env.DAO_CONTRACT_ID || '',
+      policyGuard: process.env.VITE_POLICY_CONTRACT_ID || process.env.POLICY_CONTRACT_ID || '',
     },
     features: [
       'Three-Way Match Verification (CID Proof, Caps, Anti-Replay)',

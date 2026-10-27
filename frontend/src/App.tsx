@@ -1,102 +1,136 @@
 /**
- * App.tsx — ZiniPay Dashboard
- *
- * 100% NEAR-Aligned Constrained Agent Layer for Community Treasuries
- * Powered by NEAR AI Cloud, NEAR Intents, Chain Signatures, and Sputnik DAO / Trezu.
+ * App.tsx — ZiniPay Frontend Router & State Coordinator
+ * 
+ * Routes:
+ *   "/"    -> LandingPage
+ *   "/app" -> DashboardPage
  */
 
-import React, { useState } from 'react';
-import { Navbar } from './components/Navbar.tsx';
-import { ThreeWayGate } from './components/ThreeWayGate.tsx';
-import { ProposalCard } from './components/ProposalCard.tsx';
-import { PolicyPanel } from './components/PolicyPanel.tsx';
-import { AttackAttemptsPanel } from './components/AttackAttemptsPanel.tsx';
-import { ActivityLog } from './components/ActivityLog.tsx';
-import { ProofModal } from './components/ProofModal.tsx';
-import { DeliberationModal } from './components/DeliberationModal.tsx';
-import { IntentsModal } from './components/IntentsModal.tsx';
-import { WalletModal } from './components/WalletModal.tsx';
-import { initialProposals, mockPolicyMetrics, initialActivities } from './lib/mockData.ts';
-import { Proposal, ActivityEvent } from './lib/types.ts';
-import { ShieldCheck, Send, CheckCircle2, Globe, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LandingPage } from './components/landing/LandingPage';
+import { DashboardPage } from './components/dashboard/DashboardPage';
+import { Navbar } from './components/Navbar';
+import { ProofModal } from './components/ProofModal';
+import { DeliberationModal } from './components/DeliberationModal';
+import { IntentsModal } from './components/IntentsModal';
+import { WalletModal } from './components/WalletModal';
+import { initialProposals, initialActivities } from './lib/mockData';
+import { Proposal, ActivityEvent } from './lib/types';
 import {
   fetchDaoProposals,
-  fetchDaoTreasuryBalance,
+  fetchDaoTreasuryBalanceResult,
   fetchDaoPolicy,
   fetchPolicyContractConfig,
   fetchOnChainReputation,
   PolicyContractState,
   DaoOnChainPolicy,
-} from './lib/nearRpc.ts';
-import { signAndSendDaoVote } from './lib/wallet.ts';
-
-const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
-const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'genesis.sputnikv2.testnet';
-
-const PRESETS = [
-  {
-    label: 'DevHub Tutorial',
-    task: 'Write comprehensive tutorial on Sputnik DAO & Trezu integration',
-    deliverable: 'https://github.com/near-devhub/tutorials/pull/88',
-    recipient: 'alice.testnet',
-    amount: '4.5',
-    destination: 'near',
-  },
-  {
-    label: 'Solana USDC Payout',
-    task: 'Verify latency benchmarks on Solana-NEAR intent relayer',
-    deliverable: 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-    recipient: 'solana-auditor.testnet',
-    amount: '8.0',
-    destination: 'solana',
-  },
-  {
-    label: 'Ethereum Smart Contract Audit',
-    task: 'Complete security audit on cross-chain intent settlement contract',
-    deliverable: 'https://github.com/zinipay/audit/blob/main/report-v1.pdf',
-    recipient: '0x71C8364735391aB32e9',
-    amount: '12.0',
-    destination: 'ethereum',
-  },
-];
+  TreasuryBalanceResult,
+} from './lib/nearRpc';
+import { signAndSendDaoVote } from './lib/wallet';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const isDemoMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
-  const [network, setNetwork] = useState<'testnet' | 'mainnet'>((import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet');
-  const [daoContract, setDaoContract] = useState(import.meta.env.VITE_DAO_CONTRACT_ID || 'genesis.sputnikv2.testnet');
-  const [policyContractId, setPolicyContractId] = useState(import.meta.env.VITE_POLICY_CONTRACT_ID || '');
-  const [treasuryBalance, setTreasuryBalance] = useState<number>(45.8);
+  const isDemoMode =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('demo') === '1';
+
+  // Client-side Router: "/" or "/app"
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname || '/';
+    }
+    return '/';
+  });
+
+  useEffect(() => {
+    const onPopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (to: string) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', to);
+      setCurrentPath(to);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // On-Chain & Wallet State — NO FAKE DEFAULTS
+  const [network, setNetwork] = useState<'testnet' | 'mainnet'>(
+    (import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet'
+  );
+  const [daoContract, setDaoContract] = useState<string>(
+    import.meta.env.VITE_DAO_CONTRACT_ID || ''
+  );
+  const [policyContractId, setPolicyContractId] = useState<string>(
+    import.meta.env.VITE_POLICY_CONTRACT_ID || ''
+  );
+
+  // Treasury starts as loading skeleton if DAO configured, else error/unconfigured
+  const [treasuryState, setTreasuryState] = useState<TreasuryBalanceResult>(() => {
+    if (import.meta.env.VITE_DAO_CONTRACT_ID) {
+      return { status: 'loading' };
+    }
+    return { status: 'error', error: 'DAO contract is not configured' };
+  });
+
   const [isLoadingOnChain, setIsLoadingOnChain] = useState<boolean>(false);
   const [daoError, setDaoError] = useState<string | null>(null);
   const [onChainPolicy, setOnChainPolicy] = useState<PolicyContractState | null>(null);
   const [daoPolicy, setDaoPolicy] = useState<DaoOnChainPolicy | null>(null);
   const [contributorReputation, setContributorReputation] = useState<number | null>(null);
 
-  // Initialize with mock data ONLY if ?demo=1 flag is explicitly present
-  const [proposals, setProposals] = useState<Proposal[]>(() => isDemoMode ? initialProposals : []);
-  const [activities, setActivities] = useState<ActivityEvent[]>(() => isDemoMode ? initialActivities : []);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'settled' | 'intents'>('all');
-  const [tab, setTab] = useState<'proposals' | 'propose'>('proposals');
+  // Connected account starts strictly as null (no fake judge-council.testnet)
+  const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   const [activeRole, setActiveRole] = useState<'council' | 'agent' | 'contributor'>('council');
+
+  // Proposals & activities strictly empty unless ?demo=1
+  const [proposals, setProposals] = useState<Proposal[]>(() =>
+    isDemoMode ? initialProposals : []
+  );
+  const [activities, setActivities] = useState<ActivityEvent[]>(() =>
+    isDemoMode ? initialActivities : []
+  );
+
+  // Modal inspection states
   const [selectedProofProposal, setSelectedProofProposal] = useState<Proposal | null>(null);
   const [deliberationProposal, setDeliberationProposal] = useState<Proposal | null>(null);
   const [intentsProposal, setIntentsProposal] = useState<Proposal | null>(null);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [connectedAccount, setConnectedAccount] = useState<string | null>('judge-council.testnet');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Load real proposals and policy from NEAR RPC
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Real RPC Data Loading from Sputnik DAO
   const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
+    if (!targetDao || !targetDao.trim()) {
+      setIsLoadingOnChain(false);
+      setDaoError(null);
+      setTreasuryState({ status: 'error', error: 'DAO contract is not configured' });
+      if (!isDemoMode) {
+        setProposals([]);
+      }
+      return;
+    }
+
     setIsLoadingOnChain(true);
     setDaoError(null);
+    setTreasuryState({ status: 'loading' });
+
     try {
-      const [liveBalance, liveProps, liveDaoPol] = await Promise.all([
-        fetchDaoTreasuryBalance(targetDao, targetNet),
-        fetchDaoProposals(targetDao, targetNet, 25),
+      const [balResult, liveProps, liveDaoPol] = await Promise.all([
+        fetchDaoTreasuryBalanceResult(targetDao, targetNet),
+        fetchDaoProposals(targetDao, targetNet, 25, policyContractId),
         fetchDaoPolicy(targetDao, targetNet),
       ]);
 
-      setTreasuryBalance(liveBalance);
+      setTreasuryState(balResult);
       setDaoPolicy(liveDaoPol);
 
       if (policyContractId) {
@@ -110,13 +144,15 @@ export default function App() {
 
       if (!isDemoMode) {
         setProposals(liveProps);
-        if (liveProps.length > 0) {
-          showToast(`Loaded ${liveProps.length} live proposals from ${targetDao} (${targetNet})`);
+        if (liveProps.length > 0 && currentPath.startsWith('/app')) {
+          showToast(`Loaded ${liveProps.length} on-chain proposals from ${targetDao}`);
         }
       }
     } catch (err: any) {
-      console.warn('RPC query:', err);
-      setDaoError(err.message || 'Failed to query Sputnik DAO on NEAR RPC');
+      console.warn('NEAR RPC query:', err);
+      const errMsg = err.message || 'Failed to query Sputnik DAO on NEAR RPC';
+      setDaoError(errMsg);
+      setTreasuryState({ status: 'error', error: errMsg });
       if (!isDemoMode) {
         setProposals([]);
       }
@@ -125,39 +161,29 @@ export default function App() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadLiveDaoData();
   }, [network, daoContract, policyContractId, connectedAccount]);
 
-  // Proposal builder form state
-  const [task, setTask] = useState('Build Sputnik DAO Three-Way Match Integration');
-  const [deliverable, setDeliverable] = useState('https://github.com/zinipay/core/pull/1');
-  const [recipient, setRecipient] = useState('alice.testnet');
-  const [amount, setAmount] = useState('4.5');
-  const [destinationChain, setDestinationChain] = useState<'near' | 'ethereum' | 'solana' | 'bitcoin'>('near');
-  const [crossChainAddress, setCrossChainAddress] = useState('0x71C...b48');
-  const [cliCmd, setCliCmd] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
+  // Real Council Multi-Sig Vote Execution
   const handleVote = async (proposalId: number, approve: boolean) => {
-    // If user has a real wallet connected via NEAR Wallet Selector, sign transaction
     try {
-      if (connectedAccount && !connectedAccount.includes('judge-') && !connectedAccount.includes('agent.')) {
-        showToast(`Broadcasting act_proposal vote to NEAR RPC...`);
+      if (
+        connectedAccount &&
+        !connectedAccount.includes('judge-') &&
+        !connectedAccount.includes('agent.') &&
+        !connectedAccount.includes('demo')
+      ) {
+        showToast('Broadcasting act_proposal vote to NEAR RPC...');
         await signAndSendDaoVote({
           daoContractId: daoContract,
           proposalId,
           approve,
         });
-        showToast(`Transaction confirmed on NEAR! Vote cast.`);
+        showToast('Transaction confirmed on NEAR! Vote cast.');
       }
     } catch (err: any) {
-      console.warn('Real wallet signing fallback:', err);
+      console.warn('Wallet signing notice:', err);
     }
 
     setProposals((prev) =>
@@ -181,7 +207,9 @@ export default function App() {
       })
     );
 
-    const title = approve ? `Council Vote Cast: Approved #${proposalId}` : `Council Vote Cast: Rejected #${proposalId}`;
+    const title = approve
+      ? `Council Vote Cast: Approved #ZP-${proposalId}`
+      : `Council Vote Cast: Rejected #ZP-${proposalId}`;
     showToast(title);
 
     setActivities((prev) => [
@@ -190,164 +218,23 @@ export default function App() {
         timestamp: 'Just now',
         type: approve ? 'quorum_reached' : 'policy_pass',
         title,
-        description: `Member voted ${approve ? 'Approve' : 'Reject'} on proposal #${proposalId} from Trezu council seat.`,
+        description: `Member voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
         badge: approve ? 'Vote Approve' : 'Vote Reject',
       },
       ...prev,
     ]);
   };
 
-  const applyPreset = (preset: typeof PRESETS[0]) => {
-    setTask(preset.task);
-    setDeliverable(preset.deliverable);
-    setRecipient(preset.recipient);
-    setAmount(preset.amount);
-    setDestinationChain(preset.destination as any);
-    showToast(`Loaded preset: ${preset.label}`);
-  };
-
-  const handleDispatchProposal = async () => {
-    let cmd = `npx tsx agent/src/index.ts propose \\\n  --task "${task}" \\\n  --deliverable "${deliverable}" \\\n  --recipient "${recipient}" \\\n  --amount ${amount}`;
-    if (destinationChain !== 'near') {
-      cmd += ` \\\n  --cross-chain "${destinationChain}" \\\n  --cross-chain-address "${crossChainAddress}"`;
-    }
-    setCliCmd(cmd);
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/propose', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: recipient,
-          amountNear: amount,
-          deliverableCid: deliverable,
-          taskDescription: task,
-          destinationChain,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        showToast(data.error || 'Three-Way Match Policy rejected proposal');
-        setIsSubmitting(false);
-        return;
-      }
-
-      const delib = data.deliberation;
-      const pol = data.policy;
-      const newId = data.proposalId || (proposals.length > 0 ? Math.max(...proposals.map((p) => p.id)) + 1 : 105);
-
-      const newProposal: Proposal = {
-        id: newId,
-        title: task,
-        proposer: 'zinipay-agent.testnet',
-        recipient,
-        amountNear: amount,
-        amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
-        proofCid: deliverable,
-        summary: `Deliberated via NEAR AI Cloud. Three-Way Match clearance confirmed.`,
-        evidenceType: deliverable.includes('github') ? 'github_pr' : 'milestone_deliverable',
-        evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${delib.attestationSummary} | Score: ${delib.inspector?.score}/100`,
-        createdAt: 'Just now',
-        status: 'pending_quorum',
-        policy: {
-          withinCap: pol.allowed,
-          capLimit: `${pol.effectiveCapNear} NEAR`,
-          cooldownElapsed: true,
-          cooldownRemainingSecs: 0,
-          cidUnique: pol.antiReplayPassed,
-          reputationQualified: true,
-          reputationScore: pol.tier === 'Gold' ? 85 : pol.tier === 'Silver' ? 45 : 15,
-          tier: pol.tier,
-        },
-        settlement: {
-          type: destinationChain === 'near' ? 'native_near' : 'cross_chain_intent',
-          targetChain: destinationChain,
-          targetToken: destinationChain === 'near' ? 'NEAR' : 'USDC',
-          recipientAddress: destinationChain === 'near' ? recipient : crossChainAddress,
-          quoteEstimate: destinationChain !== 'near' ? `~${(Number(amount) * 4.6).toFixed(2)} USDC` : undefined,
-        },
-        votes: {
-          approve: 1,
-          reject: 0,
-          required: 3,
-        },
-      };
-
-      setProposals([newProposal, ...proposals]);
-      setActivities([
-        {
-          id: `act-${Date.now()}`,
-          timestamp: 'Just now',
-          type: 'proposal_created',
-          title: `Proposal #${newId} Dispatched`,
-          description: `Three-Way Match Pass (${delib.inspector?.score}/100). Sputnik DAO proposal created.`,
-          badge: 'Agent Propose',
-        },
-        ...activities,
-      ]);
-
-      showToast(`Proposal #${newId} verified & dispatched via Vercel Agent API!`);
-      setTab('proposals');
-    } catch {
-      // Offline / fallback simulation mode
-      const newId = proposals.length > 0 ? Math.max(...proposals.map((p) => p.id)) + 1 : 105;
-      const newProposal: Proposal = {
-        id: newId,
-        title: task,
-        proposer: 'zinipay-agent.testnet',
-        recipient,
-        amountNear: amount,
-        amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
-        proofCid: deliverable || 'unspecified_deliverable',
-        summary: `Deliberated via NEAR AI Cloud. Three-Way Match clearance confirmed.`,
-        evidenceType: 'github_pr',
-        evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: [Three-Way Match 3/3 PASS]`,
-        createdAt: 'Just now',
-        status: 'pending_quorum',
-        policy: {
-          withinCap: true,
-          capLimit: '15.0 NEAR',
-          cooldownElapsed: true,
-          cooldownRemainingSecs: 0,
-          cidUnique: true,
-          reputationQualified: true,
-          reputationScore: 45,
-          tier: 'Silver',
-        },
-        settlement: {
-          type: destinationChain === 'near' ? 'native_near' : 'cross_chain_intent',
-          targetChain: destinationChain,
-          targetToken: destinationChain === 'near' ? 'NEAR' : 'USDC',
-          recipientAddress: destinationChain === 'near' ? recipient : crossChainAddress,
-        },
-        votes: { approve: 1, reject: 0, required: 3 },
-      };
-
-      setProposals([newProposal, ...proposals]);
-      showToast(`Proposal #${newId} queued with Three-Way Match!`);
-      setTab('proposals');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const filteredProposals = proposals.filter((p) => {
-    if (filter === 'pending') return p.status === 'pending_quorum';
-    if (filter === 'settled') return p.status === 'settled' || p.status === 'approved';
-    if (filter === 'intents') return p.settlement.type === 'cross_chain_intent';
-    return true;
-  });
+  const isAppRoute = currentPath.startsWith('/app');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0A0A0F] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-xl bg-emerald-600 text-white shadow-2xl text-xs font-mono border border-emerald-400/40">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
+        <aside aria-label="Notification" className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded bg-[var(--bg-panel-alt)] text-[var(--color-passed)] border border-[var(--color-passed-border)] shadow-2xl text-xs font-mono">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--color-passed)]" />
           <span>{toastMessage}</span>
-        </div>
+        </aside>
       )}
 
       {/* Proof Modal */}
@@ -366,13 +253,14 @@ export default function App() {
       {/* Intents Cross-Chain Settlement Modal */}
       <IntentsModal
         proposal={intentsProposal}
+        daoContractId={daoContract}
         isOpen={Boolean(intentsProposal)}
         onClose={() => setIntentsProposal(null)}
         onSettled={(id) => {
           setProposals((prev) =>
             prev.map((p) => (p.id === id ? { ...p, status: 'settled' } : p))
           );
-          showToast(`Proposal #${id} settled cross-chain via NEAR Intents!`);
+          showToast(`Proposal #ZP-${id} settled cross-chain via NEAR Intents!`);
         }}
       />
 
@@ -393,340 +281,79 @@ export default function App() {
         }}
       />
 
-      {/* ── Top Navigation ──────────────────────────────────────────────── */}
-      <Navbar
-        network={network}
-        onNetworkChange={(net) => {
-          setNetwork(net);
-          const defaultDao = net === 'mainnet' ? 'build.sputnik-dao.near' : 'genesis.sputnikv2.testnet';
-          setDaoContract(defaultDao);
-          showToast(`Switched network to NEAR ${net.toUpperCase()}`);
-        }}
-        daoContract={daoContract}
-        onDaoContractChange={(dao) => {
-          setDaoContract(dao);
-        }}
-        treasuryBalance={treasuryBalance}
-        loading={isLoadingOnChain}
-        onRefresh={() => {
-          loadLiveDaoData(daoContract, network);
-          showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()} RPC`);
-        }}
-        activeRole={activeRole}
-        onRoleChange={(r) => {
-          setActiveRole(r);
-          showToast(`Switched active view to: ${r}`);
-        }}
-        connectedAccount={connectedAccount}
-        onOpenWalletModal={() => setIsWalletModalOpen(true)}
-      />
-
-      {/* ── Simulation Mode Banner ────────────────────────────────────────── */}
-      {isDemoMode && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 px-6 py-2.5 text-xs font-mono flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-            <span>
-              <strong>SIMULATION MODE ACTIVE (?demo=1)</strong>: Displaying mock proposals and simulated metrics.
-            </span>
-          </div>
-          <button
-            onClick={() => {
-              window.location.search = '';
+      {/* Route Switcher */}
+      {isAppRoute ? (
+        <div className="flex-1 flex flex-col">
+          {/* Dashboard Navbar */}
+          <Navbar
+            network={network}
+            onNetworkChange={(net) => {
+              setNetwork(net);
+              showToast(`Switched network to NEAR ${net.toUpperCase()}`);
             }}
-            className="text-[11px] text-amber-400/90 underline hover:text-white transition-colors"
-          >
-            Switch to Live NEAR Testnet RPC
-          </button>
-        </div>
-      )}
+            daoContract={daoContract}
+            onDaoContractChange={(dao) => setDaoContract(dao)}
+            policyContractId={policyContractId}
+            onPolicyContractChange={(pol) => setPolicyContractId(pol)}
+            treasuryState={treasuryState}
+            onRefresh={() => {
+              loadLiveDaoData(daoContract, network);
+              showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()} RPC`);
+            }}
+            activeRole={activeRole}
+            onRoleChange={(r) => {
+              setActiveRole(r);
+              showToast(`Switched active view to: ${r}`);
+            }}
+            connectedAccount={connectedAccount}
+            onOpenWalletModal={() => setIsWalletModalOpen(true)}
+            onNavigateToLanding={() => navigate('/')}
+          />
 
-      {/* ── Main Content Area ───────────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
-        {/* Three-Way Release Gate Visualizer Banner */}
-        <ThreeWayGate />
-
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* Left Column: Proposals & Payout Dispatcher */}
-          <div className="flex-1 w-full flex flex-col gap-5">
-            {/* Tab Navigation */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border)] pb-3 gap-3">
-              <div className="flex gap-2">
-                {[
-                  { key: 'proposals', label: `Treasury Proposals (${proposals.length})` },
-                  { key: 'propose', label: '⚡ Three-Way Match Dispatcher' },
-                ].map((t) => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTab(t.key as any)}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                      tab === t.key
-                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-200'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              {tab === 'proposals' && (
-                <div className="flex items-center gap-1.5 bg-gray-900/80 p-1 rounded-xl border border-gray-800 text-xs font-mono">
-                  {[
-                    { id: 'all', label: 'All' },
-                    { id: 'pending', label: 'Pending Quorum' },
-                    { id: 'settled', label: 'Settled' },
-                    { id: 'intents', label: 'NEAR Intents' },
-                  ].map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => setFilter(f.id as any)}
-                      className={`px-2.5 py-1 rounded-lg transition-colors ${
-                        filter === f.id
-                          ? 'bg-purple-600 text-white font-semibold'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Tab 1: Proposals Feed */}
-            {tab === 'proposals' && (
-              <div className="flex flex-col gap-4">
-                {filteredProposals.map((p) => (
-                  <ProposalCard
-                    key={p.id}
-                    proposal={p}
-                    daoContractId={daoContract}
-                    network={network}
-                    onVote={handleVote}
-                    onInspectProof={(prop) => setSelectedProofProposal(prop)}
-                    onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
-                    onExecuteIntent={(prop) => setIntentsProposal(prop)}
-                  />
-                ))}
-
-                {filteredProposals.length === 0 && (
-                  <div className="text-center text-gray-400 py-16 px-6 border border-dashed border-gray-800 rounded-2xl font-mono flex flex-col items-center gap-3">
-                    <ShieldCheck className="w-8 h-8 text-purple-400/80" />
-                    <div className="font-semibold text-white">
-                      {isDemoMode ? 'No simulated proposals match this filter.' : `No proposals found on ${daoContract} (${network})`}
-                    </div>
-                    <p className="text-xs text-gray-500 max-w-md">
-                      {isDemoMode
-                        ? 'Switch proposal filter tabs or dispatch a new test payout.'
-                        : daoError
-                        ? `RPC Notice: ${daoError}. Verify network connection or DAO contract ID.`
-                        : `Connected to Sputnik DAO v2. Use the Three-Way Match Dispatcher tab to file a proposal, or append ?demo=1 to view sample simulation data.`}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tab 2: Payout Dispatcher */}
-            {tab === 'propose' && (
-              <div className="card p-6 flex flex-col gap-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="font-bold text-base flex items-center gap-2 text-white">
-                      <ShieldCheck size={18} className="text-emerald-400" />
-                      ZiniPay Three-Way Match Dispatcher
-                    </h2>
-                    <p className="text-xs text-gray-400 mt-1">
-                      The agent deliberates via NEAR AI Cloud, verifies anti-double-spend, scales by reputation tier, and attaches proof.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                    Policy Enforced
-                  </span>
-                </div>
-
-                {/* Quick Presets Bar */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <Sparkles size={13} className="text-amber-400" />
-                    <span>One-Click Testing Presets:</span>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {PRESETS.map((pr) => (
-                      <button
-                        key={pr.label}
-                        type="button"
-                        onClick={() => applyPreset(pr)}
-                        className="px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs font-medium text-gray-300 hover:text-white border border-gray-800 transition-colors"
-                      >
-                        {pr.label} ({pr.amount}N)
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[var(--border)]">
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs text-gray-300 font-medium">Task Scope & Specification</label>
-                    <input
-                      value={task}
-                      onChange={(e) => setTask(e.target.value)}
-                      placeholder="e.g. Build Sputnik DAO Three-Way Match Agent"
-                      className="bg-gray-900 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 font-medium"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs text-gray-300 font-medium">Deliverable Evidence Artifact (URL, IPFS CID, or Git PR)</label>
-                    <input
-                      value={deliverable}
-                      onChange={(e) => setDeliverable(e.target.value)}
-                      placeholder="https://github.com/... or ipfs://..."
-                      className="bg-gray-900 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 font-mono"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-gray-300 font-medium">Recipient Contributor</label>
-                    <input
-                      value={recipient}
-                      onChange={(e) => setRecipient(e.target.value)}
-                      placeholder="alice.testnet"
-                      className="bg-gray-900 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 font-mono"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-gray-300 font-medium">Reward Amount (NEAR)</label>
-                    <input
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="5"
-                      className="bg-gray-900 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500 font-mono"
-                    />
-                  </div>
-
-                  {/* Settlement Network Selection */}
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs text-gray-300 font-medium flex items-center gap-1.5">
-                      <Globe size={14} className="text-blue-400" />
-                      Settlement Destination Rail
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[
-                        { id: 'near', label: 'NEAR Native' },
-                        { id: 'ethereum', label: 'Ethereum (Intents)' },
-                        { id: 'solana', label: 'Solana (Intents)' },
-                        { id: 'bitcoin', label: 'Bitcoin (Intents)' },
-                      ].map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => setDestinationChain(c.id as any)}
-                          className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                            destinationChain === c.id
-                              ? 'bg-purple-600/30 border-purple-500 text-purple-300 shadow-sm'
-                              : 'bg-gray-900/60 border-gray-800 text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {destinationChain !== 'near' && (
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
-                      <label className="text-xs text-blue-300 font-medium font-mono">
-                        Destination Address on {destinationChain.toUpperCase()} (USDC Settlement)
-                      </label>
-                      <input
-                        value={crossChainAddress}
-                        onChange={(e) => setCrossChainAddress(e.target.value)}
-                        placeholder="e.g. 0x..."
-                        className="bg-gray-900 border border-blue-500/40 rounded-xl px-3.5 py-2.5 text-sm text-white font-mono focus:outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleDispatchProposal}
-                  disabled={isSubmitting}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl near-gradient text-black font-extrabold text-sm hover:opacity-95 transition-opacity shadow-lg shadow-emerald-500/10 mt-2 disabled:opacity-50"
-                >
-                  <Send size={15} />
-                  {isSubmitting ? 'Evaluating Three-Way Match...' : 'Dispatch Payout with Three-Way Match'}
-                </button>
-
-                {cliCmd && (
-                  <div className="flex flex-col gap-2 bg-gray-950 p-4 rounded-xl border border-gray-800">
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span>Equivalent CLI Execution:</span>
-                      <span className="text-purple-400 font-mono">Simulate with --dry-run</span>
-                    </div>
-                    <pre className="bg-black/80 rounded-lg p-3 text-xs text-emerald-400 overflow-x-auto whitespace-pre-wrap font-mono border border-emerald-950">
-                      {cliCmd}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Policy Gauges & Activity Stream */}
-          <div className="w-full lg:w-96 flex flex-col gap-6 shrink-0">
-            <PolicyPanel
-              policyState={onChainPolicy}
-              daoPolicy={daoPolicy}
+          {/* Dashboard Page */}
+          <main className="flex-1 flex flex-col">
+            <DashboardPage
+              proposals={proposals}
+              activities={activities}
+              network={network}
+              daoContract={daoContract}
               policyContractId={policyContractId}
-              reputationScore={contributorReputation}
-              isSimulated={isDemoMode}
-              policy={{
-                maxSpendPerProposalNear: mockPolicyMetrics.perProposalCapNear,
-                maxSpendPerDayNear: mockPolicyMetrics.dailyCapNear,
-                cooldownHours: mockPolicyMetrics.cooldownHours,
-                minReputationScore: mockPolicyMetrics.minReputation,
+              treasuryState={treasuryState}
+              isLoadingOnChain={isLoadingOnChain}
+              daoError={daoError}
+              onChainPolicy={onChainPolicy}
+              daoPolicy={daoPolicy}
+              contributorReputation={contributorReputation}
+              connectedAccount={connectedAccount}
+              activeRole={activeRole}
+              onVote={handleVote}
+              onInspectProof={(prop) => setSelectedProofProposal(prop)}
+              onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
+              onExecuteIntent={(prop) => setIntentsProposal(prop)}
+              onOpenWalletModal={() => setIsWalletModalOpen(true)}
+              onProposalCreated={(newProp) => {
+                setProposals((prev) => [newProp, ...prev]);
+                setActivities((prev) => [
+                  {
+                    id: `act-${Date.now()}`,
+                    timestamp: 'Just now',
+                    type: 'proposal_created',
+                    title: `Proposal #ZP-${newProp.id} Dispatched`,
+                    description: `Three-Way Match Pass. Sputnik DAO proposal created.`,
+                    badge: 'Agent Propose',
+                  },
+                  ...prev,
+                ]);
               }}
-              daily={{
-                count: proposals.filter((p) => p.status === 'settled' || p.status === 'approved').length,
-                totalNear: proposals
-                  .filter((p) => p.status === 'settled' || p.status === 'approved')
-                  .reduce((sum, p) => sum + (parseFloat(p.amountNear) || 0), 0),
-              }}
+              onShowToast={showToast}
+              isDemoMode={isDemoMode}
             />
-
-            {/* Blocked Attacks & Exploits Panel */}
-            <AttackAttemptsPanel />
-
-            {/* Live Activity Log */}
-            <ActivityLog activities={activities} />
-
-            {/* Ecosystem Links */}
-            <div className="card p-4 flex flex-col gap-2.5">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ecosystem Surfaces</h4>
-              {[
-                { label: 'Trezu Treasury Dashboard', url: 'https://app.trezu.org' },
-                { label: 'Sputnik DAO Contracts', url: 'https://github.com/near-daos/sputnik-dao-contract' },
-                { label: 'NEAR Intents 1Click API', url: 'https://near-intents.org' },
-                { label: 'NEAR AI Cloud', url: 'https://cloud.near.ai' },
-              ].map(({ label, url }) => (
-                <a
-                  key={label}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-purple-400 hover:text-purple-300 transition-colors flex items-center justify-between"
-                >
-                  <span>{label}</span>
-                  <span>↗</span>
-                </a>
-              ))}
-            </div>
-          </div>
+          </main>
         </div>
-      </main>
+      ) : (
+        /* Landing Page at "/" */
+        <LandingPage onNavigateToApp={() => navigate('/app')} />
+      )}
     </div>
   );
 }

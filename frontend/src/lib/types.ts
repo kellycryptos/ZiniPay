@@ -29,13 +29,18 @@ export type Proposal = {
   evidenceType: 'github_pr' | 'milestone_deliverable' | 'signal_audit';
   evidenceDetails: string;
   createdAt: string;
-  status: 'pending_quorum' | 'approved' | 'settled' | 'rejected';
+  status: 'pending_quorum' | 'approved' | 'settled' | 'rejected' | 'failed' | 'expired' | 'removed' | 'moved';
+  rawStatus?: 'InProgress' | 'Approved' | 'Rejected' | 'Removed' | 'Expired' | 'Failed' | 'Moved';
+  executionError?: string;
+  submissionTime?: string;
   simulated?: boolean;
   txHash?: string;
   attestationHash?: string;
   attestationStatus?: 'unverified' | 'report_received' | 'verified';
   attestationReason?: string;
   targetContract?: string;
+  targetMethod?: string;
+  isZinipayRelease?: boolean;
   policy: PolicyCheckStatus;
   settlement: SettlementRoute;
   votes: {

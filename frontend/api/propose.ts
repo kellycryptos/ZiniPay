@@ -18,11 +18,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const {
-      daoId = 'genesis.sputnikv2.testnet',
-      recipientId = 'contributor.testnet',
-      amountNear = '10',
-      deliverableCid = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-      taskDescription = 'Security review and proof match verification',
+      daoId = process.env.VITE_DAO_CONTRACT_ID || process.env.DAO_CONTRACT_ID || '',
+      recipientId = '',
+      amountNear = '0',
+      deliverableCid = '',
+      taskDescription = '',
     } = req.body || {};
 
     // 1. Contributor reputation lookup

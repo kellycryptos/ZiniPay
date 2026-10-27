@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
-import { Coins, RefreshCw, Wallet, Check, ChevronDown, Shield } from 'lucide-react';
+import { RefreshCw, Wallet, Check, ChevronDown, Shield, ArrowLeft } from 'lucide-react';
+import { TreasuryBalanceResult } from '../lib/nearRpc';
 
 interface NavbarProps {
   network: 'testnet' | 'mainnet';
   onNetworkChange: (network: 'testnet' | 'mainnet') => void;
   daoContract: string;
   onDaoContractChange: (dao: string) => void;
-  treasuryBalance: number;
-  loading: boolean;
+  policyContractId: string;
+  onPolicyContractChange: (policy: string) => void;
+  treasuryState: {
+    status: 'loading' | 'success' | 'error';
+    balance?: number;
+    error?: string;
+  };
   onRefresh: () => void;
   activeRole: 'council' | 'agent' | 'contributor';
   onRoleChange: (role: 'council' | 'agent' | 'contributor') => void;
   connectedAccount: string | null;
   onOpenWalletModal: () => void;
+  onNavigateToLanding: () => void;
 }
 
 export function Navbar({
@@ -20,135 +27,190 @@ export function Navbar({
   onNetworkChange,
   daoContract,
   onDaoContractChange,
-  treasuryBalance,
-  loading,
+  policyContractId,
+  onPolicyContractChange,
+  treasuryState,
   onRefresh,
   activeRole,
   onRoleChange,
   connectedAccount,
   onOpenWalletModal,
+  onNavigateToLanding,
 }: NavbarProps) {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   return (
-    <header className="border-b border-[var(--border)] px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0D0D14]/90 backdrop-blur-md sticky top-0 z-40">
-      {/* Brand & Subtitle */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl near-gradient flex items-center justify-center shadow-lg shadow-purple-500/20 text-black shrink-0">
-          <Coins size={22} className="text-black fill-black" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
-              ZiniPay <span className="text-sm">🪙🤖</span>
-            </h1>
-            <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-full font-semibold border border-purple-500/30">
-              Sputnik DAO + Trezu
-            </span>
+    <header className="border-b border-[var(--border-subtle)] px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 bg-[var(--bg-canvas)]/95 backdrop-blur-md sticky top-0 z-40">
+      {/* Brand & Landing Link */}
+      <div className="flex items-center justify-between w-full md:w-auto">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onNavigateToLanding}
+            className="p-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors"
+            title="Return to Landing Page"
+          >
+            <ArrowLeft size={15} />
+          </button>
+
+          <div className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] flex items-center justify-center font-mono font-bold text-white text-xs shrink-0">
+            ZP
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">Constrained AI Agent Releases · Proof + Policy + Human Quorum</p>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-extrabold text-base tracking-tight text-white font-sans">
+                ZiniPay
+              </h1>
+              <span className="tag-neutral text-[10px]">
+                Sputnik DAO v2
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] font-mono">
+              Constrained Agent Treasury Layer
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile quick connect button if wallet modal needed */}
+        <div className="md:hidden">
+          <button
+            type="button"
+            onClick={onOpenWalletModal}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold transition-all ${
+              connectedAccount ? 'tag-passed' : 'btn-primary py-1 px-2.5 text-[11px]'
+            }`}
+          >
+            <Wallet size={12} />
+            <span>{connectedAccount ? 'Connected' : 'Wallet'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Status, Balances & Wallet */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* Treasury Balance */}
-        <div className="hidden sm:flex items-center gap-2 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 text-xs font-mono">
-          <span className="text-gray-400">Treasury:</span>
-          <span className="text-emerald-400 font-bold">{treasuryBalance.toFixed(1)} NEAR</span>
+      {/* Controls: Treasury, DAO Selector, Network, Role, Wallet */}
+      <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full md:w-auto">
+        {/* Treasury Balance with Skeleton & Error handling */}
+        <div className="flex items-center gap-2 bg-[var(--bg-panel-alt)] px-2.5 sm:px-3 py-1.5 rounded border border-[var(--border-subtle)] text-xs font-mono">
+          <span className="text-[var(--text-muted)]">Treasury:</span>
+          {treasuryState.status === 'loading' ? (
+            <div className="w-16 h-3.5 bg-gray-800 rounded animate-pulse" />
+          ) : treasuryState.status === 'error' ? (
+            <span
+              className="text-[var(--color-blocked)] font-semibold cursor-help"
+              title={treasuryState.error || 'Failed to query DAO account balance'}
+            >
+              Unavailable
+            </span>
+          ) : (
+            <span className="text-[var(--color-passed)] font-bold">
+              {treasuryState.balance !== undefined ? treasuryState.balance.toFixed(2) : '0.00'} NEAR
+            </span>
+          )}
         </div>
 
         {/* DAO Contract Input */}
-        <div className="flex items-center gap-1.5 bg-gray-900/90 px-3 py-1.5 rounded-xl border border-gray-800 text-xs font-mono">
-          <span className="text-gray-500">DAO:</span>
+        <div className="flex items-center gap-1.5 bg-[var(--bg-panel-alt)] px-2 sm:px-2.5 py-1.5 rounded border border-[var(--border-subtle)] text-xs font-mono flex-1 sm:flex-initial">
+          <span className="text-[var(--text-muted)]">DAO:</span>
           <input
             value={daoContract}
             onChange={(e) => onDaoContractChange(e.target.value)}
-            className="bg-transparent text-white font-mono focus:outline-none w-36 sm:w-48 text-xs font-semibold"
-            placeholder="genesis.sputnikv2.testnet"
+            className="bg-transparent text-white font-mono focus:outline-none w-24 sm:w-36 text-xs font-semibold placeholder:text-gray-600"
+            placeholder="e.g., zinipay.sputnikv2.testnet"
           />
         </div>
 
-        {/* Network Pill / Toggle */}
+        {/* Policy Contract Input */}
+        <div className="flex items-center gap-1.5 bg-[var(--bg-panel-alt)] px-2 sm:px-2.5 py-1.5 rounded border border-[var(--border-subtle)] text-xs font-mono flex-1 sm:flex-initial">
+          <span className="text-[var(--text-muted)]">Policy:</span>
+          <input
+            value={policyContractId}
+            onChange={(e) => onPolicyContractChange(e.target.value)}
+            className="bg-transparent text-white font-mono focus:outline-none w-24 sm:w-36 text-xs font-semibold placeholder:text-gray-600"
+            placeholder="e.g., zinipay-policy.testnet"
+          />
+        </div>
+
+        {/* Network Toggle */}
         <button
+          type="button"
           onClick={() => onNetworkChange(network === 'testnet' ? 'mainnet' : 'testnet')}
-          className={`status-badge border transition-all cursor-pointer font-bold ${
-            network === 'testnet'
-              ? 'bg-amber-400/10 text-amber-400 border-amber-400/30 hover:bg-amber-400/20'
-              : 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20'
-          }`}
-          title="Click to toggle between Testnet and Mainnet"
+          className="tag-neutral cursor-pointer hover:border-[var(--border-strong)] transition-all font-mono py-1 px-2 text-[11px]"
+          title="Toggle between Testnet and Mainnet"
         >
           {network.toUpperCase()} ⟲
         </button>
 
-        {/* Refresh */}
+        {/* Refresh State */}
         <button
+          type="button"
           onClick={onRefresh}
-          className="p-2 rounded-xl hover:bg-white/5 transition-colors text-gray-400 hover:text-white border border-gray-800"
+          className="p-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] transition-colors text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)]"
           title="Refresh on-chain state"
         >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={treasuryState.status === 'loading' ? 'animate-spin' : ''} />
         </button>
 
         {/* Role Switcher */}
         <div className="relative">
           <button
+            type="button"
             onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-700 text-xs font-medium text-gray-200 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-primary)] transition-colors"
           >
-            <Shield size={13} className="text-purple-400" />
-            <span className="capitalize">{activeRole} View</span>
-            <ChevronDown size={13} className="text-gray-400" />
+            <Shield size={12} className="text-[var(--color-passed)]" />
+            <span className="capitalize">{activeRole}</span>
+            <ChevronDown size={12} className="text-[var(--text-muted)]" />
           </button>
 
           {roleMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-xl bg-gray-900 border border-gray-700 shadow-xl py-1 z-50 text-xs font-mono">
+            <div className="absolute right-0 mt-2 w-48 rounded bg-[var(--bg-panel)] border border-[var(--border-strong)] shadow-2xl py-1 z-50 text-xs font-mono">
               {[
-                { id: 'council', label: 'Council / Finance (Vote)', desc: 'Full multi-sig signer' },
-                { id: 'agent', label: 'ZiniPay Agent (Propose)', desc: 'Function-call key only' },
-                { id: 'contributor', label: 'Contributor (Claim)', desc: 'Submit deliverables' },
+                { id: 'council', label: 'Council (Vote)', desc: 'Multi-sig signer seat' },
+                { id: 'agent', label: 'ZiniPay Agent', desc: 'Function-call key only' },
+                { id: 'contributor', label: 'Contributor', desc: 'Submit deliverables' },
               ].map((r) => (
                 <button
                   key={r.id}
+                  type="button"
                   onClick={() => {
                     onRoleChange(r.id as any);
                     setRoleMenuOpen(false);
                   }}
-                  className="w-full text-left px-3 py-2 hover:bg-purple-600/20 flex flex-col transition-colors"
+                  className="w-full text-left px-3 py-2 hover:bg-[var(--bg-panel-alt)] flex flex-col transition-colors"
                 >
                   <div className="flex items-center justify-between text-white font-medium">
                     <span>{r.label}</span>
-                    {activeRole === r.id && <Check size={12} className="text-emerald-400" />}
+                    {activeRole === r.id && <Check size={12} className="text-[var(--color-passed)]" />}
                   </div>
-                  <span className="text-[10px] text-gray-400">{r.desc}</span>
+                  <span className="text-[10px] text-[var(--text-muted)]">{r.desc}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Wallet Connect */}
+        {/* Desktop Wallet Connect Button */}
         <button
+          type="button"
           onClick={onOpenWalletModal}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
+          className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono font-bold transition-all ${
             connectedAccount
-              ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/40 shadow-emerald-600/10'
-              : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-600/30'
+              ? 'tag-passed'
+              : 'btn-primary py-1.5 px-3'
           }`}
         >
-          <Wallet size={14} />
+          <Wallet size={13} />
           {connectedAccount ? (
-            <span className="flex items-center gap-1.5">
-              <span>{connectedAccount}</span>
-              {(connectedAccount.includes('judge-') || connectedAccount.includes('agent.') || connectedAccount === 'alice.testnet') && (
-                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-mono font-bold">
-                  SIMULATION
+            <span className="flex items-center gap-1.5 truncate max-w-[130px] sm:max-w-[180px]">
+              <span className="truncate">{connectedAccount}</span>
+              {(connectedAccount.includes('judge-') || connectedAccount.includes('agent.') || connectedAccount.includes('alice.')) && (
+                <span className="tag-pending text-[9px] px-1 py-0">
+                  SIM
                 </span>
               )}
             </span>
           ) : (
-            'Connect Wallet'
+            <span>Connect wallet</span>
           )}
         </button>
       </div>

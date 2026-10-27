@@ -4,12 +4,13 @@ import { Proposal } from '../lib/types';
 
 interface IntentsModalProps {
   proposal: Proposal | null;
+  daoContractId?: string;
   isOpen: boolean;
   onClose: () => void;
   onSettled?: (proposalId: number, txHash: string) => void;
 }
 
-export function IntentsModal({ proposal, isOpen, onClose, onSettled }: IntentsModalProps) {
+export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, onSettled }: IntentsModalProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [settledTx, setSettledTx] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -96,7 +97,7 @@ export function IntentsModal({ proposal, isOpen, onClose, onSettled }: IntentsMo
             <div className="flex flex-col gap-1">
               <span className="text-[10px] text-gray-400 uppercase font-mono">From Sputnik Treasury</span>
               <span className="font-bold text-white text-base">{proposal.amountNear} NEAR</span>
-              <span className="text-[11px] text-gray-500 font-mono">genesis.sputnikv2.testnet</span>
+              <span className="text-[11px] text-gray-500 font-mono">{daoContractId || 'DAO Treasury'}</span>
             </div>
 
             <div className="p-2.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">

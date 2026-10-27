@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const NETWORK = import.meta.env.VITE_NEAR_NETWORK ?? 'testnet';
-const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? 'genesis.sputnikv2.testnet';
+const DAO_CONTRACT = import.meta.env.VITE_DAO_CONTRACT_ID ?? '';
 
 export interface Proposal {
   id: number;
