@@ -36,7 +36,7 @@ function getConfig(dryRun: boolean = false) {
     network: process.env.NEAR_NETWORK ?? 'testnet',
     accountId: getEnv('NEAR_ACCOUNT_ID', 'zinipay-agent.testnet'),
     privateKey: getEnv('NEAR_PRIVATE_KEY', 'ed25519:3D4YuaHz5ndfUXAUsafDbg16p8837eDemoKeyForDryRun'),
-    daoContractId: getEnv('DAO_CONTRACT_ID', 'zinipay.sputnik-dao.testnet'),
+    daoContractId: getEnv('DAO_CONTRACT_ID', 'zinipay.sputnikv2.testnet'),
     policyContractId: process.env.POLICY_CONTRACT_ID ?? getEnv('POLICY_CONTRACT_ID', 'zinipay-policy.testnet'),
     proposalBond: process.env.PROPOSAL_BOND ?? '1000000000000000000000000',  // 1 NEAR
     dbPath: process.env.DB_PATH ?? './zinipay.json',

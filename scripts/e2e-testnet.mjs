@@ -107,7 +107,7 @@ async function run() {
     console.error('     NEAR_PRIVATE_KEY=ed25519:...');
     console.error('     COUNCIL_ACCOUNT_ID=your-council.testnet');
     console.error('     COUNCIL_PRIVATE_KEY=ed25519:...');
-    console.error('     DAO_CONTRACT_ID=your-dao.sputnik-dao.testnet');
+    console.error('     DAO_CONTRACT_ID=zinipay.sputnikv2.testnet');
     console.error('     POLICY_CONTRACT_ID=your-policy.testnet');
     console.error('     RECIPIENT_ACCOUNT_ID=your-recipient.testnet (must exist on-chain)');
     console.error('     GITHUB_PR_URL=https://github.com/your-org/your-repo/pull/1 (merged PR)');

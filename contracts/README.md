@@ -2,7 +2,7 @@
 
 This directory contains the smart contract and reference architecture for ZiniPay's on-chain policy layer:
 1. **`contracts/policy-helper`**: Custom Rust NEAR smart contract enforcing spend caps, reputation tier multipliers, cooldowns, CID anti-replay, and atomic payouts.
-2. **Sputnik DAO v2 Integration**: Standard Sputnik DAO v2 multisig contracts deployed at `*.sputnik-dao.near` / `*.sputnik-dao.testnet`.
+2. **Sputnik DAO v2 Integration**: Standard Sputnik DAO v2 multisig contracts deployed at `*.sputnik-dao.near` / `*.sputnikv2.testnet`.
 
 ---
 

@@ -48,7 +48,7 @@
                  ▼ add_proposal (Attached NEAR bond)
   ┌──────────────────────────────┐
   │  Sputnik DAO v2 Treasury     │ ◀─── Proposal: FunctionCall -> PolicyHelper::release
-  │  (*.sputnik-dao.testnet)     │
+  │  (*.sputnikv2.testnet)       │
   └──────────────┬───────────────┘
                  │
                  ▼ act_proposal (VoteApprove)
@@ -150,8 +150,8 @@ npm run test:e2e
 | Step | Action | Contract Target | Verification Status |
 | :--- | :--- | :--- | :--- |
 | **1. Pre-Flight** | View `check_policy` | `policy.testnet` | ✅ Passed (Cap: 10 NEAR, Cooldown: 60s) |
-| **2. Propose** | `add_proposal` (FunctionCall) | `your-dao.sputnik-dao.testnet` | ✅ Dispatched with SHA-256 Attestation digest |
-| **3. Vote** | `act_proposal` (`VoteApprove`) | `your-dao.sputnik-dao.testnet` | ✅ Quorum reached; `Approved` status confirmed |
+| **2. Propose** | `add_proposal` (FunctionCall) | `zinipay.sputnikv2.testnet` | ✅ Dispatched with SHA-256 Attestation digest |
+| **3. Vote** | `act_proposal` (`VoteApprove`) | `zinipay.sputnikv2.testnet` | ✅ Quorum reached; `Approved` status confirmed |
 | **4. Payout** | `Promise.transfer` | Contributor Account | ✅ Recipient balance increase verified |
 | **5. Promotion** | `update_reputation` | `policy.testnet` | ✅ Contributor promoted to Silver (Cap: 10 → 15 NEAR) |
 | **6. Attacks** | Replay, Over-Cap, Bad Caller | `policy.testnet` | ✅ 3/3 attacks failed closed with on-chain panics |

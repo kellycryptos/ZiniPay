@@ -73,7 +73,7 @@ export function useNearDao() {
   const fetchAll = useCallback(async () => {
     const isDemo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
 
-    if (!DAO_CONTRACT || DAO_CONTRACT === 'your-dao.sputnik-dao.testnet') {
+    if (!DAO_CONTRACT || DAO_CONTRACT.includes('your-dao')) {
       if (isDemo) {
         // Only return demo mock proposals when explicit ?demo=1 flag is provided
         setProposals([
