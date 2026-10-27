@@ -17,7 +17,7 @@ Traditional cloud AI providers require complete trust in the host operator: inpu
 NEAR AI Cloud executes inference workloads inside hardware-enforced **Trusted Execution Environments (TEEs)**:
 - **Gateway Proxy**: Runs inside an **Intel TDX Confidential VM (CVM)**. It terminates client TLS connections, verifies model attestations, and signs responses.
 - **Model Workers**: Run open-weight LLMs (e.g. `meta-llama/Llama-3.3-70B-Instruct`, `Qwen/Qwen2.5-72B-Instruct`, `deepseek-ai/DeepSeek-V3`) on **NVIDIA Hopper/Blackwell GPUs** protected by NVIDIA Confidential Computing and Intel TDX.
-- **Hardware Attestation**: The CPU and GPU generate cryptographically signed hardware quotes proving that the genuine firmware, boot measurements (RTMRs), and Docker container images are executing without host tampering.
+- **Hardware Attestation**: The CPU and GPU generate cryptographically signed hardware quotes showing that the firmware, boot measurements (RTMRs), and Docker container images match expected values.
 
 ---
 

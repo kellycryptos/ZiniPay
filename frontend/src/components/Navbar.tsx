@@ -58,7 +58,7 @@ export function Navbar({
   };
 
   return (
-    <header className="border-b border-[var(--border-subtle)] px-3 sm:px-6 h-15 flex items-center justify-between bg-[var(--bg-canvas)]/95 backdrop-blur-md sticky top-0 z-40 w-full max-w-full">
+    <header className="border-b border-[var(--border-subtle)] px-3 sm:px-6 h-15 flex items-center justify-between bg-[var(--bg-canvas)]/95 backdrop-blur-md sticky top-0 z-40 w-full max-w-full overflow-hidden">
       {/* Left: Brand & Return to Landing */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
@@ -71,26 +71,26 @@ export function Navbar({
           <ArrowLeft size={16} />
         </button>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           <img
             src="/brand/logo-mark.svg"
             alt="ZiniPay Logo"
             className="w-7 h-7 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-1 shrink-0"
           />
-          <span className="font-bold text-base tracking-tight text-white font-sans">
+          <span className="font-bold text-base tracking-tight text-white font-sans shrink-0">
             ZiniPay
           </span>
         </div>
       </div>
 
       {/* Right: Connection Settings Popover & Account Menu */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
         {/* Connection Button & Popover */}
-        <div className="relative" ref={connectionRef}>
+        <div className="relative shrink-0" ref={connectionRef}>
           <button
             type="button"
             onClick={() => setConnectionOpen(!connectionOpen)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-sans font-medium transition-colors border ${
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded text-xs font-sans font-medium transition-colors border ${
               connectionOpen
                 ? 'bg-[var(--bg-panel-alt)] text-white border-[var(--border-strong)]'
                 : 'bg-transparent hover:bg-[var(--bg-panel-alt)] text-[var(--text-secondary)] hover:text-white border-[var(--border-subtle)]'

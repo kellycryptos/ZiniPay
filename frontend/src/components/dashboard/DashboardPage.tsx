@@ -120,9 +120,9 @@ export function DashboardPage({
       )}
 
       {/* Main Two-Column Layout */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start w-full min-w-0 max-w-full">
+      <div className="flex flex-col lg:flex-row gap-6 lg:items-start w-full min-w-0 max-w-full overflow-hidden">
         {/* ── Left Rail (Narrow: 250px) ────────────────────────── */}
-        <aside className="w-full lg:w-64 shrink-0 min-w-0 max-w-full">
+        <aside className="w-full lg:w-64 shrink-0 min-w-0 max-w-full overflow-hidden">
           <PolicyPanel
             treasuryBalance={treasuryState.balance}
             treasuryLoading={treasuryState.status === 'loading'}
@@ -136,73 +136,75 @@ export function DashboardPage({
         </aside>
 
         {/* ── Main Area (Approval Queue / Form / Security) ────── */}
-        <main className="flex-1 w-full min-w-0 max-w-full flex flex-col gap-4">
+        <main className="flex-1 w-full min-w-0 max-w-full flex flex-col gap-4 overflow-hidden">
           {/* Plain Underline Tabs */}
-          <div className="border-b border-[var(--border-subtle)] w-full max-w-full overflow-x-auto no-scrollbar">
-            <nav className="flex gap-4 sm:gap-6 text-sm min-w-max pb-0.5" aria-label="Queue views">
-              <button
-                type="button"
-                onClick={() => setTab('pending')}
-                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
-                  tab === 'pending'
-                    ? 'border-[var(--color-passed)] text-white'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-                }`}
-              >
-                <span>Pending approval</span>
-                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({pendingCount})</span>
-              </button>
+          <div className="border-b border-[var(--border-subtle)] w-full max-w-full overflow-hidden">
+            <div className="w-full overflow-x-auto no-scrollbar">
+              <nav className="flex gap-4 sm:gap-6 text-sm whitespace-nowrap w-max pb-0.5" aria-label="Queue views">
+                <button
+                  type="button"
+                  onClick={() => setTab('pending')}
+                  className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                    tab === 'pending'
+                      ? 'border-[var(--color-passed)] text-white'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span>Pending approval</span>
+                  <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({pendingCount})</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setTab('paid')}
-                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
-                  tab === 'paid'
-                    ? 'border-[var(--color-passed)] text-white'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-                }`}
-              >
-                <span>Paid</span>
-                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({paidCount})</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('paid')}
+                  className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                    tab === 'paid'
+                      ? 'border-[var(--color-passed)] text-white'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span>Paid</span>
+                  <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({paidCount})</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setTab('all')}
-                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
-                  tab === 'all'
-                    ? 'border-[var(--color-passed)] text-white'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-                }`}
-              >
-                <span>All</span>
-                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({totalCount})</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('all')}
+                  className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                    tab === 'all'
+                      ? 'border-[var(--color-passed)] text-white'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span>All</span>
+                  <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({totalCount})</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setTab('new_payout')}
-                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
-                  tab === 'new_payout'
-                    ? 'border-[var(--color-passed)] text-white'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-                }`}
-              >
-                <span>New payout</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('new_payout')}
+                  className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                    tab === 'new_payout'
+                      ? 'border-[var(--color-passed)] text-white'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span>New payout</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setTab('security')}
-                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
-                  tab === 'security'
-                    ? 'border-[var(--color-passed)] text-white'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-                }`}
-              >
-                <span>Security log</span>
-              </button>
-            </nav>
+                <button
+                  type="button"
+                  onClick={() => setTab('security')}
+                  className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                    tab === 'security'
+                      ? 'border-[var(--color-passed)] text-white'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                  }`}
+                >
+                  <span>Security log</span>
+                </button>
+              </nav>
+            </div>
           </div>
 
           {/* Queue Sub-Toolbar (Legend & Controls) */}

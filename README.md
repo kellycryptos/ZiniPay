@@ -123,11 +123,28 @@ ZiniPay is architected to **fail closed**. All security assertions are tested in
 - **Exact Error**: `Nonce mismatch: expected <nonce>..., got <nonce>...`
 - **Unit Test**: Test 6 in `agent/test/deliberation.test.ts`.
 
-### 5. Stolen / Author Mismatch PR
-- **Attack**: Attacker submits a merged GitHub PR authored by someone else.
-- **Enforcement**: Validated by `verifyArtifact` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts#L160).
-- **Exact Error**: `PR author (<author>) does not match recipient handle (<handles>)`
-- **Unit Test**: Test 1 in `agent/test/deliberation.test.ts` and step 2 in `scripts/e2e-testnet.mjs`.
+### 5. Stolen / Unbound PR Attack & Cryptographic Identity Binding
+- **Attack**: An attacker submits a merged GitHub PR authored by someone else, or a PR without verifiable on-chain binding to their NEAR account.
+- **Enforcement**: Validated by `verifyArtifact` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts). The agent strictly requires:
+  1. The PR is merged.
+  2. The PR author matches the claimed recipient GitHub handle.
+  3. The PR description (body) contains the explicit binding line: `zinipay-recipient: <recipient.testnet>`.
+- **Exact Errors**:
+  - Missing binding: `PR description missing required "zinipay-recipient: <near account id>" binding`
+  - Recipient mismatch: `PR zinipay-recipient binding ("<account>") does not match recipient account ("<expected>")`
+  - Author mismatch: `PR author (<author>) does not match recipient handle (<handles>)`
+- **Unit Tests**: Tests 1b.1 – 1b.4 in `agent/test/deliberation.test.ts`.
+
+---
+
+## 👥 Strict Role Separation Architecture
+
+ZiniPay enforces absolute role separation between automated agents and human signers:
+1. **Agent Account (`AGENT_ACCOUNT_ID`)**: Operates strictly under a `Requestor` role. It can file proposals (`add_proposal`) but holds zero council seats and zero voting power (`*:VoteApprove`).
+2. **Council Member 1 (`COUNCIL_ACCOUNT_ID`)**: First human council multi-sig member.
+3. **Council Member 2 (`COUNCIL2_ACCOUNT_ID`)**: Second human council multi-sig member. Quorum requires both votes to reach threshold.
+4. **Recipient (`RECIPIENT_ACCOUNT_ID`)**: Distinct external contributor account. Cannot be an agent or council member.
+5. **PolicyHelper Contract (`POLICY_CONTRACT_ID`)**: Owned by Council Member 1, strictly bound to `DAO_CONTRACT_ID`.
 
 ---
 
@@ -136,25 +153,29 @@ ZiniPay is architected to **fail closed**. All security assertions are tested in
 The repository contains an automated end-to-end verification script ([`scripts/e2e-testnet.mjs`](file:///scripts/e2e-testnet.mjs)) executing the complete on-chain lifecycle:
 
 ```bash
-# Configure funded testnet credentials in agent/.env:
-#   AGENT_ACCOUNT_ID=... AGENT_PRIVATE_KEY=...
-#   COUNCIL_ACCOUNT_ID=... COUNCIL_PRIVATE_KEY=...
-#   DAO_CONTRACT_ID=... POLICY_CONTRACT_ID=...
-#   RECIPIENT_ACCOUNT_ID=...
+# Configure distinct testnet credentials in agent/.env:
+#   AGENT_ACCOUNT_ID=zinipay-agent.testnet
+#   COUNCIL_ACCOUNT_ID=council1.testnet
+#   COUNCIL2_ACCOUNT_ID=council2.testnet
+#   RECIPIENT_ACCOUNT_ID=contributor.testnet
+#   DAO_CONTRACT_ID=zinipay-demo.sputnikv2.testnet
+#   GITHUB_PR_URL=https://github.com/your-org/your-repo/pull/1
+#   STOLEN_PR_URL=https://github.com/second-account/another-repo/pull/1
 
 npm run test:e2e
 ```
 
-### Verified Transaction Lifecycle Output
+### Verified Multi-Sig Lifecycle Output
 
-| Step | Action | Contract Target | Verification Status |
+| Step | Action | Contract Target | Verification Mechanism |
 | :--- | :--- | :--- | :--- |
-| **1. Pre-Flight** | View `check_policy` | `policy.testnet` | ✅ Passed (Cap: 10 NEAR, Cooldown: 60s) |
-| **2. Propose** | `add_proposal` (FunctionCall) | `zinipay.sputnikv2.testnet` | ✅ Dispatched with SHA-256 Attestation digest |
-| **3. Vote** | `act_proposal` (`VoteApprove`) | `zinipay.sputnikv2.testnet` | ✅ Quorum reached; `Approved` status confirmed |
-| **4. Payout** | `Promise.transfer` | Contributor Account | ✅ Recipient balance increase verified |
-| **5. Promotion** | `update_reputation` | `policy.testnet` | ✅ Contributor promoted to Silver (Cap: 10 → 15 NEAR) |
-| **6. Attacks** | Replay, Over-Cap, Bad Caller | `policy.testnet` | ✅ 3/3 attacks failed closed with on-chain panics |
+| **1. Role Separation** | Pre-Flight Validation | Agent / Council / Recipient | ✅ Assert `agent != council1 != council2 != recipient` |
+| **2. Identity Binding** | PR Body Verification | GitHub REST API | ✅ Verified `zinipay-recipient: <account>` binding |
+| **3. Propose** | `add_proposal` (Attached Bond) | Sputnik DAO v2 | ✅ Filed by Agent with SHA-256 Attestation digest |
+| **4. Human Vote 1** | `act_proposal` (`VoteApprove`) | Sputnik DAO v2 | ✅ Council 1 votes; proposal remains `InProgress` |
+| **5. Human Vote 2** | `act_proposal` (`VoteApprove`) | Sputnik DAO v2 | ✅ Council 2 votes; proposal transitions to `Approved` |
+| **6. Payout Receipt** | Receipt Transfer Action | Contributor Account | ✅ Confirmed exact transfer deposit in tx receipt chain |
+| **7. Policy Guardrails** | Replay, Over-Cap, Caller | `PolicyHelper` | ✅ 3/3 attacks fail closed with verified on-chain panics |
 
 *(Per hackathon anti-fabrication rules, live transaction hashes are output strictly from live RPC execution).*
 

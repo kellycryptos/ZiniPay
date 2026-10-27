@@ -120,3 +120,22 @@ Rather than another generic Web3 dark theme or copying GitHub Primer dark tokens
 | **Static Status Badges** | Badges like "Active Guardrail" or "FAIL-CLOSED PIPELINE" showed green regardless of contract connectivity. | Deleted all static assertion badges. Only dynamic on-chain reads produce status tags. |
 | **All-Monospace Body Text** | Monospace text across paragraphs fatigued reading and destroyed visual hierarchy. | Switched to `Plus Jakarta Sans` for all UI text, headings, and body copy. Reserved `IBM Plex Mono` exclusively for hashes, IDs, and numeric tokens. |
 | **Capitalized Tracked Micro-Labels** | `GATE 01 [PROOF]:`, `RECIPIENT:`, `AMOUNT:` felt like a template. | Clean sentence case: `Recipient`, `Amount`, `Deliverable CID`, `Proof`, `Policy`, `Council quorum`. |
+
+---
+
+## 6. Cryptographic Identity Binding & Role Separation Invariants
+
+1. **PR Description Identity Binding**:
+   - The agent's deliverable verification gate requires the PR body to include an explicit binding tag:
+     ```text
+     zinipay-recipient: yourname.testnet
+     ```
+   - Only the PR author or repository maintainers can modify this text on GitHub.
+   - The agent extracts this line via GitHub REST API and matches it against the payout recipient. This directly binds GitHub identity to the on-chain NEAR account without third-party or centralized oracles.
+   - If missing, or if the account differs, the deliberation engine rejects the deliverable fail-closed.
+
+2. **Role Separation Architecture**:
+   - **Agent (`AGENT_ACCOUNT_ID`)**: Functions strictly as a proposer/requestor. It attaches proposal bonds but possesses zero council voting permissions.
+   - **Council Members 1 & 2 (`COUNCIL_ACCOUNT_ID`, `COUNCIL2_ACCOUNT_ID`)**: Human multi-sig signers. A proposal requires 2 of 2 votes to transition from `InProgress` to `Approved`.
+   - **Recipient (`RECIPIENT_ACCOUNT_ID`)**: Distinct contributor account receiving funds. Pre-flight checks fail loudly if the agent or council collides with the recipient.
+   - **Policy Contract Owner**: Owned by human Council Member 1 and bound to the DAO contract ID.

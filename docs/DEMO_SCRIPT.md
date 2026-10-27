@@ -55,7 +55,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
 - **Voiceover**:
   > *"On the ZiniPay dashboard, council members and contributors see live data straight from Sputnik DAO RPC.
   >
-  > Every proposal clearly displays its decoded action, target contract, and verified attestation reference. Council members can review the work and cast their multi-sig vote in one click.
+  > Every proposal clearly displays its decoded action, target contract, and attestation reference. Council members can review the work and cast their multi-sig vote in one click.
   >
   > In the sidebar, our 'Attack Attempts' audit panel provides full transparency into blocked exploits—showing replayed CIDs, spend cap violations, and unauthorized callers caught by our contract guardrails.
   >

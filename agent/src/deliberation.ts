@@ -173,9 +173,27 @@ export async function verifyArtifact(
         };
       }
 
+      // Check PR body binding: "zinipay-recipient: <near account id>"
+      const body = pr.body || '';
+      const recipientMatch = body.match(/^[ \t]*zinipay-recipient:[ \t]*([^\r\n]+)/im);
+      if (!recipientMatch) {
+        return {
+          verified: false,
+          reason: `PR description missing required "zinipay-recipient: <near account id>" binding`,
+        };
+      }
+
+      const boundRecipient = recipientMatch[1].trim();
+      if (boundRecipient.toLowerCase() !== recipientId.trim().toLowerCase()) {
+        return {
+          verified: false,
+          reason: `PR zinipay-recipient binding ("${boundRecipient}") does not match recipient account ("${recipientId}")`,
+        };
+      }
+
       return {
         verified: true,
-        reason: `Verified merged GitHub PR #${pullNumber} by @${authorLogin}`,
+        reason: `Verified merged GitHub PR #${pullNumber} by @${authorLogin} bound to ${recipientId}`,
       };
     } catch (err: any) {
       return {

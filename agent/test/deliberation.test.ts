@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { MultiAgentDeliberationEngine, verifyArtifact, verifyAttestationReport } from '../src/deliberation.js';
 import { DeliverableValidator } from '../src/validator.js';
 
@@ -8,6 +9,67 @@ export async function runDeliberationTests() {
   const art1 = await verifyArtifact('not-a-valid-proof', 'alice.testnet');
   console.assert(!art1.verified, 'Invalid deliverable must not be verified');
   console.log('✓ Test 1: Invalid deliverable fails verification');
+
+  // Test 1b: GitHub PR identity binding tests (zinipay-recipient: <account>)
+  const originalAxiosGet = axios.get;
+  let mockPrData: any = null;
+
+  (axios as any).get = async (url: string, config: any) => {
+    if (url.includes('api.github.com/repos/')) {
+      if (mockPrData) {
+        return { status: 200, data: mockPrData };
+      }
+      return { status: 404, data: {} };
+    }
+    return originalAxiosGet(url, config);
+  };
+
+  try {
+    // 1. matching line passes
+    mockPrData = {
+      merged: true,
+      user: { login: 'alice' },
+      body: 'Implemented bounty feature.\nzinipay-recipient: alice.testnet\nDone.',
+    };
+    const resPass = await verifyArtifact('https://github.com/org/repo/pull/1', 'alice.testnet', 'alice');
+    console.assert(resPass.verified, 'Matching recipient binding line and author must pass');
+    console.log('✓ Test 1b.1: Matching zinipay-recipient line passes');
+
+    // 2. missing line fails
+    mockPrData = {
+      merged: true,
+      user: { login: 'alice' },
+      body: 'Implemented bounty feature without binding line.',
+    };
+    const resMissing = await verifyArtifact('https://github.com/org/repo/pull/1', 'alice.testnet', 'alice');
+    console.assert(!resMissing.verified, 'Missing zinipay-recipient line must fail');
+    console.assert(resMissing.reason.includes('missing required "zinipay-recipient'), 'Reason must cite missing binding');
+    console.log('✓ Test 1b.2: Missing zinipay-recipient line fails');
+
+    // 3. a different account fails
+    mockPrData = {
+      merged: true,
+      user: { login: 'alice' },
+      body: 'Implemented bounty feature.\nzinipay-recipient: eve.testnet',
+    };
+    const resDifferent = await verifyArtifact('https://github.com/org/repo/pull/1', 'alice.testnet', 'alice');
+    console.assert(!resDifferent.verified, 'Different recipient account binding must fail');
+    console.assert(resDifferent.reason.includes('does not match recipient account'), 'Reason must cite recipient mismatch');
+    console.log('✓ Test 1b.3: Different recipient account in binding fails');
+
+    // 4. a merged PR by another author fails even if the body contains the line
+    mockPrData = {
+      merged: true,
+      user: { login: 'mallory' },
+      body: 'Stolen PR work.\nzinipay-recipient: alice.testnet',
+    };
+    const resStolen = await verifyArtifact('https://github.com/org/repo/pull/1', 'alice.testnet', 'alice');
+    console.assert(!resStolen.verified, 'PR by another author must fail even with binding line');
+    console.assert(resStolen.reason.includes('does not match recipient handle'), 'Reason must cite author mismatch');
+    console.log('✓ Test 1b.4: Merged PR by another author fails even if body contains the line');
+  } finally {
+    axios.get = originalAxiosGet;
+  }
 
   // Test 2: MultiAgentDeliberationEngine fails closed without key in live mode
   const engine = new MultiAgentDeliberationEngine({

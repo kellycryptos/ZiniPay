@@ -204,7 +204,7 @@ export function StepByStepProposeForm({
           status: 'passed',
           reason: `Multi-agent consensus passed (${delib?.inspector?.score || 88}/100 confidence). Attestation generated.`,
           score: delib?.inspector?.score || 88,
-          attestationSummary: delib?.attestationSummary || 'Verified by NEAR AI Cloud TEE',
+          attestationSummary: delib?.attestationSummary || 'Report received (not independently verified)',
         });
 
         setCurrentStep(5);

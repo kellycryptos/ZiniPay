@@ -236,7 +236,7 @@ export default function App() {
   const isAppRoute = currentPath.startsWith('/app');
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
       {/* Toast Notification */}
       {toastMessage && (
         <aside aria-label="Notification" className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded bg-[var(--bg-panel-alt)] text-[var(--color-passed)] border border-[var(--color-passed-border)] shadow-2xl text-xs font-mono">
@@ -291,7 +291,7 @@ export default function App() {
 
       {/* Route Switcher */}
       {isAppRoute ? (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
           {/* Dashboard Navbar */}
           <Navbar
             network={network}
@@ -317,7 +317,7 @@ export default function App() {
           />
 
           {/* Dashboard Page */}
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
             <DashboardPage
               proposals={proposals}
               activities={activities}
