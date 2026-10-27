@@ -1,0 +1,19 @@
+name: build-wasm
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo test
+        working-directory: contracts/policy-helper
+      - run: cargo install cargo-near --locked
+      - run: cargo near build non-reproducible-wasm --no-abi
+        working-directory: contracts/policy-helper
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zinipay_policy_helper
+          path: contracts/policy-helper/target/near/*.wasm
