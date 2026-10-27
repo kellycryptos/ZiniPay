@@ -80,6 +80,15 @@ export function ReleaseReceiptCard({
       return;
     }
 
+    if (proposal.simulated) {
+      setPolicyCheck({
+        status: proposal.policy?.withinCap ? 'passed' : 'failed',
+        reason: proposal.policy?.withinCap ? 'Simulated check: within cap & limits' : 'Simulated check: cap exceeded',
+        checking: false,
+      });
+      return;
+    }
+
     if (isInProgress) {
       if (!policyContractId || !policyContractId.trim()) {
         setPolicyCheck({ status: 'unknown', reason: 'Policy contract not configured', checking: false });
@@ -136,25 +145,24 @@ export function ReleaseReceiptCard({
     : null;
 
   return (
-    <article className="receipt-card p-5 font-mono text-xs text-slate-300 transition-all hover:border-[var(--border-strong)]">
+    <article className="receipt-card p-4 sm:p-5 text-xs text-[var(--text-receipt)] transition-all w-full max-w-full">
       {/* Receipt Top Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)] text-[11px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border-receipt)] text-xs gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[var(--text-muted)] font-mono">RECEIPT</span>
-          <span className="font-bold text-white tracking-wider">#ZP-{proposal.id}</span>
+          <span className="font-semibold text-[var(--text-receipt)]">Release receipt #{proposal.id}</span>
           {!isZinipay && (
-            <span className="tag-neutral text-[10px]">
+            <span className="tag-neutral text-[11px]">
               Not a ZiniPay release
             </span>
           )}
           {proposal.simulated && (
-            <span className="tag-pending font-bold tracking-wider">
-              SIMULATION
+            <span className="tag-pending text-[11px] font-medium">
+              Simulation
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--text-muted)]">{proposal.createdAt}</span>
+        <div className="flex items-center gap-2.5 justify-between sm:justify-end">
+          <span className="text-[var(--text-receipt-muted)] text-xs">{proposal.createdAt}</span>
           <span
             className={
               proposal.status === 'settled' || proposal.status === 'approved'
@@ -164,16 +172,26 @@ export function ReleaseReceiptCard({
                 : 'tag-pending'
             }
           >
-            {proposal.status.toUpperCase().replace('_', ' ')}
+            {proposal.status === 'pending_quorum'
+              ? 'Pending approval'
+              : proposal.status === 'settled' || proposal.status === 'approved'
+              ? 'Paid'
+              : proposal.status === 'rejected'
+              ? 'Rejected'
+              : proposal.status === 'failed'
+              ? 'Failed'
+              : proposal.status === 'expired'
+              ? 'Expired'
+              : proposal.status}
           </span>
         </div>
       </div>
 
       {/* Task Description */}
       <div className="py-3 font-sans">
-        <h4 className="font-semibold text-sm text-white tracking-tight leading-snug">{proposal.title}</h4>
+        <h4 className="font-semibold text-sm text-[var(--text-receipt)] tracking-tight leading-snug">{proposal.title}</h4>
         {proposal.summary && (
-          <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono leading-relaxed line-clamp-2">
+          <p className="text-xs text-[var(--text-receipt-secondary)] mt-1.5 leading-relaxed line-clamp-2">
             {proposal.summary}
           </p>
         )}
@@ -181,16 +199,16 @@ export function ReleaseReceiptCard({
 
       <div className="ledger-perforation" />
 
-      {/* Monospace Tabular Rows */}
-      <div className="flex flex-col gap-2 py-1 text-[11px]">
+      {/* Clean Tabular Rows */}
+      <div className="flex flex-col gap-2.5 py-1 text-xs">
         {/* Recipient */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)] tracking-wider">RECIPIENT:</span>
+          <span className="text-[var(--text-receipt-muted)]">Recipient</span>
           <div className="flex items-center gap-2 truncate">
-            <span className="text-white font-semibold truncate">{proposal.recipient}</span>
+            <span className="text-[var(--text-receipt)] font-mono font-medium truncate">{proposal.recipient}</span>
             {isZinipay && proposal.settlement.type === 'cross_chain_intent' && (
               <span className="tag-neutral text-[10px]">
-                INTENTS → {proposal.settlement.targetChain.toUpperCase()}
+                Intents to {proposal.settlement.targetChain}
               </span>
             )}
           </div>
@@ -198,20 +216,20 @@ export function ReleaseReceiptCard({
 
         {/* Amount */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)] tracking-wider">AMOUNT:</span>
+          <span className="text-[var(--text-receipt-muted)]">Amount</span>
           <div className="flex items-center gap-2">
-            <span className="text-white font-bold">{proposal.amountNear} NEAR</span>
+            <span className="text-[var(--text-receipt)] font-mono font-semibold">{proposal.amountNear} NEAR</span>
             {isZinipay && proposal.settlement.quoteEstimate && (
-              <span className="text-[var(--text-secondary)] text-[10px]">({proposal.settlement.quoteEstimate})</span>
+              <span className="text-[var(--text-receipt-secondary)] font-mono text-[11px]">({proposal.settlement.quoteEstimate})</span>
             )}
           </div>
         </div>
 
         {/* Deliverable Evidence */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)] tracking-wider">DELIVERABLE:</span>
-          <span className="text-[var(--text-secondary)] truncate max-w-[240px] sm:max-w-xs" title={proposal.proofCid}>
-            {proposal.proofCid ? proposal.proofCid : 'N/A (Standard Sputnik DAO proposal)'}
+          <span className="text-[var(--text-receipt-muted)]">Deliverable CID</span>
+          <span className="text-[var(--text-receipt-secondary)] font-mono truncate max-w-[190px] sm:max-w-xs break-all" title={proposal.proofCid}>
+            {proposal.proofCid ? proposal.proofCid : 'Not applicable'}
           </span>
         </div>
 
@@ -219,7 +237,7 @@ export function ReleaseReceiptCard({
 
         {/* Gate 1: Proof */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)]">GATE 01 [PROOF]:</span>
+          <span className="text-[var(--text-receipt-muted)]">Proof</span>
           {!isZinipay ? (
             <span className="tag-neutral">Not a ZiniPay release</span>
           ) : (
@@ -233,7 +251,7 @@ export function ReleaseReceiptCard({
          * ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
          * │ ZINIPAY GATE VERIFICATION MATRIX BY PROPOSAL LIFECYCLE                                                 │
          * ├──────────────────┬─────────────────────────────┬───────────────────────────┬───────────────────────────┤
-         * │ Status           │ Gate 01 [Proof]             │ Gate 02 [Policy]          │ Gate 03 [Quorum]          │
+         * │ Status           │ Proof                       │ Policy                    │ Quorum                    │
          * ├──────────────────┼─────────────────────────────┼───────────────────────────┼───────────────────────────┤
          * │ InProgress       │ Claimed (not on-chain)      │ Live check_policy view    │ Real-time council votes   │
          * │ Approved/Settled │ Claimed (not on-chain)      │ "Executed on-chain"       │ Consensus reached         │
@@ -246,21 +264,21 @@ export function ReleaseReceiptCard({
          */}
         {/* Gate 2: Policy */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)]">GATE 02 [POLICY]:</span>
+          <span className="text-[var(--text-receipt-muted)]">Policy</span>
           {!isZinipay ? (
             <span className="tag-neutral">Not a ZiniPay release</span>
           ) : isInProgress ? (
             policyCheck.checking ? (
               <span className="tag-pending">
-                <Clock size={10} className="animate-spin inline mr-1" /> Evaluating check_policy view...
+                <Clock size={11} className="animate-spin inline mr-1" /> Evaluating check_policy view...
               </span>
             ) : policyCheck.status === 'passed' ? (
               <span className="tag-passed">
-                <Check size={10} /> PASS · Would pass if executed now
+                <Check size={11} /> Passed · Would pass if executed now
               </span>
             ) : policyCheck.status === 'failed' ? (
               <span className="tag-blocked" title={policyCheck.reason}>
-                <X size={10} /> BLOCKED · Would be blocked now: {policyCheck.reason || 'Policy violation'}
+                <X size={11} /> Blocked · Would be blocked now: {policyCheck.reason || 'Policy violation'}
               </span>
             ) : (
               <span className="tag-pending">
@@ -269,17 +287,12 @@ export function ReleaseReceiptCard({
             )
           ) : isApproved ? (
             <span className="tag-passed">
-              <Check size={10} /> PASS · Executed on-chain
+              <Check size={11} /> Passed · Executed on-chain
               {onChainCidUsed === true && ' (cid_used: verified)'}
-              {proposal.submissionTime && (
-                <span className="text-[var(--text-muted)] text-[10px] ml-1 font-mono">
-                  [TS:{proposal.submissionTime.slice(0, 10)}]
-                </span>
-              )}
             </span>
           ) : isFailed ? (
             <span className="tag-blocked">
-              <X size={10} /> FAILED · Release did not execute {proposal.executionError ? `(${proposal.executionError})` : ''}
+              <X size={11} /> Failed · Release did not execute {proposal.executionError ? `(${proposal.executionError})` : ''}
             </span>
           ) : (
             <span className="tag-neutral">
@@ -290,77 +303,67 @@ export function ReleaseReceiptCard({
 
         {/* Gate 3: Quorum */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)]">GATE 03 [QUORUM]:</span>
+          <span className="text-[var(--text-receipt-muted)]">Council quorum</span>
           {!isZinipay ? (
             <span className="tag-neutral">Not a ZiniPay release</span>
           ) : quorumStatus === 'passed' ? (
             <span className="tag-passed">
-              <Check size={10} /> PASSED · Quorum Reached ({proposal.votes.approve}/{proposal.votes.required})
+              <Check size={11} /> Passed · Quorum reached ({proposal.votes.approve} of {proposal.votes.required} votes)
             </span>
           ) : quorumStatus === 'blocked' ? (
             <span className="tag-blocked">
-              <X size={10} /> REJECTED · Council Veto
+              <X size={11} /> Rejected · Council veto
             </span>
           ) : (
             <span className="tag-pending">
-              <Clock size={10} /> PENDING · {proposal.votes.approve}/{proposal.votes.required} Council Votes
-            </span>
-          )}
-        </div>
-
-        {/* Attestation Status */}
-        <div className="ledger-row">
-          <span className="text-[var(--text-muted)]">ATTESTATION:</span>
-          {!isZinipay ? (
-            <span className="tag-neutral">Not a ZiniPay release</span>
-          ) : (
-            <span className="tag-pending" title="Attestation hash was provided in proposal description by the proposer and cannot be verified on-chain without an on-chain verifier contract.">
-              Claimed in proposal description (not verified on-chain)
+              <Clock size={11} /> Pending · {proposal.votes.approve} of {proposal.votes.required} council votes
             </span>
           )}
         </div>
 
         {/* Vote Counts */}
         <div className="ledger-row">
-          <span className="text-[var(--text-muted)]">VOTES:</span>
-          <span className="text-white">
-            <strong className="text-[var(--color-passed)]">{proposal.votes.approve} APPROVE</strong> /{' '}
-            <strong className="text-[var(--color-blocked)]">{proposal.votes.reject} REJECT</strong> (REQ: {proposal.votes.required})
+          <span className="text-[var(--text-receipt-muted)]">Votes</span>
+          <span className="text-[var(--text-receipt)] text-xs">
+            <span className="text-[var(--color-passed)] font-semibold">{proposal.votes.approve} approve</span>
+            <span className="text-[var(--text-receipt-muted)] mx-1.5">/</span>
+            <span className="text-[var(--color-blocked)] font-semibold">{proposal.votes.reject} reject</span>
+            <span className="text-[var(--text-receipt-muted)] ml-1.5">({proposal.votes.required} required)</span>
           </span>
         </div>
 
         {/* Explorer / Tx Link */}
-        <div className="ledger-row pt-1">
-          <span className="text-[var(--text-muted)]">TX RECORD:</span>
+        <div className="ledger-row pt-0.5">
+          <span className="text-[var(--text-receipt-muted)]">On-chain record</span>
           {explorerLinkTarget ? (
             <a
               href={explorerLinkTarget}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--color-passed)] hover:underline flex items-center gap-1"
+              className="text-[var(--text-receipt-secondary)] hover:text-[var(--text-receipt)] hover:underline flex items-center gap-1 font-mono text-xs"
             >
               <span>{proposal.txHash ? `${proposal.txHash.slice(0, 16)}...` : daoContractId || 'Sputnik DAO'}</span>
               <ExternalLink size={10} />
             </a>
           ) : (
-            <span className="text-[var(--text-muted)]">On-Chain Proposal #{proposal.id}</span>
+            <span className="text-[var(--text-receipt-muted)] font-mono text-xs">Proposal #{proposal.id}</span>
           )}
         </div>
       </div>
 
       {/* Action Bar */}
       {showActions && (
-        <div className="pt-3 mt-2 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-2">
-          {/* Secondary Inspection Buttons (Only for ZiniPay releases) */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="pt-3 mt-2 border-t border-[var(--border-receipt)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Inspection Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
             {isZinipay && onInspectProof && (
               <button
                 type="button"
                 onClick={() => onInspectProof(proposal)}
-                className="px-2.5 py-1 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[11px] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors flex items-center gap-1"
+                className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5 cursor-pointer"
               >
-                <FileText size={11} />
-                <span>Proof</span>
+                <FileText size={12} />
+                <span>Deliverable proof</span>
               </button>
             )}
 
@@ -368,10 +371,10 @@ export function ReleaseReceiptCard({
               <button
                 type="button"
                 onClick={() => onInspectDeliberation(proposal)}
-                className="px-2.5 py-1 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[11px] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors flex items-center gap-1"
+                className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5 cursor-pointer"
               >
-                <Cpu size={11} />
-                <span>Deliberation</span>
+                <Cpu size={12} />
+                <span>Deliberation details</span>
               </button>
             )}
 
@@ -379,32 +382,32 @@ export function ReleaseReceiptCard({
               <button
                 type="button"
                 onClick={() => onExecuteIntent(proposal)}
-                className="px-2.5 py-1 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[11px] text-[var(--color-pending)] border border-[var(--color-pending-border)] transition-colors flex items-center gap-1"
+                className="btn-secondary text-xs py-1 px-2.5 flex items-center gap-1.5 text-[var(--color-pending)] cursor-pointer"
               >
-                <Globe size={11} />
-                <span>Intents</span>
+                <Globe size={12} />
+                <span>Intents settlement</span>
               </button>
             )}
           </div>
 
           {/* Voting Actions for Council */}
           {onVote && proposal.status === 'pending_quorum' && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
               <button
                 type="button"
                 onClick={() => onVote(proposal.id, true)}
-                className="px-3 py-1 rounded bg-[var(--color-passed-bg)] hover:bg-[rgba(0,236,151,0.18)] text-[var(--color-passed)] border border-[var(--color-passed-border)] font-bold transition-colors flex items-center gap-1 text-[11px]"
+                className="btn-primary text-xs py-1 px-3 flex items-center gap-1.5 flex-1 sm:flex-initial justify-center cursor-pointer"
               >
-                <Check size={12} />
-                <span>Vote Approve</span>
+                <Check size={13} />
+                <span>Approve payout</span>
               </button>
               <button
                 type="button"
                 onClick={() => onVote(proposal.id, false)}
-                className="px-3 py-1 rounded bg-[var(--color-blocked-bg)] hover:bg-[rgba(255,77,77,0.18)] text-[var(--color-blocked)] border border-[var(--color-blocked-border)] font-bold transition-colors flex items-center gap-1 text-[11px]"
+                className="btn-secondary text-xs py-1 px-3 flex items-center gap-1.5 text-[var(--color-blocked)] hover:text-white hover:bg-[var(--color-blocked)] hover:border-[var(--color-blocked)] cursor-pointer"
               >
-                <X size={12} />
-                <span>Vote Reject</span>
+                <X size={13} />
+                <span>Reject</span>
               </button>
             </div>
           )}

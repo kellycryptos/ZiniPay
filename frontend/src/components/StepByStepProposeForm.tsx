@@ -337,31 +337,28 @@ export function StepByStepProposeForm({
   };
 
   return (
-    <div className="ledger-card p-6 flex flex-col gap-6">
+    <div className="ledger-card p-4 sm:p-6 flex flex-col gap-6 w-full max-w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-subtle)] gap-2">
         <div>
           <h2 className="font-bold text-base text-white flex items-center gap-2">
             <FileCheck size={18} className="text-[var(--color-passed)]" />
-            <span>Step-by-Step Payout Proposal</span>
+            <span>Step-by-step payout proposal</span>
           </h2>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Every submission moves through 5 verification stages before being broadcast to Sputnik DAO.
           </p>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-[11px]">
-          <span className="tag-passed">FAIL-CLOSED PIPELINE</span>
         </div>
       </div>
 
       {/* Simulation Presets (Only visible in ?demo=1 mode) */}
       {isDemo && (
         <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--color-pending-border)] flex flex-col gap-2">
-          <div className="flex items-center justify-between text-[11px] font-mono">
-            <span className="text-[var(--color-pending)] font-bold">
-              [SIMULATION MODE ACTIVE] Testing Presets:
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-[var(--color-pending)] font-medium">
+              Simulation presets:
             </span>
-            <span className="tag-pending text-[10px]">SIMULATION</span>
+            <span className="tag-pending text-[10px]">Simulation</span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {DEMO_PRESETS.map((pr) => (
@@ -369,7 +366,7 @@ export function StepByStepProposeForm({
                 key={pr.label}
                 type="button"
                 onClick={() => applyDemoPreset(pr)}
-                className="px-3 py-1 rounded bg-[var(--bg-canvas)] hover:bg-[#1E232F] text-[11px] font-mono text-slate-300 hover:text-white border border-[var(--border-subtle)] transition-colors"
+                className="px-3 py-1 rounded bg-[var(--bg-canvas)] hover:bg-[#1E232F] text-xs font-mono text-slate-300 hover:text-white border border-[var(--border-subtle)] transition-colors cursor-pointer"
               >
                 {pr.label} ({pr.amount} NEAR)
               </button>
@@ -379,11 +376,11 @@ export function StepByStepProposeForm({
       )}
 
       {/* Step Progress Indicators */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono text-[11px]">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
         {[
-          { num: 1, label: '1. Submit Work' },
+          { num: 1, label: '1. Task scope' },
           { num: 2, label: '2. Deliverable' },
-          { num: 3, label: '3. Policy Check' },
+          { num: 3, label: '3. Policy check' },
           { num: 4, label: '4. Deliberation' },
           { num: 5, label: '5. Payload' },
         ].map((s) => {
@@ -394,7 +391,7 @@ export function StepByStepProposeForm({
               key={s.num}
               className={`p-2.5 rounded border flex flex-col gap-1 transition-all ${
                 isActive
-                  ? 'border-[var(--color-passed)] bg-[var(--color-passed-bg)] text-white font-bold'
+                  ? 'border-[var(--color-passed)] bg-[var(--color-passed-bg)] text-white font-medium'
                   : isDone
                   ? 'border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--color-passed)]'
                   : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-muted)]'
@@ -422,27 +419,27 @@ export function StepByStepProposeForm({
           {/* Task Scope */}
           <div className="flex flex-col gap-1.5 md:col-span-2">
             <label htmlFor="task-scope-input" className="text-xs font-medium text-[var(--text-primary)]">
-              Task Scope & Description
+              Task description & scope
             </label>
             <input
               id="task-scope-input"
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              placeholder="e.g., Audit Sputnik DAO settlement contract and verify CI tests"
-              className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--color-passed)] font-mono"
+              placeholder="e.g. Audit Sputnik DAO settlement contract and verify CI tests"
+              className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--color-passed)] font-sans"
             />
           </div>
 
           {/* Deliverable Artifact */}
           <div className="flex flex-col gap-1.5 md:col-span-2">
             <label htmlFor="deliverable-artifact-input" className="text-xs font-medium text-[var(--text-primary)]">
-              Deliverable Artifact (GitHub PR or IPFS CID)
+              Deliverable artifact (GitHub PR or IPFS CID)
             </label>
             <input
               id="deliverable-artifact-input"
               value={deliverable}
               onChange={(e) => setDeliverable(e.target.value)}
-              placeholder="e.g., https://github.com/org/repo/pull/12 or ipfs://bafy..."
+              placeholder="e.g. https://github.com/org/repo/pull/12 or ipfs://bafy..."
               className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--color-passed)] font-mono"
             />
           </div>
@@ -450,13 +447,13 @@ export function StepByStepProposeForm({
           {/* Recipient */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="recipient-input" className="text-xs font-medium text-[var(--text-primary)]">
-              Recipient Account ID
+              Recipient NEAR account
             </label>
             <input
               id="recipient-input"
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
-              placeholder="e.g., contributor.testnet"
+              placeholder="e.g. contributor.testnet"
               className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--color-passed)] font-mono"
             />
           </div>
@@ -464,13 +461,13 @@ export function StepByStepProposeForm({
           {/* Reward Amount */}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="reward-amount-input" className="text-xs font-medium text-[var(--text-primary)]">
-              Reward Amount (NEAR)
+              Reward amount (NEAR)
             </label>
             <input
               id="reward-amount-input"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g., 5.0"
+              placeholder="e.g. 5.0"
               className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--color-passed)] font-mono"
             />
           </div>
@@ -479,7 +476,7 @@ export function StepByStepProposeForm({
           <div className="flex flex-col gap-1.5 md:col-span-2">
             <label className="text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5">
               <Globe size={13} className="text-[var(--color-passed)]" />
-              <span>Settlement Destination Rail</span>
+              <span>Settlement rail</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
@@ -492,7 +489,7 @@ export function StepByStepProposeForm({
                   key={c.id}
                   type="button"
                   onClick={() => setDestinationChain(c.id as any)}
-                  className={`py-2 text-xs font-mono font-semibold rounded border transition-all ${
+                  className={`py-2 text-xs font-medium rounded border transition-all cursor-pointer ${
                     destinationChain === c.id
                       ? 'bg-[var(--color-passed-bg)] border-[var(--color-passed)] text-[var(--color-passed)]'
                       : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
@@ -506,14 +503,14 @@ export function StepByStepProposeForm({
 
           {destinationChain !== 'near' && (
             <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label htmlFor="cross-chain-addr-input" className="text-xs font-medium text-[var(--text-primary)] font-mono">
-                Recipient {destinationChain.toUpperCase()} Address (USDC Settlement)
+              <label htmlFor="cross-chain-addr-input" className="text-xs font-medium text-[var(--text-primary)]">
+                Recipient {destinationChain.toUpperCase()} address (USDC Settlement)
               </label>
               <input
                 id="cross-chain-addr-input"
                 value={crossChainAddress}
                 onChange={(e) => setCrossChainAddress(e.target.value)}
-                placeholder="e.g., 0x71C8364735391aB32e9 or Solana address"
+                placeholder="e.g. 0x71C8364735391aB32e9 or Solana address"
                 className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] rounded p-2.5 text-xs text-white font-mono focus:outline-none focus:border-[var(--color-passed)]"
               />
             </div>
@@ -525,25 +522,25 @@ export function StepByStepProposeForm({
           type="button"
           onClick={handleEvaluateFlow}
           disabled={isEvaluating}
-          className="btn-secondary py-3 text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
+          className="btn-secondary py-2.5 text-xs font-medium flex items-center justify-center gap-2 cursor-pointer mt-2 disabled:opacity-50"
         >
           <Cpu size={14} className={isEvaluating ? 'animate-spin' : 'text-[var(--color-passed)]'} />
-          <span>{isEvaluating ? 'Evaluating Through Release Gates...' : 'Run Automated Gate Checks (Steps 2–4)'}</span>
+          <span>{isEvaluating ? 'Evaluating through release gates...' : 'Run automated gate checks (Steps 2–4)'}</span>
         </button>
       </div>
 
       {/* Live Results Panel: Steps 2 to 5 */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)] font-mono text-xs">
-        <div className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider">
-          Gate Verification Stream
+      <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)] text-xs">
+        <div className="text-xs font-medium text-white">
+          Verification steps
         </div>
 
         {/* Step 2 Result */}
         <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">STEP 02:</span>
+            <span className="text-[var(--text-muted)]">Step 2:</span>
             <div>
-              <span className="font-semibold text-white">Deliverable Check: </span>
+              <span className="font-semibold text-white">Deliverable check: </span>
               <span className="text-[var(--text-secondary)]">{deliverableStatus.reason}</span>
             </div>
           </div>
@@ -556,16 +553,16 @@ export function StepByStepProposeForm({
                 : 'tag-neutral'
             }
           >
-            {deliverableStatus.status.toUpperCase()}
+            {deliverableStatus.status === 'passed' ? 'Passed' : deliverableStatus.status === 'failed' ? 'Failed' : 'Pending'}
           </span>
         </div>
 
         {/* Step 3 Result */}
         <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">STEP 03:</span>
+            <span className="text-[var(--text-muted)]">Step 3:</span>
             <div>
-              <span className="font-semibold text-white">Policy Check: </span>
+              <span className="font-semibold text-white">Policy check: </span>
               <span className="text-[var(--text-secondary)]">{policyStatus.reason}</span>
             </div>
           </div>
@@ -578,16 +575,16 @@ export function StepByStepProposeForm({
                 : 'tag-neutral'
             }
           >
-            {policyStatus.status.toUpperCase()}
+            {policyStatus.status === 'passed' ? 'Passed' : policyStatus.status === 'failed' ? 'Failed' : 'Pending'}
           </span>
         </div>
 
         {/* Step 4 Result */}
         <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">STEP 04:</span>
+            <span className="text-[var(--text-muted)]">Step 4:</span>
             <div>
-              <span className="font-semibold text-white">Multi-Agent Deliberation: </span>
+              <span className="font-semibold text-white">Deliberation: </span>
               <span className="text-[var(--text-secondary)]">{deliberationStatus.reason}</span>
             </div>
           </div>
@@ -600,17 +597,17 @@ export function StepByStepProposeForm({
                 : 'tag-neutral'
             }
           >
-            {deliberationStatus.status.toUpperCase()}
+            {deliberationStatus.status === 'passed' ? 'Passed' : deliberationStatus.status === 'failed' ? 'Failed' : 'Pending'}
           </span>
         </div>
 
         {/* Step 5 Result & Dispatch Action */}
-        <div className="p-4 rounded bg-[#0A0B0E] border border-[var(--border-subtle)] flex flex-col gap-3">
+        <div className="p-4 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
-              <span className="text-[var(--text-muted)]">STEP 05:</span>
+              <span className="text-[var(--text-muted)]">Step 5:</span>
               <div>
-                <span className="font-semibold text-white">Proposal Payload: </span>
+                <span className="font-semibold text-white">Proposal payload: </span>
                 <span className="text-[var(--text-secondary)]">{payloadStatus.reason}</span>
               </div>
             </div>
@@ -623,7 +620,7 @@ export function StepByStepProposeForm({
                   : 'tag-neutral'
               }
             >
-              {payloadStatus.status.toUpperCase()}
+              {payloadStatus.status === 'passed' ? 'Passed' : payloadStatus.status === 'failed' ? 'Failed' : 'Pending'}
             </span>
           </div>
 

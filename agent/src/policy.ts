@@ -121,6 +121,12 @@ export class PolicyEngine {
     if (!this.db.data) {
       this.db.data = createDefaultDb();
     }
+    if (!this.db.data.paidDeliverables) {
+      this.db.data.paidDeliverables = {};
+    }
+    if (!this.db.data.proposals) {
+      this.db.data.proposals = [];
+    }
     return this.db.data;
   }
 

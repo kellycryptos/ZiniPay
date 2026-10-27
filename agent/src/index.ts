@@ -97,9 +97,10 @@ program
   .description('Show daily spend summary, reputation tiers, and leaderboard')
   .action(async () => {
     const dbPath = process.env.DB_PATH ?? './zinipay.json';
+    const repDbPath = dbPath.endsWith('.json') ? dbPath.replace(/\.json$/, '-reputation.json') : `${dbPath}-reputation.json`;
     const policy = new PolicyEngine(dbPath, policyConfig);
     await policy.init();
-    const reputation = new ReputationLedger(dbPath);
+    const reputation = new ReputationLedger(repDbPath);
     await reputation.init();
     const summary = policy.getDailySpendSummary();
     const maxNear = Number(policyConfig.maxSpendPerDay) / 1e24;
@@ -154,7 +155,8 @@ async function runPropose(opts: ProposeOpts) {
     model: cfg.openaiModel,
   });
 
-  const reputation = new ReputationLedger(cfg.dbPath);
+  const repDbPath = cfg.dbPath.endsWith('.json') ? cfg.dbPath.replace(/\.json$/, '-reputation.json') : `${cfg.dbPath}-reputation.json`;
+  const reputation = new ReputationLedger(repDbPath);
   await reputation.init();
 
   const intents = new NearIntents(cfg.intentsApiUrl);
@@ -273,8 +275,8 @@ async function runPropose(opts: ProposeOpts) {
       };
       intentInfo = `[SIMULATION] ~${opts.amountNear} NEAR converted to ${opts.crossChainToken ?? 'USDC'} on ${opts.crossChain}`;
     }
-  } else if (opts.plainTransfer) {
-    console.log(chalk.yellow('  [FLAG: --plain-transfer] Using plain DAO Transfer proposal'));
+  } else if (opts.plainTransfer || !cfg.policyContractId) {
+    console.log(chalk.yellow('  [DAO Transfer] Using direct Sputnik DAO Transfer proposal'));
     proposalKind = {
       Transfer: {
         token_id: '',

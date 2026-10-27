@@ -1,13 +1,23 @@
+# Environments and keys
 .env
-*.db
+.env.*
+!.env.example
+*.pem
+*.key
+*.seed
+
+# Local lowdb state
+zinipay*.json
+
+# Dependencies and builds
 node_modules/
 dist/
 target/
 .DS_Store
 *.log
+*.db
 
 zinipay/
 *.tsbuildinfo
 screenshots/
 frontend/scripts/
-

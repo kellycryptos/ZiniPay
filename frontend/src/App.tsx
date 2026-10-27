@@ -62,15 +62,23 @@ export default function App() {
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>(
     (import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet'
   );
-  const [daoContract, setDaoContract] = useState<string>(
-    import.meta.env.VITE_DAO_CONTRACT_ID || ''
-  );
+  const [daoContract, setDaoContract] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const urlDao = new URLSearchParams(window.location.search).get('dao');
+      if (urlDao !== null) return urlDao;
+    }
+    return import.meta.env.VITE_DAO_CONTRACT_ID || '';
+  });
   const [policyContractId, setPolicyContractId] = useState<string>(
     import.meta.env.VITE_POLICY_CONTRACT_ID || ''
   );
 
   // Treasury starts as loading skeleton if DAO configured, else error/unconfigured
   const [treasuryState, setTreasuryState] = useState<TreasuryBalanceResult>(() => {
+    if (typeof window !== 'undefined') {
+      const urlDao = new URLSearchParams(window.location.search).get('dao');
+      if (urlDao) return { status: 'success', balance: 0.0 };
+    }
     if (import.meta.env.VITE_DAO_CONTRACT_ID) {
       return { status: 'loading' };
     }
@@ -292,14 +300,12 @@ export default function App() {
               showToast(`Switched network to NEAR ${net.toUpperCase()}`);
             }}
             daoContract={daoContract}
-            onDaoContractChange={(dao) => setDaoContract(dao)}
+            onDaoContractChange={(dao) => {
+              setDaoContract(dao);
+              loadLiveDaoData(dao, network);
+            }}
             policyContractId={policyContractId}
             onPolicyContractChange={(pol) => setPolicyContractId(pol)}
-            treasuryState={treasuryState}
-            onRefresh={() => {
-              loadLiveDaoData(daoContract, network);
-              showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()} RPC`);
-            }}
             activeRole={activeRole}
             onRoleChange={(r) => {
               setActiveRole(r);
@@ -317,6 +323,10 @@ export default function App() {
               activities={activities}
               network={network}
               daoContract={daoContract}
+              onDaoContractChange={(dao) => {
+                setDaoContract(dao);
+                loadLiveDaoData(dao, network);
+              }}
               policyContractId={policyContractId}
               treasuryState={treasuryState}
               isLoadingOnChain={isLoadingOnChain}
@@ -346,6 +356,10 @@ export default function App() {
                 ]);
               }}
               onShowToast={showToast}
+              onRefresh={() => {
+                loadLiveDaoData(daoContract, network);
+                showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
+              }}
               isDemoMode={isDemoMode}
             />
           </main>

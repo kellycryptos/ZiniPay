@@ -3,34 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #0A0B0E;
-  --bg-panel: #111318;
-  --bg-panel-alt: #161922;
-  --bg-panel-header: #141720;
-  --border-subtle: #1F2432;
-  --border-strong: #2C3447;
+  --bg-canvas: #121721;
+  --bg-panel: #1A2230;
+  --bg-panel-alt: #222C3D;
+  --bg-panel-header: #1E2736;
+  --border-subtle: #28354A;
+  --border-strong: #384964;
 
-  --color-passed: #00EC97;
-  --color-passed-bg: rgba(0, 236, 151, 0.08);
-  --color-passed-border: rgba(0, 236, 151, 0.28);
+  /* Receipt Paper Surface (Paper on Desk) */
+  --bg-receipt: #FDFDFE;
+  --text-receipt: #0F172A;
+  --text-receipt-secondary: #334155;
+  --text-receipt-muted: #64748B;
+  --border-receipt: #E2E8F0;
 
-  --color-blocked: #FF4D4D;
-  --color-blocked-bg: rgba(255, 77, 77, 0.08);
-  --color-blocked-border: rgba(255, 77, 77, 0.28);
+  /* Accents */
+  --color-passed: #0D7A5F;
+  --color-passed-bg: rgba(13, 122, 95, 0.12);
+  --color-passed-border: rgba(13, 122, 95, 0.35);
 
-  --color-pending: #F59E0B;
-  --color-pending-bg: rgba(245, 158, 11, 0.08);
-  --color-pending-border: rgba(245, 158, 11, 0.28);
+  --color-blocked: #B91C1C;
+  --color-blocked-bg: rgba(185, 28, 28, 0.12);
+  --color-blocked-border: rgba(185, 28, 28, 0.35);
 
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --color-pending: #B45309;
+  --color-pending-bg: rgba(180, 83, 9, 0.12);
+  --color-pending-border: rgba(180, 83, 9, 0.35);
+
+  --text-primary: #E2E8F0;
+  --text-secondary: #8D9EBA;
+  --text-muted: #64758F;
 }
 
 body {
   background-color: var(--bg-canvas);
   color: var(--text-primary);
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -39,10 +47,19 @@ body {
 }
 
 code, kbd, samp, pre, .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Technical Ledger Card */
+/* Hide scrollbars on tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Technical Ledger Card (On Dark Canvas) */
 .ledger-card {
   background-color: var(--bg-panel);
   border: 1px solid var(--border-subtle);
@@ -53,42 +70,32 @@ code, kbd, samp, pre, .font-mono {
   border-color: var(--border-strong);
 }
 
-/* Receipt Card Signature Element */
+/* Receipt Card (Paper on Desk - The Hero) */
 .receipt-card {
-  background: linear-gradient(180deg, #13161F 0%, #0F1117 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
+  background-color: var(--bg-receipt);
+  color: var(--text-receipt);
+  border: 1px solid var(--border-receipt);
+  border-radius: 8px;
   position: relative;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.receipt-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: repeating-linear-gradient(90deg, #00EC97 0, #00EC97 8px, transparent 8px, transparent 14px);
-  opacity: 0.8;
-}
-
-/* Perforated hairline divider */
+/* Perforated hairline divider inside receipt */
 .ledger-perforation {
-  border-top: 1px dashed var(--border-strong);
+  border-top: 1px dashed #CBD5E1;
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
-/* Monospace Ledger Row */
+/* Ledger Row */
 .ledger-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.75rem;
-  line-height: 1.25rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.35rem;
+  flex-wrap: wrap;
 }
 
 /* Minimalist technical buttons */
@@ -97,19 +104,19 @@ code, kbd, samp, pre, .font-mono {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: #00EC97;
-  color: #0A0B0E;
-  font-weight: 700;
+  background-color: var(--color-passed);
+  color: #FFFFFF;
+  font-weight: 600;
   font-size: 0.8125rem;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
-  transition: background-color 0.15s ease, transform 0.05s ease;
-  font-family: 'Space Grotesk', sans-serif;
+  transition: background-color 0.15s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   text-decoration: none;
 }
 
 .btn-primary:hover {
-  background-color: #00D385;
+  background-color: #0A634E;
 }
 
 .btn-secondary {
@@ -117,32 +124,32 @@ code, kbd, samp, pre, .font-mono {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: #161922;
-  color: #F1F5F9;
+  background-color: var(--bg-panel-alt);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.8125rem;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   transition: all 0.15s ease;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   text-decoration: none;
 }
 
 .btn-secondary:hover {
-  background-color: #1F2432;
+  background-color: var(--border-subtle);
   border-color: var(--border-strong);
 }
 
-/* Status tags */
+/* Status tags on dark canvas */
 .tag-passed {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
   font-weight: 600;
   background-color: var(--color-passed-bg);
   border: 1px solid var(--color-passed-border);
@@ -152,11 +159,11 @@ code, kbd, samp, pre, .font-mono {
 .tag-blocked {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
   font-weight: 600;
   background-color: var(--color-blocked-bg);
   border: 1px solid var(--color-blocked-border);
@@ -166,11 +173,11 @@ code, kbd, samp, pre, .font-mono {
 .tag-pending {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
   font-weight: 600;
   background-color: var(--color-pending-bg);
   border: 1px solid var(--color-pending-border);
@@ -180,15 +187,61 @@ code, kbd, samp, pre, .font-mono {
 .tag-neutral {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.75rem;
   font-weight: 500;
-  background-color: #161922;
+  background-color: var(--bg-panel-alt);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
+}
+
+/* Specialized Tags inside Paper Receipts (Light Theme Inverted) */
+.receipt-card .tag-passed,
+.receipt-card .tag-blocked,
+.receipt-card .tag-pending,
+.receipt-card .tag-neutral {
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+.receipt-card .tag-passed {
+  background-color: #EDF7F4;
+  border-color: #A3DACB;
+  color: #0D7A5F;
+}
+
+.receipt-card .tag-blocked {
+  background-color: #FEF2F2;
+  border-color: #FECACA;
+  color: #B91C1C;
+}
+
+.receipt-card .tag-pending {
+  background-color: #FFFBEB;
+  border-color: #FDE68A;
+  color: #B45309;
+}
+
+.receipt-card .tag-neutral {
+  background-color: #F1F5F9;
+  border-color: #CBD5E1;
+  color: #475569;
+}
+
+.receipt-card .btn-secondary {
+  background-color: #F1F5F9;
+  color: #0F172A;
+  border-color: #CBD5E1;
+}
+
+.receipt-card .btn-secondary:hover {
+  background-color: #E2E8F0;
+  border-color: #94A3B8;
 }
 
 /* Accessibility: respect prefers-reduced-motion */

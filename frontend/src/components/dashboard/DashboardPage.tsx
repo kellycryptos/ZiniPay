@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { ThreeWayGate } from '../ThreeWayGate';
 import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
 import { PolicyPanel } from '../PolicyPanel';
 import { AttackAttemptsPanel } from '../AttackAttemptsPanel';
-import { ActivityLog } from '../ActivityLog';
 import { StepByStepProposeForm } from '../StepByStepProposeForm';
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
-import { ShieldCheck, Filter, AlertTriangle, ExternalLink } from 'lucide-react';
+import { RefreshCw, Inbox, Filter } from 'lucide-react';
 
 interface DashboardPageProps {
   proposals: Proposal[];
   activities: ActivityEvent[];
   network: 'testnet' | 'mainnet';
   daoContract: string;
+  onDaoContractChange: (dao: string) => void;
   policyContractId: string;
   treasuryState: TreasuryBalanceResult;
   isLoadingOnChain: boolean;
@@ -30,23 +29,22 @@ interface DashboardPageProps {
   onOpenWalletModal: () => void;
   onProposalCreated: (proposal: Proposal) => void;
   onShowToast: (msg: string) => void;
+  onRefresh: () => void;
   isDemoMode: boolean;
 }
 
 export function DashboardPage({
   proposals,
-  activities,
   network,
   daoContract,
+  onDaoContractChange,
   policyContractId,
   treasuryState,
   isLoadingOnChain,
   daoError,
   onChainPolicy,
   daoPolicy,
-  contributorReputation,
   connectedAccount,
-  activeRole,
   onVote,
   onInspectProof,
   onInspectDeliberation,
@@ -54,27 +52,59 @@ export function DashboardPage({
   onOpenWalletModal,
   onProposalCreated,
   onShowToast,
+  onRefresh,
   isDemoMode,
 }: DashboardPageProps) {
-  const [tab, setTab] = useState<'proposals' | 'propose'>('proposals');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'settled' | 'intents'>('all');
+  // Navigation tabs: 'pending' | 'paid' | 'all' | 'new_payout' | 'security'
+  const [tab, setTab] = useState<'pending' | 'paid' | 'all' | 'new_payout' | 'security'>(() => {
+    if (typeof window !== 'undefined') {
+      const paramTab = new URLSearchParams(window.location.search).get('tab');
+      if (paramTab === 'new_payout' || paramTab === 'propose') return 'new_payout';
+      if (paramTab === 'paid') return 'paid';
+      if (paramTab === 'all') return 'all';
+      if (paramTab === 'security') return 'security';
+    }
+    return 'pending';
+  });
+  const [intentFilter, setIntentFilter] = useState<'all' | 'intents'>('all');
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [tempDaoInput, setTempDaoInput] = useState('');
 
-  const filteredProposals = proposals.filter((p) => {
-    if (filter === 'pending') return p.status === 'pending_quorum';
-    if (filter === 'settled') return p.status === 'settled' || p.status === 'approved';
-    if (filter === 'intents') return p.settlement.type === 'cross_chain_intent';
+  // Counts
+  const pendingCount = proposals.filter((p) => p.status === 'pending_quorum').length;
+  const paidCount = proposals.filter((p) => p.status === 'settled' || p.status === 'approved').length;
+  const totalCount = proposals.length;
+
+  // Filtered list
+  const displayProposals = proposals.filter((p) => {
+    // 1. Status filtering by tab
+    if (tab === 'pending' && p.status !== 'pending_quorum') return false;
+    if (tab === 'paid' && p.status !== 'settled' && p.status !== 'approved') return false;
+    // 2. Intents sub-filtering
+    if (intentFilter === 'intents' && p.settlement.type !== 'cross_chain_intent') return false;
     return true;
   });
 
+  const handleConnectDao = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (tempDaoInput.trim()) {
+      onDaoContractChange(tempDaoInput.trim());
+      setTempDaoInput('');
+    }
+  };
+
   return (
-    <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 flex flex-col gap-6 font-sans">
-      {/* Simulation Banner if in ?demo=1 mode */}
+    <div className="flex-1 max-w-6xl w-full min-w-0 max-w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 font-sans">
+      {/* Simulation Banner (?demo=1) */}
       {isDemoMode && (
-        <aside aria-label="Simulation notice" className="p-3 rounded bg-[var(--color-pending-bg)] border border-[var(--color-pending-border)] text-[var(--color-pending)] text-xs font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-pending)] animate-pulse" />
-            <span>
-              <strong>SIMULATION MODE ACTIVE (?demo=1)</strong>: Showing simulated proposals and evaluation metrics.
+        <aside
+          aria-label="Simulation notice"
+          className="p-3 rounded-md bg-[var(--color-pending-bg)] border border-[var(--color-pending-border)] text-xs text-[var(--color-pending)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full max-w-full"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-[var(--color-pending)] shrink-0" />
+            <span className="break-words">
+              <strong>Simulation preview active (?demo=1)</strong>: Showing sample verification receipts and audit logs.
             </span>
           </div>
           <button
@@ -82,154 +112,190 @@ export function DashboardPage({
             onClick={() => {
               window.location.search = '';
             }}
-            className="text-[11px] underline hover:text-white transition-colors cursor-pointer self-start sm:self-auto"
+            className="text-[11px] underline hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
           >
-            Switch to Live NEAR Testnet RPC
+            Switch to live NEAR testnet
           </button>
         </aside>
       )}
 
-      {/* Top Banner: Three-Way Release Gate */}
-      <ThreeWayGate />
-
-      {/* Three-Column / Three-Rail Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ── Left Rail (Treasury & Policy Limits & Roles) ────────── */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          {/* Treasury Account Snapshot */}
-          <div className="ledger-card p-5 flex flex-col gap-3 font-mono text-xs">
-            <div className="text-[11px] text-[var(--text-muted)] uppercase tracking-wider">
-              Treasury Account Snapshot
-            </div>
-            <div>
-              <div className="text-[11px] text-[var(--text-muted)]">DAO ACCOUNT</div>
-              <div className="text-white font-bold text-xs truncate mt-0.5" title={daoContract || 'Not configured'}>
-                {daoContract || <span className="text-[var(--text-muted)] font-normal italic">Not configured</span>}
-              </div>
-            </div>
-            <div>
-              <div className="text-[11px] text-[var(--text-muted)]">RPC BALANCE</div>
-              {!daoContract ? (
-                <div className="text-[var(--text-muted)] font-mono text-xs mt-0.5">
-                  Not configured
-                </div>
-              ) : treasuryState.status === 'loading' ? (
-                <div className="w-24 h-5 bg-gray-800 rounded animate-pulse mt-1" />
-              ) : treasuryState.status === 'error' ? (
-                <div className="text-[var(--color-blocked)] font-bold text-xs mt-0.5">
-                  Unavailable ({treasuryState.error || 'Query failed'})
-                </div>
-              ) : (
-                <div className="text-[var(--color-passed)] font-extrabold text-lg mt-0.5">
-                  {treasuryState.balance !== undefined ? treasuryState.balance.toFixed(2) : '0.00'} NEAR
-                </div>
-              )}
-            </div>
-            <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
-              <span className="text-[var(--text-muted)]">NETWORK:</span>
-              <span className="tag-neutral text-[10px]">NEAR {network.toUpperCase()}</span>
-            </div>
-          </div>
-
-          {/* Policy Panel */}
+      {/* Main Two-Column Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full min-w-0 max-w-full">
+        {/* ── Left Rail (Narrow: 250px) ────────────────────────── */}
+        <aside className="w-full lg:w-64 shrink-0 min-w-0 max-w-full">
           <PolicyPanel
+            treasuryBalance={treasuryState.balance}
+            treasuryLoading={treasuryState.status === 'loading'}
+            treasuryError={treasuryState.error}
+            daoConfigured={Boolean(daoContract && daoContract.trim())}
             policyState={onChainPolicy}
-            daoPolicy={daoPolicy}
-            policyContractId={policyContractId}
-            reputationScore={contributorReputation}
-            isSimulated={isDemoMode}
-            policy={{
-              maxSpendPerProposalNear: 10.0,
-              maxSpendPerDayNear: 50.0,
-              cooldownHours: 4,
-              minReputationScore: 0,
-            }}
-            daily={{
-              count: proposals.filter((p) => p.status === 'settled' || p.status === 'approved').length,
-              totalNear: proposals
-                .filter((p) => p.status === 'settled' || p.status === 'approved')
-                .reduce((sum, p) => sum + (parseFloat(p.amountNear) || 0), 0),
-            }}
+            policyContractConfigured={Boolean(policyContractId && policyContractId.trim())}
+            onOpenSecurityLog={() => setTab('security')}
+            securityEventCount={isDemoMode ? 3 : 0}
           />
-        </div>
+        </aside>
 
-        {/* ── Main Area (Proposals Feed & Step-by-Step Propose) ─── */}
-        <div className="lg:col-span-6 flex flex-col gap-5">
-          {/* Main View Tabs */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-subtle)] pb-3 gap-3">
-            <div className="flex gap-2">
+        {/* ── Main Area (Approval Queue / Form / Security) ────── */}
+        <main className="flex-1 w-full min-w-0 max-w-full flex flex-col gap-4">
+          {/* Plain Underline Tabs */}
+          <div className="border-b border-[var(--border-subtle)] w-full max-w-full overflow-x-auto no-scrollbar">
+            <nav className="flex gap-4 sm:gap-6 text-sm min-w-max pb-0.5" aria-label="Queue views">
               <button
                 type="button"
-                onClick={() => setTab('proposals')}
-                className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition-all ${
-                  tab === 'proposals'
-                    ? 'btn-primary py-1.5 px-3.5'
-                    : 'btn-secondary py-1.5 px-3.5 text-[var(--text-secondary)]'
+                onClick={() => setTab('pending')}
+                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  tab === 'pending'
+                    ? 'border-[var(--color-passed)] text-white'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
                 }`}
               >
-                Treasury Proposals ({proposals.length})
+                <span>Pending approval</span>
+                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({pendingCount})</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setTab('propose')}
-                className={`px-3.5 py-1.5 rounded text-xs font-mono font-bold transition-all ${
-                  tab === 'propose'
-                    ? 'btn-primary py-1.5 px-3.5'
-                    : 'btn-secondary py-1.5 px-3.5 text-[var(--text-secondary)]'
+                onClick={() => setTab('paid')}
+                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  tab === 'paid'
+                    ? 'border-[var(--color-passed)] text-white'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
                 }`}
               >
-                + Propose Payout
+                <span>Paid</span>
+                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({paidCount})</span>
               </button>
-            </div>
 
-            {/* Filter buttons when viewing proposals */}
-            {tab === 'proposals' && (
-              <div className="flex items-center gap-1 bg-[var(--bg-panel-alt)] p-1 rounded border border-[var(--border-subtle)] text-[11px] font-mono">
-                {[
-                  { id: 'all', label: 'All' },
-                  { id: 'pending', label: 'Pending Quorum' },
-                  { id: 'settled', label: 'Settled' },
-                  { id: 'intents', label: 'NEAR Intents' },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => setFilter(f.id as any)}
-                    className={`px-2.5 py-1 rounded transition-colors ${
-                      filter === f.id
-                        ? 'bg-[var(--bg-canvas)] text-white font-bold border border-[var(--border-subtle)]'
-                        : 'text-[var(--text-muted)] hover:text-white'
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setTab('all')}
+                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  tab === 'all'
+                    ? 'border-[var(--color-passed)] text-white'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                }`}
+              >
+                <span>All</span>
+                <span className="ml-1.5 text-xs text-[var(--text-muted)] font-mono">({totalCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTab('new_payout')}
+                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  tab === 'new_payout'
+                    ? 'border-[var(--color-passed)] text-white'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                }`}
+              >
+                <span>New payout</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTab('security')}
+                className={`pb-2.5 font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  tab === 'security'
+                    ? 'border-[var(--color-passed)] text-white'
+                    : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+                }`}
+              >
+                <span>Security log</span>
+              </button>
+            </nav>
           </div>
 
-          {/* Proposals Feed as Release Receipts */}
-          {tab === 'proposals' && (
-            <div className="flex flex-col gap-4">
-              {!daoContract || !daoContract.trim() ? (
-                /* Empty state: DAO not configured */
-                <div className="ledger-card p-12 text-center flex flex-col items-center justify-center gap-3 font-mono text-xs border-dashed">
-                  <AlertTriangle size={28} className="text-[var(--color-pending)]" />
-                  <div className="text-white font-bold text-sm font-sans">
-                    DAO contract is not configured
+          {/* Queue Sub-Toolbar (Legend & Controls) */}
+          {(tab === 'pending' || tab === 'paid' || tab === 'all') && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs w-full min-w-0">
+              {/* One-Line Collapsible Legend without arrow glyphs */}
+              <div className="flex flex-col min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setLegendOpen(!legendOpen)}
+                  className="text-[var(--text-muted)] hover:text-white transition-colors text-left underline underline-offset-4 decoration-[var(--border-subtle)] hover:decoration-white text-xs cursor-pointer"
+                >
+                  {legendOpen ? 'Hide gate verification details' : 'How the three release gates work'}
+                </button>
+
+                {legendOpen && (
+                  <div className="mt-2.5 p-3 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[11px] text-[var(--text-secondary)] leading-relaxed flex flex-col gap-1.5 max-w-xl">
+                    <p>
+                      <strong className="text-white">Proof</strong>: Deliverable attestation hash claimed by the proposer in the proposal payload.
+                    </p>
+                    <p>
+                      <strong className="text-white">Policy</strong>: On-chain spending cap, daily limits, and recipient cooldown verified by PolicyHelper.
+                    </p>
+                    <p>
+                      <strong className="text-white">Council quorum</strong>: Explicit human council multi-sig approval required on Sputnik DAO v2 before execution.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-[var(--text-secondary)] max-w-md leading-relaxed">
-                    Set <code className="text-white bg-black/40 px-1 py-0.5 rounded">VITE_DAO_CONTRACT_ID</code> in your environment or enter a DAO account ID in the navigation bar above to view treasury proposals.
+                )}
+              </div>
+
+              {/* Right-aligned Filter & Refresh Toolbar */}
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <div className="flex items-center gap-1 bg-[var(--bg-panel-alt)] px-2 py-1 rounded border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+                  <Filter size={11} className="text-[var(--text-muted)]" />
+                  <select
+                    value={intentFilter}
+                    onChange={(e) => setIntentFilter(e.target.value as any)}
+                    className="bg-transparent text-white focus:outline-none cursor-pointer pr-1 text-xs"
+                    aria-label="Filter payout types"
+                  >
+                    <option value="all" className="bg-[var(--bg-panel)] text-white">All payouts</option>
+                    <option value="intents" className="bg-[var(--bg-panel)] text-white">NEAR Intents only</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={isLoadingOnChain}
+                  className="p-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)] cursor-pointer"
+                  title="Refresh on-chain proposals"
+                  aria-label="Refresh on-chain proposals"
+                >
+                  <RefreshCw size={13} className={isLoadingOnChain ? 'animate-spin' : ''} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Queue Content Area */}
+          {(tab === 'pending' || tab === 'paid' || tab === 'all') && (
+            <div className="flex flex-col gap-4">
+              {/* Unconfigured DAO Empty State (No warning triangle, no red) */}
+              {!isDemoMode && (!daoContract || !daoContract.trim()) ? (
+                <div className="ledger-card p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3">
+                  <h3 className="font-semibold text-base text-white">
+                    Connect a community treasury
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)] max-w-md leading-relaxed">
+                    Enter a Sputnik DAO contract ID to load pending payout requests and live policy constraints.
                   </p>
+                  <form onSubmit={handleConnectDao} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 w-full max-w-sm">
+                    <input
+                      type="text"
+                      value={tempDaoInput}
+                      onChange={(e) => setTempDaoInput(e.target.value)}
+                      placeholder="e.g. zinipay.sputnikv2.testnet"
+                      className="flex-1 bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] focus:border-[var(--border-strong)] rounded px-3 py-1.5 text-xs text-white font-mono placeholder:text-gray-600 focus:outline-none"
+                    />
+                    <button type="submit" className="btn-primary text-xs py-1.5 px-3 shrink-0 cursor-pointer">
+                      Connect
+                    </button>
+                  </form>
                 </div>
               ) : isLoadingOnChain && proposals.length === 0 ? (
                 /* Loading State Skeleton */
-                <div className="ledger-card p-10 flex flex-col items-center justify-center gap-3 font-mono text-xs text-[var(--text-muted)] animate-pulse">
-                  <div className="w-8 h-8 rounded-full bg-gray-800" />
-                  <span>Loading live proposals from NEAR RPC ({daoContract})...</span>
+                <div className="ledger-card p-10 flex flex-col items-center justify-center gap-2 text-xs text-[var(--text-muted)] animate-pulse">
+                  <div className="w-6 h-6 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--color-passed)] animate-spin" />
+                  <span>Checking {daoContract} on NEAR {network}...</span>
                 </div>
-              ) : filteredProposals.length > 0 ? (
-                filteredProposals.map((prop) => (
+              ) : displayProposals.length > 0 ? (
+                /* Proposal Receipts Feed */
+                displayProposals.map((prop) => (
                   <ReleaseReceiptCard
                     key={prop.id}
                     proposal={prop}
@@ -244,28 +310,28 @@ export function DashboardPage({
                   />
                 ))
               ) : (
-                /* Empty state with specific text */
-                <div className="ledger-card p-12 text-center flex flex-col items-center justify-center gap-3 font-mono text-xs border-dashed">
-                  <ShieldCheck size={28} className="text-[var(--text-muted)]" />
-                  <div className="text-white font-bold text-sm font-sans">
-                    {isDemoMode
-                      ? 'No simulated proposals match this filter.'
-                      : `No proposals found on ${daoContract} (${network})`}
-                  </div>
-                  <p className="text-[11px] text-[var(--text-secondary)] max-w-md leading-relaxed">
-                    {isDemoMode
-                      ? 'Switch proposal filter tabs or dispatch a new payout test.'
-                      : daoError
-                      ? `RPC Notice: ${daoError}. Verify network connection or DAO contract ID.`
-                      : `Connected to Sputnik DAO v2. Use the "+ Propose Payout" tab to dispatch a new proposal, or append ?demo=1 to view sample simulation data.`}
+                /* Configured but Empty Queue State */
+                <div className="ledger-card p-10 text-center flex flex-col items-center justify-center gap-2 text-xs">
+                  <Inbox size={24} className="text-[var(--text-muted)]" />
+                  <h4 className="font-medium text-sm text-white">
+                    {tab === 'pending'
+                      ? 'No pending payouts'
+                      : tab === 'paid'
+                      ? 'No settled payouts'
+                      : 'No proposals found'}
+                  </h4>
+                  <p className="text-xs text-[var(--text-secondary)] max-w-sm leading-relaxed">
+                    {daoError
+                      ? `Could not reach Sputnik DAO: ${daoError}. Check your network connection.`
+                      : 'New requests appear here after an agent submits a deliverable for approval.'}
                   </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* Step-by-Step Propose Flow */}
-          {tab === 'propose' && (
+          {/* New Payout Tab */}
+          {tab === 'new_payout' && (
             <StepByStepProposeForm
               daoContract={daoContract}
               network={network}
@@ -273,47 +339,17 @@ export function DashboardPage({
               onOpenWalletModal={onOpenWalletModal}
               onProposalCreated={(p) => {
                 onProposalCreated(p);
-                setTab('proposals');
+                setTab('pending');
               }}
               onShowToast={onShowToast}
               onChainPolicy={onChainPolicy}
               daoPolicy={daoPolicy}
             />
           )}
-        </div>
 
-        {/* ── Right Rail (Attack Attempts & Live Activity) ───────── */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          {/* Blocked Attacks Panel */}
-          <AttackAttemptsPanel />
-
-          {/* Activity Log */}
-          <ActivityLog activities={activities} />
-
-          {/* Ecosystem Verification Surfaces */}
-          <div className="ledger-card p-4 flex flex-col gap-2 font-mono text-xs">
-            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-              Ecosystem Surfaces
-            </span>
-            {[
-              { label: 'Trezu Treasury Dashboard', url: 'https://app.trezu.org' },
-              { label: 'Sputnik DAO Contracts', url: 'https://github.com/near-daos/sputnik-dao-contract' },
-              { label: 'NEAR Intents 1Click API', url: 'https://near-intents.org' },
-              { label: 'NEAR AI Cloud', url: 'https://cloud.near.ai' },
-            ].map(({ label, url }) => (
-              <a
-                key={label}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-[var(--text-secondary)] hover:text-white flex items-center justify-between py-1 transition-colors border-b border-[var(--border-subtle)] last:border-none"
-              >
-                <span>{label}</span>
-                <ExternalLink size={10} />
-              </a>
-            ))}
-          </div>
-        </div>
+          {/* Security Log Tab */}
+          {tab === 'security' && <AttackAttemptsPanel />}
+        </main>
       </div>
     </div>
   );
