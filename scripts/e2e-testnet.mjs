@@ -375,36 +375,36 @@ async function run() {
     console.log(`\n[8/8] Testing Contract Attack Scenarios (Must Fail Closed)...`);
 
     // Attack 1: Replay attack (Duplicate CID)
-    console.log(`  Attack Scenario 1: Replaying identical CID (${canonicalCid})...`);
+    // Call check_policy using a fresh account that has never received a release (agent or council)
+    // so the contract's cooldown check does not fire before the CID check.
+    const replayRecipient = agentAccountId !== recipientAccountId ? agentAccountId : councilAccountId;
+    const replayAmountYocto = payoutAmountYocto;
+    console.log(`  Attack Scenario 1: Replaying identical CID (${canonicalCid}) with fresh recipient (${replayRecipient})...`);
     try {
-      const allowedReplay = await agentAccount.viewFunction({
+      await agentAccount.viewFunction({
         contractId: policyContractId,
         methodName: 'check_policy',
         args: {
-          recipient: recipientAccountId,
-          amount: payoutAmountYocto,
+          recipient: replayRecipient,
+          amount: replayAmountYocto,
           cid: canonicalCid,
         },
       });
-      if (allowedReplay) {
-        console.error(`  ❌ SECURITY FAILURE: Policy contract allowed duplicate CID replay!`);
+      console.error(`  ❌ SECURITY FAILURE: Policy contract allowed duplicate CID replay!`);
+      process.exit(1);
+    } catch (err) {
+      const expectedSubstring = 'CID already used';
+      if (!err.message.includes(expectedSubstring)) {
+        console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 1 (Replay):`);
+        console.error(`     Expected to contain: "${expectedSubstring}"`);
+        console.error(`     Actual error message: "${err.message}"`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 1 BLOCKED: check_policy returned false for replayed CID`);
+      console.log(`  ✓ Attack 1 BLOCKED with verified on-chain panic: "${expectedSubstring}"`);
       logAttackEvent({
         vector: 'Replay CID',
-        caller: recipientAccountId,
-        details: `Attempted replay of deliverable CID '${canonicalCid}'`,
-        rejectionReason: 'CID already used — duplicate release attempt blocked',
-        blockedBy: 'PolicyHelper (On-Chain)',
-        simulated: false,
-      });
-    } catch (err) {
-      console.log(`  ✓ Attack 1 BLOCKED with on-chain panic: ${err.message}`);
-      logAttackEvent({
-        vector: 'Replay CID',
-        caller: recipientAccountId,
-        details: `Attempted replay of deliverable CID '${canonicalCid}'`,
+        caller: replayRecipient,
+        details: `Attempted replay of deliverable CID '${canonicalCid}' to fresh recipient '${replayRecipient}'`,
         rejectionReason: err.message,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
@@ -412,10 +412,20 @@ async function run() {
     }
 
     // Attack 2: Over-cap attack
-    const excessiveAmount = utils.format.parseNearAmount('50') || '50000000000000000000000000';
-    console.log(`  Attack Scenario 2: Over-cap spend attempt (50 NEAR)...`);
+    // Read the recipient's real effective cap and request cap + 1 NEAR
+    const realEffectiveCapYocto = await agentAccount.viewFunction({
+      contractId: policyContractId,
+      methodName: 'get_effective_cap',
+      args: { account: recipientAccountId },
+    });
+    const oneNearYocto = BigInt(utils.format.parseNearAmount('1') || '1000000000000000000000000');
+    const excessiveAmount = (BigInt(realEffectiveCapYocto) + oneNearYocto).toString();
+    const capNearFormatted = utils.format.formatNearAmount(realEffectiveCapYocto, 2);
+    const excessiveNearFormatted = utils.format.formatNearAmount(excessiveAmount, 2);
+
+    console.log(`  Attack Scenario 2: Over-cap spend attempt (Requesting ${excessiveNearFormatted} NEAR vs real cap ${capNearFormatted} NEAR)...`);
     try {
-      const allowedOverCap = await agentAccount.viewFunction({
+      await agentAccount.viewFunction({
         contractId: policyContractId,
         methodName: 'check_policy',
         args: {
@@ -424,25 +434,21 @@ async function run() {
           cid: `${canonicalCid}-overcap`,
         },
       });
-      if (allowedOverCap) {
-        console.error(`  ❌ SECURITY FAILURE: Policy contract allowed over-cap payout!`);
+      console.error(`  ❌ SECURITY FAILURE: Policy contract allowed over-cap payout!`);
+      process.exit(1);
+    } catch (err) {
+      const expectedSubstring = 'exceeds per-proposal effective cap';
+      if (!err.message.includes(expectedSubstring)) {
+        console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 2 (Over-Cap):`);
+        console.error(`     Expected to contain: "${expectedSubstring}"`);
+        console.error(`     Actual error message: "${err.message}"`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 2 BLOCKED: check_policy returned false for excessive amount`);
+      console.log(`  ✓ Attack 2 BLOCKED with verified on-chain panic: "${expectedSubstring}"`);
       logAttackEvent({
         vector: 'Over-Cap Spend',
         caller: recipientAccountId,
-        details: `Requested 50.0 NEAR exceeding Silver cap (15.0 NEAR)`,
-        rejectionReason: 'Amount exceeds effective tier cap',
-        blockedBy: 'PolicyHelper (On-Chain)',
-        simulated: false,
-      });
-    } catch (err) {
-      console.log(`  ✓ Attack 2 BLOCKED with on-chain panic: ${err.message}`);
-      logAttackEvent({
-        vector: 'Over-Cap Spend',
-        caller: recipientAccountId,
-        details: `Requested 50.0 NEAR exceeding Silver cap (15.0 NEAR)`,
+        details: `Requested ${excessiveNearFormatted} NEAR exceeding real effective cap of ${capNearFormatted} NEAR for recipient '${recipientAccountId}'`,
         rejectionReason: err.message,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
@@ -466,14 +472,20 @@ async function run() {
       console.error(`  ❌ SECURITY FAILURE: Unauthorized account was permitted to invoke release()!`);
       process.exit(1);
     } catch (err) {
-      console.log(`  ✓ Attack 3 BLOCKED with expected authorization panic:`);
+      const matchesAuth = err.message.includes('owner or DAO') || err.message.includes('owner or designated DAO');
+      if (!matchesAuth) {
+        console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 3 (Unauthorized Caller):`);
+        console.error(`     Expected to contain: "owner or DAO" (or "owner or designated DAO")`);
+        console.error(`     Actual error message: "${err.message}"`);
+        process.exit(1);
+      }
       const firstLine = err.message.split('\n')[0];
-      console.log(`     ${firstLine}`);
+      console.log(`  ✓ Attack 3 BLOCKED with verified authorization panic: "${firstLine}"`);
       logAttackEvent({
         vector: 'Unauthorized Caller',
         caller: agentAccountId,
-        details: `Non-owner / non-DAO account called release() directly`,
-        rejectionReason: firstLine,
+        details: `Non-owner / non-DAO caller '${agentAccountId}' invoked release() directly`,
+        rejectionReason: err.message,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
       });
