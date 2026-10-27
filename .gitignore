@@ -21,3 +21,5 @@ zinipay/
 *.tsbuildinfo
 screenshots/
 frontend/scripts/
+
+e2e-output.txt

@@ -107,56 +107,50 @@ async function main() {
   // 2. Parse blocked attack scenarios
   const attacks = [];
 
-  // Parse Attack 1: Replay CID
-  const replayMatch = content.match(/Attack Scenario 1[^\r\n]*[\s\S]*?(?:Attack 1 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
-  const replayError = replayMatch ? (replayMatch[1] || replayMatch[2] || 'CID already used — duplicate release attempt blocked') : null;
-  if (!replayError) {
-    console.error('❌ Refusing to write: Missing real error text for Attack 1 (Replay CID)');
-    process.exit(1);
-  }
-  attacks.push({
-    vector: 'Replay Deliverable CID',
-    status: 'BLOCKED',
-    rejectionReason: replayError,
-    blockedBy: 'PolicyHelper (On-Chain)',
-  });
-
-  // Parse Attack 2: Over-Cap Spend
-  const overCapMatch = content.match(/Attack Scenario 2[^\r\n]*[\s\S]*?(?:Attack 2 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
-  const overCapError = overCapMatch ? (overCapMatch[1] || overCapMatch[2] || 'Amount exceeds per-proposal effective cap') : null;
-  if (!overCapError) {
-    console.error('❌ Refusing to write: Missing real error text for Attack 2 (Over-Cap Spend)');
-    process.exit(1);
-  }
-  attacks.push({
-    vector: 'Over-Cap Treasury Spend',
-    status: 'BLOCKED',
-    rejectionReason: overCapError,
-    blockedBy: 'PolicyHelper (On-Chain)',
-  });
-
-  // Parse Attack 3: Unauthorized Caller
-  const unauthMatch = content.match(/Attack Scenario 3[^\r\n]*[\s\S]*?(?:Attack 3 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|Rejection reason: ([^\r\n]+))/i);
-  const unauthError = unauthMatch ? (unauthMatch[1] || unauthMatch[2] || 'Only owner or designated DAO can call this') : null;
-  if (!unauthError) {
-    console.error('❌ Refusing to write: Missing real error text for Attack 3 (Unauthorized Caller)');
-    process.exit(1);
-  }
-  attacks.push({
-    vector: 'Unauthorized Release Caller',
-    status: 'BLOCKED',
-    rejectionReason: unauthError,
-    blockedBy: 'PolicyHelper (On-Chain)',
-  });
-
-  // Parse Stolen PR
+  // Parse Stolen PR (Agent Gate)
   const stolenMatch = content.match(/Stolen \/ Unbound PR[^\r\n]*[\s\S]*?BLOCKED by agent:\s*([^\r\n]+)/i);
   if (stolenMatch) {
-    attacks.unshift({
+    attacks.push({
       vector: 'Stolen / Unbound PR',
       status: 'BLOCKED',
       rejectionReason: stolenMatch[1].trim(),
       blockedBy: 'DeliberationEngine (Artifact Verification & Recipient Binding)',
+    });
+  }
+
+  // Parse Attack 1: Replay CID (if contract deployed)
+  const replayMatch = content.match(/Attack Scenario 1[^\r\n]*[\s\S]*?(?:Attack 1 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
+  if (replayMatch) {
+    const replayError = replayMatch[1] || replayMatch[2] || 'CID already used — duplicate release attempt blocked';
+    attacks.push({
+      vector: 'Replay Deliverable CID',
+      status: 'BLOCKED',
+      rejectionReason: replayError,
+      blockedBy: 'PolicyHelper (On-Chain)',
+    });
+  }
+
+  // Parse Attack 2: Over-Cap Spend (if contract deployed)
+  const overCapMatch = content.match(/Attack Scenario 2[^\r\n]*[\s\S]*?(?:Attack 2 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
+  if (overCapMatch) {
+    const overCapError = overCapMatch[1] || overCapMatch[2] || 'Amount exceeds per-proposal effective cap';
+    attacks.push({
+      vector: 'Over-Cap Treasury Spend',
+      status: 'BLOCKED',
+      rejectionReason: overCapError,
+      blockedBy: 'PolicyHelper (On-Chain)',
+    });
+  }
+
+  // Parse Attack 3: Unauthorized Caller (if contract deployed)
+  const unauthMatch = content.match(/Attack Scenario 3[^\r\n]*[\s\S]*?(?:Attack 3 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|Rejection reason: ([^\r\n]+))/i);
+  if (unauthMatch) {
+    const unauthError = unauthMatch[1] || unauthMatch[2] || 'Only owner or designated DAO can call this';
+    attacks.push({
+      vector: 'Unauthorized Release Caller',
+      status: 'BLOCKED',
+      rejectionReason: unauthError,
+      blockedBy: 'PolicyHelper (On-Chain)',
     });
   }
 

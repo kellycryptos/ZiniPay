@@ -15,13 +15,13 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
   >
   > Welcome to ZiniPay—the 100% NEAR-aligned constrained agent layer for Sputnik DAO and Trezu.
   >
-  > In the first 30 seconds, let's look at a real transaction on NEARBlocks. Here is Proposal #42 on our Sputnik DAO. Notice the proposal description: it includes an attestation reference digest from NEAR AI Cloud, labeled honestly as 'Attestation report received (not independently verified)'.
+  > In the first 30 seconds, let's look at real transactions on NEARBlocks. Here is Proposal #0 on our Sputnik DAO `zinipay-demo.sputnikv2.testnet`. Notice the proposal description: it includes an attestation reference digest from NEAR AI Cloud, labeled honestly as 'Attestation report received (not independently verified)'.
   >
-  > The proposal wasn't a loose transfer—it was an atomic FunctionCall targeting our Rust `PolicyHelper` contract. When the human council voted VoteApprove, the DAO attached the exact payout deposit, `release` validated the spend cap and CID uniqueness, transferred the funds to the contributor, and chained an on-chain callback that automatically updated the contributor's reputation score. Everything you see here happened on NEAR testnet."*
+  > The agent filed the proposal, but notice who approved it: Council Member 1 (`zinipay-c1.testnet`) voted VoteApprove, and the proposal remained InProgress. Only after Council Member 2 (`zinipay-c2.testnet`) cast their VoteApprove did the proposal reach quorum, transition to Approved, and disburse exactly 0.1 NEAR to the contributor (`zinipay-recipient2.testnet`). Everything you see here happened on NEAR testnet with strict role separation."*
 
 ---
 
-### 🎬 Scene 2: Multi-Agent Deliberation & TEE Attestation (1:00 – 1:45)
+### 🎬 Scene 2: Multi-Agent Deliberation & Identity Binding (1:00 – 1:45)
 **Goal**: Demonstrate how the agent evaluates deliverables and fails closed against attacks.
 
 - **Screen**: Terminal split-screen (VS Code / CLI)
@@ -29,9 +29,9 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
   ```bash
   npm run agent:propose -- \
     --task "Build Sputnik DAO Three-Way Match Agent" \
-    --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
-    --recipient "vsavchyn-dev.testnet" \
-    --amount 4.5 \
+    --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" \
+    --recipient "zinipay-recipient2.testnet" \
+    --amount 0.1 \
     --dry-run
   ```
 - **Voiceover**:

@@ -165,19 +165,24 @@ The repository contains an automated end-to-end verification script ([`scripts/e
 npm run test:e2e
 ```
 
-### Verified Multi-Sig Lifecycle Output
+### Verified Multi-Sig Testnet Execution
 
-| Step | Action | Contract Target | Verification Mechanism |
-| :--- | :--- | :--- | :--- |
-| **1. Role Separation** | Pre-Flight Validation | Agent / Council / Recipient | ✅ Assert `agent != council1 != council2 != recipient` |
-| **2. Identity Binding** | PR Body Verification | GitHub REST API | ✅ Verified `zinipay-recipient: <account>` binding |
-| **3. Propose** | `add_proposal` (Attached Bond) | Sputnik DAO v2 | ✅ Filed by Agent with SHA-256 Attestation digest |
-| **4. Human Vote 1** | `act_proposal` (`VoteApprove`) | Sputnik DAO v2 | ✅ Council 1 votes; proposal remains `InProgress` |
-| **5. Human Vote 2** | `act_proposal` (`VoteApprove`) | Sputnik DAO v2 | ✅ Council 2 votes; proposal transitions to `Approved` |
-| **6. Payout Receipt** | Receipt Transfer Action | Contributor Account | ✅ Confirmed exact transfer deposit in tx receipt chain |
-| **7. Policy Guardrails** | Replay, Over-Cap, Caller | `PolicyHelper` | ✅ 3/3 attacks fail closed with verified on-chain panics |
+The following run was executed and verified on NEAR Testnet with strict role separation:
 
-*(Per hackathon anti-fabrication rules, live transaction hashes are output strictly from live RPC execution).*
+- **DAO Contract**: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
+- **Agent Account**: `agentzinipaytestnet.testnet` (Requestor role only; zero council seats, no voting permissions)
+- **Council 1 Account**: `zinipay-c1.testnet` (Quorum signer 1/2)
+- **Council 2 Account**: `zinipay-c2.testnet` (Quorum signer 2/2)
+- **Recipient Account**: `zinipay-recipient2.testnet` (Independent contributor)
+- **Contributor Deliverable**: [PR #1 on `kellycryptos/ZiniPay`](https://github.com/kellycryptos/ZiniPay/pull/1) (Merged, authored by `@kellycryptos`, with `zinipay-recipient: zinipay-recipient2.testnet`)
+
+| Step | Action | Tx Hash | Result | Explorer Link |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Stolen PR Gate** | Pre-Flight Rejection | — | 🛡️ **BLOCKED** | Rejected `near/near-sdk-rs#1651` (Author mismatch & missing recipient binding) |
+| **2. Proposal Creation** | `add_proposal` | `3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC` | ✅ Proposal #0 Created | [View on NEARBlocks](https://testnet.nearblocks.io/txns/3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC) |
+| **3. Council 1 Vote** | `act_proposal` (`VoteApprove`) | `GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3` | ✅ Vote 1 Confirmed; Status: `InProgress` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3) |
+| **4. Council 2 Vote** | `act_proposal` (`VoteApprove`) | `9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM` | ✅ Vote 2 Confirmed; Status: `Approved` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM) |
+| **5. Payout Execution** | Sputnik DAO Receipt Transfer | *Receipt in Vote 2* | 💰 +0.1000 NEAR Transferred | Exact payout receipt verified (Balance: 10.0 ➔ 10.1 NEAR) |
 
 ---
 
