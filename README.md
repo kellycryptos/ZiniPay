@@ -1,11 +1,11 @@
-# ZiniPay 🪙🤖
+# ZiniPay
 
-> **100% NEAR-Aligned Constrained Agent Layer for Community Treasuries**  
-> *Proof + Policy + Human Quorum* — Built on **Sputnik DAO v2 / Trezu**, **NEAR AI Cloud**, and **NEAR Intents**.
+> **Constrained Agent Layer for Community Treasuries**  
+> *Proof + Policy + Human Quorum*
 
-[![NEAR Protocol](https://img.shields.io/badge/NEAR-Protocol-black?logo=near)](https://near.org)
-[![Trezu](https://img.shields.io/badge/Trezu-Multisig-purple)](https://trezu.org)
 [![Sputnik DAO](https://img.shields.io/badge/Sputnik-DAO%20v2-blue)](https://github.com/near-daos/sputnik-dao-contract)
+[![Trezu](https://img.shields.io/badge/Trezu-Multisig-purple)](https://trezu.org)
+[![NEAR Protocol](https://img.shields.io/badge/NEAR-Protocol-black?logo=near)](https://near.org)
 [![NEAR Intents](https://img.shields.io/badge/NEAR-Intents-00EC97)](https://near-intents.org)
 
 ---
@@ -233,11 +233,11 @@ Open [http://localhost:5173](http://localhost:5173). Append `?demo=1` to view si
 
 ---
 
-## 📋 Honest "Not Built Yet" List
+## 📋 Roadmap & Current Boundaries
 
-To uphold strict hackathon integrity, the following features are planned roadmap items and are **not** claimed as completed:
+The following capabilities are planned roadmap items and are currently subject to explicit design boundaries:
 
-1. **Independent Cryptographic Intel TDX DCAP Quote Verification**: Currently, the agent fetches the TEE report from `https://cloud-api.near.ai/v1/attestation/report`, confirms receipt of the Intel TDX quote payload, and checks that the server echoed back the client's 32-byte nonce challenge. Full cryptographic verification of the DCAP quote (validating PCK cert chain against Intel PCS and checking that `report_data` binds `signing_address`) is not implemented locally in this build, as it requires Intel DCAP QVL libraries or the `nearai-cloud-verifier` service. Until then, it is labeled honestly in code, UI badges, and docs as: **"Attestation report received (not independently verified)"**.
+1. **Independent Cryptographic Intel TDX DCAP Quote Verification**: Currently, the agent fetches the TEE report from `https://cloud-api.near.ai/v1/attestation/report`, confirms receipt of the Intel TDX quote payload, and checks that the server echoed back the client's 32-byte nonce challenge. Full cryptographic verification of the DCAP quote (validating PCK cert chain against Intel PCS and checking that `report_data` binds `signing_address`) is not implemented locally in this build, as it requires Intel DCAP QVL libraries or the `nearai-cloud-verifier` service. Until direct on-chain or local DCAP verification is wired in, it is labeled in code, UI badges, and docs as: **"Attestation report received (not independently verified)"**.
 2. **Chain Signatures Cross-Chain Signing**: Cross-chain settlement is currently routed through the live NEAR Intents 1Click API (`1click.chaindefuser.com`). Direct multi-chain threshold ECDSA signing via `v1.signer` is planned.
 3. **Automated Council Auto-Clearing for Gold Tier**: All proposals currently require an explicit human council approval vote (`VoteApprove`). Automated execution for high-reputation contributors without human quorum is in design phase.
 4. **Native Mobile App**: The UI is a responsive web application built with React/Vite/Tailwind and NEAR Wallet Selector; dedicated iOS/Android apps are not built.

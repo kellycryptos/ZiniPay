@@ -13,7 +13,7 @@ export function LandingHowItWorks() {
     {
       num: '02',
       title: 'Agent Deliberation',
-      actor: 'NEAR AI Cloud Agent',
+      actor: 'AI Deliberation Layer',
       desc: 'ZiniPay Agent inspects the artifact for authenticity, checks contributor reputation tier, and computes a deliberation confidence score.',
       icon: Cpu,
     },
@@ -46,7 +46,7 @@ export function LandingHowItWorks() {
             How It Works in 4 Steps
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-            From pull request submission to multi-sig settlement, every step leaves an immutable audit trail on NEAR.
+            From deliverable submission to multi-sig settlement, every step leaves an immutable on-chain audit trail.
           </p>
         </div>
 

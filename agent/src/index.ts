@@ -60,7 +60,7 @@ const program = new Command();
 
 program
   .name('zinipay-agent')
-  .description('ZiniPay 🪙🤖: 100% NEAR-Aligned Constrained Release Agent for Trezu / Sputnik DAO')
+  .description('ZiniPay: Constrained Release Agent for Trezu / Sputnik DAO')
   .version('1.0.0');
 
 // ── propose command ───────────────────────────────────────────────────────────

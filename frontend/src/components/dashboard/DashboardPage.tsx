@@ -114,7 +114,7 @@ export function DashboardPage({
             }}
             className="text-[11px] underline hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
           >
-            Switch to live NEAR testnet
+            Switch to live testnet
           </button>
         </aside>
       )}
@@ -293,7 +293,7 @@ export function DashboardPage({
                 /* Loading State Skeleton */
                 <div className="ledger-card p-10 flex flex-col items-center justify-center gap-2 text-xs text-[var(--text-muted)] animate-pulse">
                   <div className="w-6 h-6 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--color-passed)] animate-spin" />
-                  <span>Checking {daoContract} on NEAR {network}...</span>
+                  <span>Checking {daoContract} on {network}...</span>
                 </div>
               ) : displayProposals.length > 0 ? (
                 /* Proposal Receipts Feed */

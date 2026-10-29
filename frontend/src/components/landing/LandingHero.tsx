@@ -62,7 +62,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
           const payoutNear = first.amountNear || '0.10';
           const realProposal: Proposal = {
             id: first.index !== undefined ? Math.max(0, first.index - 1) : 0,
-            title: first.prUrl ? `Merged GitHub PR: ${first.prUrl}` : 'Contributor PR Bounty Release (GitHub PR #1)',
+            title: first.prUrl ? `Merged GitHub PR: ${first.prUrl}` : 'Contributor Deliverable Release (GitHub PR #1)',
             proposer: 'agentzinipaytestnet.testnet',
             recipient: recipientAccount,
             amountNear: payoutNear,
@@ -127,7 +127,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
         <div className="flex-1 flex flex-col gap-6 text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--color-passed)] w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
-            <span>NEAR SPUTNIK DAO + TREZU GOVERNANCE LAYER</span>
+            <span>SPUTNIK DAO & TREZU GOVERNANCE LAYER</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.15] max-w-2xl text-balance">

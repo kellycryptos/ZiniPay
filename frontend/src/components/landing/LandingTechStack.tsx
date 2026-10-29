@@ -58,10 +58,10 @@ export function LandingTechStack() {
             Infrastructure
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            NEAR Primitives Actually Used
+            Core Infrastructure & Integrations
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-            No synthetic wrappers or simulated blockchain layers. ZiniPay integrates deeply with the native NEAR governance and cryptographic computing stack.
+            Direct integration with battle-tested multi-sig governance, smart contract guardrails, and confidential computing infrastructure.
           </p>
         </div>
 

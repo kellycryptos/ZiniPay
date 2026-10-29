@@ -82,7 +82,7 @@ export function LandingVerifiedSection() {
               Verified on Testnet
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              Cryptographic proof of end-to-end execution on NEAR Testnet. Every proposal, council vote, atomic release, and blocked attack transaction hash.
+              Cryptographic verification of end-to-end execution on testnet. Proposal creation, council multi-sig votes, atomic release, and blocked attack transaction records.
             </p>
             {meta.generatedAt && (
               <div className="font-mono text-[11px] text-[var(--text-muted)] mt-2">

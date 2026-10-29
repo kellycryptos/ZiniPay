@@ -1,26 +1,25 @@
-# ZiniPay 🪙🤖: Complete NEAR Protocol & Hackathon Alignment Audit
+# ZiniPay: Technical Architecture & System Integration Specification
 
-> **"NEAR in 2026 is the commerce and settlement layer for assets and agents."**  
-> This document audits **ZiniPay** against the official NEAR developer documentation, the Sputnik DAO v2 specification, Trezu operational docs, and the NEAR Hackathon criteria.
+> This document details the architectural integration of **ZiniPay** with the Sputnik DAO v2 specification, Trezu operational workflows, NEAR AI Cloud confidential inference, and NEAR Intents cross-chain routing.
 
 ---
 
-## 🏛️ Executive Summary: Core Alignment Pillars
+## 🏛️ Executive Summary: Core Architectural Pillars
 
-| NEAR Primitive / Hackathon Track | Official NEAR Specification | How ZiniPay Implements It | Verified Code Reference |
+| System Component / Primitive | Specification | How ZiniPay Implements It | Verified Code Reference |
 |---|---|---|---|
 | **1. Sputnik DAO v2** | `near-daos/sputnik-dao-contract` | Uses native `add_proposal` (FunctionCall to policy helper or Transfer), `act_proposal`, and `get_policy`. Attaches `proposal_bond` if required by DAO policy. Operates on live instances (`*.sputnik-dao.near`) without rebuilding the base multisig. | [`agent/src/dao.ts`](../agent/src/dao.ts) |
 | **2. Trezu Operational Roles** | `docs.trezu.org` & `NEAR-DevHub/trezu` | The AI agent is assigned the **Requestor** role. It queues proposals under on-chain policy constraints; human members in **Finance** or **Governance** retain ultimate voting and veto authority. | [`agent/src/index.ts`](../agent/src/index.ts) |
 | **3. Proposer Sandboxing & Security** | NEAR Account Model (`docs.near.org`) | The agent only has permissions to file proposals. It cannot unilaterally release treasury funds. All payouts require human multi-sig quorum approval. | [`scripts/setup-testnet.mjs`](../scripts/setup-testnet.mjs) |
 | **4. NEAR AI Cloud** | `cloud-api.near.ai` | Multi-agent deliberation runs via `https://cloud-api.near.ai/v1` on open models (Llama 3.3 70B, DeepSeek). When credentials are absent, runs in explicit `--dry-run` simulation mode. | [`agent/src/deliberation.ts`](../agent/src/deliberation.ts) |
 | **5. NEAR Intents** | `1click.chaindefuser.com` (Defuse / 1Click) | Optional cross-chain payouts route through the NEAR Intents 1Click API for atomic settlement in native USDC on Ethereum, Solana, and Bitcoin. | [`agent/src/intents.ts`](../agent/src/intents.ts) |
-| **6. Social Money Track** | Hackathon Prompt: *"Build what communities do with Sputnik DAO & Trezu"* | Delivers **Three-Way Match releases**, **on-chain policy helper contract**, **reputation-tier scaling (Bronze/Silver/Gold)**, and anti-replay protection. | [`agent/src/policy.ts`](../agent/src/policy.ts) & [`contracts/policy-helper`](../contracts/policy-helper) |
+| **6. Policy & Reputation Engine** | On-chain verification & state tracking | Delivers **Three-Way Match releases**, **on-chain policy helper contract**, **reputation-tier scaling (Bronze/Silver/Gold)**, and anti-replay protection. | [`agent/src/policy.ts`](../agent/src/policy.ts) & [`contracts/policy-helper`](../contracts/policy-helper) |
 
 ---
 
 ## 1. Sputnik DAO v2 Alignment (`near-daos/sputnik-dao-contract`)
 
-The hackathon explicitly advises: **"Don't rebuild the multisig — build what communities do with it."**
+Core Design Principle: **Do not rebuild the base multisig — build policy constraints around what agents and communities do with it.**
 
 ZiniPay adheres to this principle:
 - **No Redundant Multisig Contracts**: We connect to standard Sputnik DAO v2 instances (`sputnikv2.testnet` / `sputnik-dao.near`).
@@ -106,9 +105,9 @@ Rather than forcing DAOs to manage cross-chain bridges:
 
 ---
 
-## 6. Hackathon Track Alignment
+## 6. Security & Governance Domains
 
-- **Primary Track: Social Money**  
+- **Treasury Governance Domain**:  
   Shared treasury releases on Sputnik DAO + Trezu, programmable contributor rewards, on-chain policy verification, and reputation-gated access tiers.
-- **Secondary Track: AI Security & Defense**  
+- **AI Security & Defense Domain**:  
   The Three-Way Release Gate, per-recipient cooldown periods, canonical anti-replay normalization, prompt-injection defense, and fail-closed deliberation.

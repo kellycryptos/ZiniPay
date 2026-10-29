@@ -25,7 +25,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
             </span>
           </div>
           <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-            Constrained Agent Layer for Community Treasuries. Built for Sputnik DAO v2, Trezu, NEAR AI Cloud, and NEAR Intents.
+            Constrained Agent Layer for Community Treasuries. Proof + Policy + Human Quorum.
           </p>
         </div>
 
@@ -75,10 +75,10 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
 
       <div className="max-w-6xl mx-auto px-6 mt-8 pt-6 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[var(--text-muted)]">
         <div>
-          Zero-Fabrication Ledger · 100% NEAR-Aligned Policy Invariants
+          Zero-Fabrication Ledger · Fail-Closed Policy Invariants
         </div>
         <div>
-          NEAR Testnet & Mainnet Ready
+          Testnet & Mainnet Ready
         </div>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 {
   "name": "zinipay",
   "version": "1.0.0",
-  "description": "ZiniPay: 100% NEAR-Aligned Constrained Agent Layer for Community Treasuries (Sputnik DAO & Trezu)",
+  "description": "ZiniPay: Constrained Agent Layer for Community Treasuries (Sputnik DAO & Trezu)",
   "private": true,
   "workspaces": [
     "agent",

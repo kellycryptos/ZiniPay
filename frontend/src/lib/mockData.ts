@@ -20,7 +20,7 @@ export const initialProposals: Proposal[] = [
     amountNear: '4.5',
     amountYocto: '4500000000000000000000000',
     proofCid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-    summary: 'Verified GitHub PR #88 with 100% test coverage on NEAR Intent solver execution.',
+    summary: 'Verified GitHub PR #88 with full test coverage on NEAR Intent solver execution.',
     evidenceType: 'github_pr',
     evidenceDetails: 'GitHub Repo: near-intents-router | PR #88 merged | 42 passing unit tests | Signed by committer ed25519:6c5d... | AI confidence 96/100',
     createdAt: '12 mins ago',
