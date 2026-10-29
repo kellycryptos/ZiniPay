@@ -120,6 +120,16 @@ code, kbd, samp, pre, .font-mono {
   flex-wrap: wrap;
 }
 
+.receipt-card .ledger-row {
+  padding: 0.125rem 0.35rem;
+  border-radius: 4px;
+  transition: background-color 0.15s var(--ease-spring);
+}
+
+.receipt-card .ledger-row:hover {
+  background-color: rgba(15, 23, 42, 0.035);
+}
+
 /* Minimalist technical buttons */
 .btn-primary {
   display: inline-flex;

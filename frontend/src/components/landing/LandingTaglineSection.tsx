@@ -133,10 +133,10 @@ export function LandingTaglineSection() {
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--bg-panel-alt)]/90 border border-white/[0.08] text-[11px] font-mono text-slate-300 mb-8 backdrop-blur-md shadow-sm">
           <Sparkles size={13} className="text-amber-400" />
           <span className="font-semibold text-white tracking-wider uppercase">
-            The Social Money Balance
+            The Three-Way Balance
           </span>
           <span className="text-[var(--text-muted)]">·</span>
-          <span className="text-[var(--color-passed)] font-medium">Three-Way Gate</span>
+          <span className="text-[var(--color-passed)] font-medium">Fail-Closed Invariants</span>
         </div>
 
         {/* Rhythmic 3-Line Statement with Embedded Interactive Visual Tokens */}

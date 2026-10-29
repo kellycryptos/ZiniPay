@@ -10,8 +10,7 @@ import {
   Check,
   CheckCircle2,
   ExternalLink,
-  Layers,
-  Lock,
+  BookOpen,
 } from 'lucide-react';
 import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
 import { Proposal } from '../../lib/types';
@@ -63,6 +62,7 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
 export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
   const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
   const [isRealRun, setIsRealRun] = useState<boolean>(false);
+  const [hoveredGate, setHoveredGate] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/data/verified.json')
@@ -126,13 +126,13 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
 
   return (
     <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] overflow-hidden">
-      {/* Top subtle radial glow */}
+      {/* Top subtle multi-stop radial glow */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[380px] bg-[radial-gradient(ellipse_at_center,rgba(0,236,151,0.08)_0%,rgba(0,0,0,0)_70%)] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(0,236,151,0.08)_0%,rgba(34,211,238,0.03)_40%,transparent_70%)] pointer-events-none"
         aria-hidden="true"
       />
 
-      {/* Blueprint grid with subtle fade mask */}
+      {/* Blueprint grid with radial fade mask */}
       <div
         className="absolute inset-0 opacity-[0.035] pointer-events-none"
         style={{
@@ -147,7 +147,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
         {/* Left Column: Outcome, Value Proposition, Action CTAs & Three-Way Gate Preview */}
         <div className="flex-1 flex flex-col gap-6 text-left w-full">
           {/* Status Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)]/90 border border-[var(--border-subtle)] text-[11px] font-mono text-slate-300 w-fit backdrop-blur-sm shadow-sm">
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[var(--bg-panel-alt)]/90 border border-white/[0.08] text-[11px] font-mono text-slate-300 w-fit backdrop-blur-md shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-passed)] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-passed)]" />
@@ -157,12 +157,12 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             <span className="text-[var(--color-passed)] font-mono">v1.0 Testnet Verified</span>
           </div>
 
-          {/* Headline with adjusted size and tighter leading */}
-          <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight text-white leading-[1.18] max-w-xl text-balance">
+          {/* Headline with balanced scale and tight leading */}
+          <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold tracking-tight text-white leading-[1.18] max-w-xl text-balance">
             Constrained Agent Layer for Community Treasuries
           </h1>
 
-          {/* Subtext with breathing room and clear mechanism */}
+          {/* Subtext with generous breathing room and clear mechanism */}
           <div className="flex flex-col gap-2.5 text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-prose">
             <p>
               Communities need to pay contributors without handing an AI the keys.
@@ -177,7 +177,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             <button
               type="button"
               onClick={onNavigateToApp}
-              className="btn-primary cursor-pointer text-sm py-2.5 px-5 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2 group font-semibold"
+              className="btn-primary cursor-pointer text-xs sm:text-sm py-2.5 px-5 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2 group font-semibold tracking-wide"
             >
               <span>Open Dashboard</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
@@ -187,25 +187,26 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
               href="https://github.com/zinipay/zinipay"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary text-sm py-2.5 px-4 flex items-center gap-2 text-slate-200 hover:text-white"
+              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-slate-200 hover:text-white border border-white/[0.08]"
             >
               <Github size={16} />
-              <span>Git</span>
+              <span>View Contracts & Code</span>
             </a>
 
             <a
               href="https://github.com/zinipay/zinipay/tree/main/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary text-sm py-2.5 px-4 flex items-center gap-2 text-slate-200 hover:text-white"
+              className="btn-secondary text-xs sm:text-sm py-2.5 px-3 flex items-center gap-1.5 text-slate-400 hover:text-white border border-white/[0.08]"
+              title="Documentation"
             >
-              <FileCheck size={16} />
+              <BookOpen size={14} />
               <span>Docs</span>
             </a>
           </div>
 
-          {/* Three-Way Gate Hero Preview Widget */}
-          <div className="mt-2 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)]/90 border border-[var(--border-subtle)] backdrop-blur-sm shadow-sm">
+          {/* Three-Way Gate Hero Preview Widget (Harmonized Tri-Color Grammar) */}
+          <div className="mt-1 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)]/90 border border-[var(--border-subtle)] backdrop-blur-sm shadow-sm">
             <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[var(--border-subtle)] text-[11px] font-mono">
               <span className="text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5 font-medium">
                 <ShieldCheck size={14} className="text-[var(--color-passed)]" />
@@ -218,49 +219,73 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-              {/* Gate 01 */}
-              <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-white/[0.04] flex flex-col justify-between hover:border-[var(--color-passed-border)] transition-colors">
+              {/* Gate 01: Agent Proof (Cyan) */}
+              <div
+                onMouseEnter={() => setHoveredGate(1)}
+                onMouseLeave={() => setHoveredGate(null)}
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                  hoveredGate === 1
+                    ? 'border-cyan-400/60 shadow-[0_4px_16px_rgba(34,211,238,0.12)] -translate-y-0.5'
+                    : 'border-cyan-500/20 hover:border-cyan-500/40'
+                }`}
+              >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">GATE 01</span>
-                    <FileCheck size={14} className="text-slate-300" />
+                    <span className="font-mono text-[10px] text-cyan-400 font-bold">GATE 01</span>
+                    <FileCheck size={14} className="text-cyan-300" />
                   </div>
                   <div className="text-xs font-semibold text-white tracking-tight">Verifiable Proof</div>
-                  <div className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">PR / CID Hash</div>
+                  <div className="text-[10px] text-slate-400 truncate mt-0.5">PR & CID Hash</div>
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.04] flex items-center gap-1 text-[10px] font-mono text-[var(--color-passed)]">
+                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-cyan-400">
                   <Check size={11} />
                   <span>Verified</span>
                 </div>
               </div>
 
-              {/* Gate 02 */}
-              <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-white/[0.04] flex flex-col justify-between hover:border-[var(--color-passed-border)] transition-colors">
+              {/* Gate 02: On-Chain Policy (Emerald) */}
+              <div
+                onMouseEnter={() => setHoveredGate(2)}
+                onMouseLeave={() => setHoveredGate(null)}
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                  hoveredGate === 2
+                    ? 'border-emerald-400/60 shadow-[0_4px_16px_rgba(0,236,151,0.12)] -translate-y-0.5'
+                    : 'border-emerald-500/20 hover:border-emerald-500/40'
+                }`}
+              >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">GATE 02</span>
                     <ShieldAlert size={14} className="text-[var(--color-passed)]" />
                   </div>
                   <div className="text-xs font-semibold text-white tracking-tight">On-Chain Policy</div>
-                  <div className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">Tier Cap & Rules</div>
+                  <div className="text-[10px] text-slate-400 truncate mt-0.5">Tier Cap & Rules</div>
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.04] flex items-center gap-1 text-[10px] font-mono text-[var(--color-passed)]">
+                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-[var(--color-passed)]">
                   <Check size={11} />
                   <span>Enforced</span>
                 </div>
               </div>
 
-              {/* Gate 03 */}
-              <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-white/[0.04] flex flex-col justify-between hover:border-[var(--color-passed-border)] transition-colors">
+              {/* Gate 03: Human Quorum (Amber) */}
+              <div
+                onMouseEnter={() => setHoveredGate(3)}
+                onMouseLeave={() => setHoveredGate(null)}
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                  hoveredGate === 3
+                    ? 'border-amber-400/60 shadow-[0_4px_16px_rgba(251,191,36,0.12)] -translate-y-0.5'
+                    : 'border-amber-500/20 hover:border-amber-500/40'
+                }`}
+              >
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">GATE 03</span>
-                    <Users size={14} className="text-slate-300" />
+                    <span className="font-mono text-[10px] text-amber-400 font-bold">GATE 03</span>
+                    <Users size={14} className="text-amber-300" />
                   </div>
                   <div className="text-xs font-semibold text-white tracking-tight">Human Quorum</div>
-                  <div className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">2-of-3 Council</div>
+                  <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-3 Council</div>
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.04] flex items-center gap-1 text-[10px] font-mono text-[var(--color-passed)]">
+                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-amber-400">
                   <Check size={11} />
                   <span>Consented</span>
                 </div>
@@ -269,32 +294,32 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
           </div>
 
           {/* Integrated Product Architecture Spec Row */}
-          <div className="grid grid-cols-3 gap-2 px-3.5 py-2.5 rounded-lg bg-[var(--bg-panel-alt)]/50 border border-[var(--border-subtle)] text-xs font-mono">
+          <div className="grid grid-cols-3 gap-2 px-3.5 py-2.5 rounded-lg bg-[var(--bg-panel-alt)]/60 border border-[var(--border-subtle)] text-xs font-mono">
             <div>
-              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Verification</div>
-              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Three-Way Gate</div>
+              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Policy Engine</div>
+              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Rust PolicyHelper</div>
             </div>
             <div>
               <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Execution Model</div>
-              <div className="text-[var(--color-passed)] font-semibold text-[11px] mt-0.5 truncate">Fail-Closed</div>
+              <div className="text-[var(--color-passed)] font-semibold text-[11px] mt-0.5 truncate">Fail-Closed Gate</div>
             </div>
             <div>
-              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Governance</div>
-              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Multi-Sig Quorum</div>
+              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Governance Multi-Sig</div>
+              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Sputnik DAO v2</div>
             </div>
           </div>
         </div>
 
         {/* Right Column: Docked Signature Release Receipt Cockpit */}
         <div className="w-full lg:w-[490px] shrink-0 relative">
-          {/* Subtle Ambient Glow Behind Card */}
+          {/* Subtle Ambient Backlight Glow Behind Chassis */}
           <div
-            className="absolute -inset-1.5 bg-gradient-to-tr from-[var(--color-passed)]/20 via-emerald-500/5 to-transparent rounded-2xl blur-xl opacity-75 pointer-events-none"
+            className="absolute -inset-1.5 bg-gradient-to-tr from-[var(--color-passed)]/15 via-cyan-500/10 to-transparent rounded-2xl blur-xl opacity-75 pointer-events-none"
             aria-hidden="true"
           />
 
           {/* Elevated Cockpit Chassis */}
-          <div className="relative rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-1 ring-white/[0.06]">
+          <div className="relative rounded-2xl bg-[var(--bg-panel)] border border-white/[0.08] p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-1 ring-white/[0.04]">
             {/* Cockpit Window Controls Header */}
             <div className="flex items-center justify-between pb-3 px-1 border-b border-[var(--border-subtle)] mb-3 text-xs">
               <div className="flex items-center gap-2">
@@ -333,7 +358,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             </div>
 
             {/* Embedded Release Receipt Card */}
-            <div className="rounded-xl overflow-hidden shadow-inner">
+            <div className="rounded-xl overflow-hidden shadow-inner border border-black/[0.06]">
               <ReleaseReceiptCard
                 proposal={heroProposal}
                 daoContractId={daoContractId}
@@ -346,9 +371,11 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             {/* Telemetry Footer Strip */}
             <div className="mt-3 pt-2.5 px-1 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5">
-                <span className="text-white font-medium">On-Chain Policy</span>
+                <span className="text-white font-medium">PolicyHelper</span>
                 <span>·</span>
-                <span className="text-slate-400">Enforced</span>
+                <span className="truncate max-w-[130px] sm:max-w-[170px] text-slate-400">
+                  {policyContractId || 'zinipay-policy.testnet'}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-[var(--color-passed)] font-medium">
                 <CheckCircle2 size={12} />
