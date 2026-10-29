@@ -49,8 +49,8 @@ export interface ReputationEntry {
 // NOTE: Canonical reputation persistence is maintained on-chain via `PolicyHelper` (get_reputation).
 // Serverless instances do not persist state across invocations.
 const defaultFallbackLedger: Record<string, ReputationEntry> = {
-  'alice.testnet': {
-    accountId: 'alice.testnet',
+  'zinipay-recipient2.testnet': {
+    accountId: 'zinipay-recipient2.testnet',
     score: 85,
     tier: 'Gold',
     totalProposals: 14,

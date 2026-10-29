@@ -90,7 +90,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
                   Audits deliverable depth, commit history, and artifact CID structure.
                 </p>
                 <div className="p-2.5 rounded-lg bg-black/60 font-mono text-[11px] text-gray-300 border border-gray-800/80">
-                  <span className="text-emerald-400">✓ Deliverable Verified:</span> {proposal.proofCid}
+                  <span className="text-emerald-400">✓ Deliverable Artifact:</span> {proposal.proofCid}
                   <br />
                   <span className="text-blue-400">↳ Audit Critique:</span> Substantive evidence attached. Scope aligns directly with milestone acceptance criteria.
                 </div>

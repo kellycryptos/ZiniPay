@@ -30,9 +30,9 @@
   --color-pending-bg: rgba(180, 83, 9, 0.12);
   --color-pending-border: rgba(180, 83, 9, 0.35);
 
-  --text-primary: #E2E8F0;
-  --text-secondary: #8D9EBA;
-  --text-muted: #64758F;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #8D9EBA;
 }
 
 html {

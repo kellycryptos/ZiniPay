@@ -90,6 +90,40 @@ export async function runDeliberationTests() {
   console.assert(resLive.attestationSummary.includes('FAIL'), 'Attestation summary must show FAIL');
   console.log('✓ Test 2: Live deliberation fails closed with mock key');
 
+  // Test 2b: MultiAgentDeliberationEngine fails closed on HTTP 402 (No spending limit)
+  const engine402 = new MultiAgentDeliberationEngine({
+    baseUrl: 'https://cloud-api.near.ai/v1',
+    apiKey: 'sk-simulated-key',
+    model: 'google/gemini-2.5-flash',
+  });
+  // Mock client chat completions create to throw 402
+  (engine402 as any).client = {
+    chat: {
+      completions: {
+        create: async () => {
+          const err: any = new Error('402 No spending limit configured');
+          err.status = 402;
+          throw err;
+        },
+      },
+    },
+  };
+
+  const res402 = await engine402.deliberate({
+    taskDescription: 'Bounty deliverable',
+    deliverable: 'https://github.com/org/repo/pull/1',
+    amountNear: '1',
+    recipientId: 'bob.testnet',
+    recipientReputation: 10,
+    dryRun: false,
+  });
+  console.assert(!res402.consensusApproved, 'Deliberation must fail closed and reject on HTTP 402');
+  console.assert(!res402.inspector.approved, 'Inspector must not approve on HTTP 402');
+  console.assert(!res402.riskArbiter.approved, 'Risk Arbiter must not approve on HTTP 402');
+  console.assert(res402.inspector.critique.includes('NO MODEL REVIEW'), 'Critique must flag NO MODEL REVIEW');
+  console.assert(res402.attestationSummary.includes('FAIL'), 'Attestation summary must record FAIL');
+  console.log('✓ Test 2b: Live deliberation fails closed on HTTP 402 with [NO MODEL REVIEW]');
+
   // Test 3: MultiAgentDeliberationEngine in dry-run mode
   const resDryRun = await engine.deliberate({
     taskDescription: 'Build a feature',

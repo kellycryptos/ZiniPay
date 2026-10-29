@@ -30,15 +30,15 @@ ZiniPay adheres to this principle:
     ```json
     {
       "proposal": {
-        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: near/near-sdk-rs#1651 | Confidence: 95%",
+        "description": "[Three-Way Match: 3/3 PASS] [Tier: Silver] ... | Deliverable: kellycryptos/ZiniPay#1 | Confidence: 95%",
         "kind": {
           "FunctionCall": {
-            "receiver_id": "policy.zinipay.testnet",
+            "receiver_id": "zinipay-policy2.testnet",
             "actions": [
               {
                 "method_name": "release",
-                "args": "eyJyZWNpcGllbnQiOiJhbGljZS50ZXN0bmV0IiwiYW1vdW50IjoiNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImNpZCI6Im5lYXIvY29yZS1jb250cmFjdHMjNDIifQ==",
-                "deposit": "5000000000000000000000000",
+                "args": "eyJyZWNpcGllbnQiOiJ6aW5pcGF5LXJlY2lwaWVudDIudGVzdG5ldCIsImFtb3VudCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImNpZCI6ImtlbGx5Y3J5cHRvcy9aaW5pUGF5IzEifQ==",
+                "deposit": "100000000000000000000000",
                 "gas": "150000000000000"
               }
             ]
@@ -111,4 +111,4 @@ Rather than forcing DAOs to manage cross-chain bridges:
 - **Primary Track: Social Money**  
   Shared treasury releases on Sputnik DAO + Trezu, programmable contributor rewards, on-chain policy verification, and reputation-gated access tiers.
 - **Secondary Track: AI Security & Defense**  
-  The Three-Way Release Gate, rolling spend caps, per-recipient cooldown periods, canonical anti-replay normalization, prompt-injection defense, and fail-closed deliberation.
+  The Three-Way Release Gate, per-recipient cooldown periods, canonical anti-replay normalization, prompt-injection defense, and fail-closed deliberation.

@@ -341,6 +341,7 @@ async function run() {
         ],
       },
     };
+    console.log(`  ✓ Proposal kind: FunctionCall -> ${policyContractId}::release()`);
   } else {
     proposalKind = {
       Transfer: {
@@ -349,6 +350,7 @@ async function run() {
         amount: payoutAmountYocto,
       },
     };
+    console.log(`  ✓ Proposal kind: Direct DAO Transfer -> ${recipientAccountId}`);
   }
 
   // ── Step 5: Submit Real Proposal to DAO ────────────────────────────────────

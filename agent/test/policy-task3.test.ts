@@ -7,12 +7,12 @@ export async function runPolicyTests() {
   console.log('Testing Task 3 policy normalization, anti-replay, and FunctionCall proposal...');
 
   // Test 1: normalizeDeliverable canonicalization
-  const pr1 = 'https://GitHub.com/Near/core-contracts/pull/42?foo=bar#section';
-  const pr2 = 'https://github.com/near/core-contracts/pull/42/';
+  const pr1 = 'https://GitHub.com/Near/repo-contracts/pull/42?foo=bar#section';
+  const pr2 = 'https://github.com/near/repo-contracts/pull/42/';
   const normPr1 = normalizeDeliverable(pr1);
   const normPr2 = normalizeDeliverable(pr2);
-  console.assert(normPr1 === 'near/core-contracts#42', `Expected near/core-contracts#42, got ${normPr1}`);
-  console.assert(normPr2 === 'near/core-contracts#42', `Expected near/core-contracts#42, got ${normPr2}`);
+  console.assert(normPr1 === 'near/repo-contracts#42', `Expected near/repo-contracts#42, got ${normPr1}`);
+  console.assert(normPr2 === 'near/repo-contracts#42', `Expected near/repo-contracts#42, got ${normPr2}`);
   console.log('✓ Test 1: GitHub PR canonicalized to owner/repo#number');
 
   // Test 2: IPFS canonicalization
@@ -77,7 +77,7 @@ export async function runPolicyTests() {
     console.assert(prop.FunctionCall.actions[0].method_name === 'release', 'Action must be release');
     const argsJson = JSON.parse(Buffer.from(prop.FunctionCall.actions[0].args, 'base64').toString());
     console.assert(argsJson.recipient === 'alice.testnet', 'Arg recipient matches');
-    console.assert(argsJson.cid === 'near/core-contracts#42', 'Arg cid matches normalized deliverable');
+    console.assert(argsJson.cid === 'near/repo-contracts#42', 'Arg cid matches normalized deliverable');
   }
   console.log('✓ Test 4: FunctionCall proposal built correctly');
 

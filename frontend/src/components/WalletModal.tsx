@@ -52,8 +52,8 @@ export function WalletModal({
       balance: '0.25 NEAR (Simulated)',
     },
     {
-      id: 'alice.testnet',
-      label: 'Alice (Gold Contributor)',
+      id: 'contributor.testnet',
+      label: 'Contributor (Gold Contributor)',
       role: 'contributor' as const,
       balance: '45.0 NEAR (Simulated)',
     },

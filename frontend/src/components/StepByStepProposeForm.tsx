@@ -69,6 +69,8 @@ export function StepByStepProposeForm({
     reason: string;
     score?: number;
     attestationSummary?: string;
+    simulated?: boolean;
+    reviewType?: string;
   }>({ status: 'pending', reason: 'Awaiting agent deliberation' });
 
   const [payloadStatus, setPayloadStatus] = useState<{
@@ -83,7 +85,7 @@ export function StepByStepProposeForm({
       label: 'DevHub Tutorial',
       task: 'Write comprehensive tutorial on Sputnik DAO & Trezu integration',
       deliverable: 'https://github.com/near-devhub/tutorials/pull/88',
-      recipient: 'alice.testnet',
+      recipient: 'contributor.testnet',
       amount: '4.5',
       destination: 'near' as const,
     },
@@ -202,9 +204,13 @@ export function StepByStepProposeForm({
 
         setDeliberationStatus({
           status: 'passed',
-          reason: `Multi-agent consensus passed (${delib?.inspector?.score || 88}/100 confidence). Attestation generated.`,
+          reason: delib?.reviewType === 'format-check-only'
+            ? 'Format check only: deliverable pattern valid (no model reviewed deliverable; simulation).'
+            : `Multi-agent consensus passed (${delib?.inspector?.score || 88}/100 confidence). Attestation generated.`,
           score: delib?.inspector?.score || 88,
           attestationSummary: delib?.attestationSummary || 'Report received (not independently verified)',
+          simulated: Boolean(data.simulated || isDemo),
+          reviewType: delib?.reviewType || 'format-check-only',
         });
 
         setCurrentStep(5);
@@ -295,7 +301,7 @@ export function StepByStepProposeForm({
       evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${deliberationStatus.attestationSummary}`,
       createdAt: 'Just now',
       status: 'pending_quorum',
-      simulated: isDemo,
+      simulated: isDemo || Boolean(deliberationStatus.simulated),
       policy: {
         withinCap: true,
         capLimit: `${onChainPolicy ? (Number(BigInt(onChainPolicy.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1) : '15.0'} NEAR`,
@@ -321,7 +327,7 @@ export function StepByStepProposeForm({
     };
 
     onProposalCreated(newProp);
-    onShowToast(`Proposal #ZP-${newId} queued with verified Three-Way Match!`);
+    onShowToast(`Proposal #ZP-${newId} queued with Three-Way Match!`);
 
     // Reset form
     setTask('');
@@ -583,9 +589,21 @@ export function StepByStepProposeForm({
         <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <span className="text-[var(--text-muted)]">Step 4:</span>
-            <div>
-              <span className="font-semibold text-white">Deliberation: </span>
-              <span className="text-[var(--text-secondary)]">{deliberationStatus.reason}</span>
+            <div className="flex flex-col gap-1">
+              <div>
+                <span className="font-semibold text-white">Deliberation: </span>
+                <span className="text-[var(--text-secondary)]">{deliberationStatus.reason}</span>
+              </div>
+              {deliberationStatus.simulated && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold">
+                    SIMULATION
+                  </span>
+                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                    format-check-only
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <span

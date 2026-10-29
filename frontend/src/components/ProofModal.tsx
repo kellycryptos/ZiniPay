@@ -90,7 +90,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 Gate 01: Artifact Evidence
               </span>
-              <span className="text-emerald-400 font-semibold">VERIFIED PASS</span>
+              <span className="text-emerald-400 font-semibold">CHECKS PASSED</span>
             </div>
             <div className="flex justify-between items-center text-gray-300">
               <span className="flex items-center gap-1.5">

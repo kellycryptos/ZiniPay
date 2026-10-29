@@ -1,7 +1,24 @@
-import React from 'react';
-import { ShieldAlert, AlertTriangle, Check, X, ShieldBan, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 export function LandingAttacksSection() {
+  const [hasRunOnTestnet, setHasRunOnTestnet] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/data/verified.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.viaPolicyContract === true) {
+          setHasRunOnTestnet(true);
+        } else if (Array.isArray(data.transactions)) {
+          const run = data.transactions.some((t: any) => t.viaPolicyContract === true);
+          setHasRunOnTestnet(run);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const attacks = [
     {
       title: 'Replayed Deliverable / CID Attack',
@@ -9,15 +26,13 @@ export function LandingAttacksSection() {
       description: 'Attacker resubmits a previously paid GitHub PR or IPFS CID to claim multiple payouts for the same work.',
       defense: 'PolicyHelper smart contract stores an immutable on-chain ledger of spent CID hashes to prevent double-spend.',
       rejectionCode: 'CID already used — duplicate release attempt blocked',
-      status: 'ENFORCED BY CONTRACT',
     },
     {
       title: 'Over-Cap Treasury Drain',
       vector: 'EXCESSIVE WITHDRAWAL',
-      description: 'Rogue agent or compromised caller requests 50 NEAR for a Bronze contributor with a 5 NEAR limit.',
-      defense: 'Contract enforces strict per-proposal caps based on contributor tier (Bronze: 5N, Silver: 15N, Gold: 50N) plus daily volume ceilings.',
+      description: 'Rogue agent or compromised caller requests 25 NEAR for a Bronze contributor with a 10 NEAR limit.',
+      defense: 'Contract enforces strict per-proposal caps based on contributor tier (Bronze 10N, Silver 15N, Gold 20N). Daily spend limits are enforced agent-side.',
       rejectionCode: 'Amount exceeds effective tier cap for recipient',
-      status: 'ENFORCED BY CONTRACT',
     },
     {
       title: 'Unauthorized Direct Caller Bypass',
@@ -25,7 +40,6 @@ export function LandingAttacksSection() {
       description: 'Attacker directly invokes the release() method on the PolicyHelper contract without Sputnik DAO multi-sig approval.',
       defense: 'Contract asserts predecessor_account_id == dao_account_id. Funds cannot move without council multi-sig consensus.',
       rejectionCode: 'Only owner or designated DAO can call this',
-      status: 'ENFORCED BY CONTRACT',
     },
     {
       title: 'Hallucinated or Stolen Deliverable',
@@ -33,7 +47,6 @@ export function LandingAttacksSection() {
       description: 'Contributor submits a third-party GitHub PR authored by someone else or a non-existent repo artifact.',
       defense: 'Multi-agent deliberation via NEAR AI Cloud cross-references PR committer identity, merge status, and CI test output before constructing any proposal.',
       rejectionCode: 'Committer identity mismatch: recipient does not match PR author',
-      status: 'ENFORCED BY AGENT',
     },
   ];
 
@@ -54,8 +67,8 @@ export function LandingAttacksSection() {
               ZiniPay is designed under a zero-trust model. Every attack vector that could drain a community treasury is prevented by fail-closed contract invariants and agent verification rules.
             </p>
           </div>
-          <div className="font-mono text-xs text-[var(--color-blocked)] bg-[var(--color-blocked-bg)] border border-[var(--color-blocked-border)] px-3 py-1.5 rounded">
-            FAIL-CLOSED INVARIANTS: ENFORCED ON-CHAIN
+          <div className="font-mono text-xs text-[var(--text-secondary)] bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] px-3 py-1.5 rounded">
+            Fail-closed design
           </div>
         </div>
 
@@ -68,8 +81,8 @@ export function LandingAttacksSection() {
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="tag-blocked text-[10px] font-bold">
-                    {att.status}
+                  <span className={`text-[10px] font-bold ${hasRunOnTestnet ? 'tag-passed' : 'tag-neutral'}`}>
+                    {hasRunOnTestnet ? 'Run on testnet' : 'Implemented and unit tested'}
                   </span>
                   <span className="font-mono text-[10px] text-[var(--text-muted)] tracking-wider">
                     {att.vector}

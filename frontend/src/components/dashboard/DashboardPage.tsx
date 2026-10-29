@@ -226,7 +226,7 @@ export function DashboardPage({
                       <strong className="text-white">Proof</strong>: Deliverable attestation hash claimed by the proposer in the proposal payload.
                     </p>
                     <p>
-                      <strong className="text-white">Policy</strong>: On-chain spending cap, daily limits, and recipient cooldown verified by PolicyHelper.
+                      <strong className="text-white">Policy</strong>: Spending cap and recipient cooldown verified by PolicyHelper smart contract (daily spend limit enforced agent-side).
                     </p>
                     <p>
                       <strong className="text-white">Council quorum</strong>: Explicit human council multi-sig approval required on Sputnik DAO v2 before execution.
@@ -281,7 +281,7 @@ export function DashboardPage({
                       type="text"
                       value={tempDaoInput}
                       onChange={(e) => setTempDaoInput(e.target.value)}
-                      placeholder="e.g. zinipay.sputnikv2.testnet"
+                      placeholder="e.g. your-dao.sputnikv2.testnet"
                       className="flex-1 bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] focus:border-[var(--border-strong)] rounded px-3 py-1.5 text-xs text-white font-mono placeholder:text-gray-600 focus:outline-none"
                     />
                     <button type="submit" className="btn-primary text-xs py-1.5 px-3 shrink-0 cursor-pointer">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, Github, Terminal } from 'lucide-react';
 import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
 import { Proposal } from '../../lib/types';
@@ -7,22 +7,22 @@ interface LandingHeroProps {
   onNavigateToApp: () => void;
 }
 
-const SHOWCASE_PROPOSAL: Proposal = {
-  id: 104,
-  title: 'Cross-chain Intent Router Implementation (Milestone 2)',
-  proposer: 'zinipay-agent.testnet',
-  recipient: 'alice.testnet',
-  amountNear: '4.50',
-  amountYocto: '4500000000000000000000000',
+const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
+  id: 1,
+  title: 'Sample Contributor Deliverable (Milestone Payout)',
+  proposer: 'agent.testnet',
+  recipient: 'contributor.testnet',
+  amountNear: '0.10',
+  amountYocto: '100000000000000000000000',
   proofCid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-  summary: 'Verified GitHub PR #88 with passing test suite on NEAR Intent solver execution. Deliberated via NEAR AI Cloud.',
+  summary: 'Sample deliverable verification receipt. Deliberated via ZiniPay agent.',
   evidenceType: 'github_pr',
-  evidenceDetails: 'GitHub Repo: near-intents-router | PR #88 merged | AI confidence 96/100',
-  createdAt: 'Just now',
+  evidenceDetails: 'GitHub Repo: org/repo | PR #1 merged',
+  createdAt: 'Sample / Unrecorded',
   status: 'pending_quorum',
-  simulated: false,
+  simulated: true,
   isZinipayRelease: true,
-  targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || 'zinipay-policy.testnet',
+  targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || '',
   targetMethod: 'release',
   policy: {
     withinCap: true,
@@ -31,23 +31,86 @@ const SHOWCASE_PROPOSAL: Proposal = {
     cooldownRemainingSecs: 0,
     cidUnique: true,
     reputationQualified: true,
-    reputationScore: 85,
-    tier: 'Gold',
+    reputationScore: 0,
+    tier: 'Bronze',
   },
   settlement: {
     type: 'native_near',
     targetChain: 'near',
     targetToken: 'NEAR',
-    recipientAddress: 'alice.testnet',
+    recipientAddress: 'contributor.testnet',
   },
   votes: {
-    approve: 2,
+    approve: 1,
     reject: 0,
-    required: 3,
+    required: 2,
   },
 };
 
 export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
+  const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
+  const [isRealRun, setIsRealRun] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/data/verified.json')
+      .then((res) => res.json())
+      .then((data) => {
+        const txs = Array.isArray(data) ? data : data?.transactions || [];
+        const first = txs[0];
+        if (first && first.txHash) {
+          const recipientAccount = first.recipient || 'zinipay-recipient2.testnet';
+          const payoutNear = first.amountNear || '0.10';
+          const realProposal: Proposal = {
+            id: first.index !== undefined ? Math.max(0, first.index - 1) : 0,
+            title: first.prUrl ? `Merged GitHub PR: ${first.prUrl}` : 'Contributor PR Bounty Release (GitHub PR #1)',
+            proposer: 'agentzinipaytestnet.testnet',
+            recipient: recipientAccount,
+            amountNear: payoutNear,
+            amountYocto: '100000000000000000000000',
+            txHash: first.txHash,
+            proofCid: first.prUrl || 'kellycryptos/ZiniPay#1',
+            summary: 'Deliberation consensus APPROVED. Multi-sig human approval completed on Sputnik DAO.',
+            evidenceType: 'github_pr',
+            evidenceDetails: `GitHub PR #1 merged | zinipay-recipient: ${recipientAccount} | Tx: ${first.txHash}`,
+            createdAt: first.timestamp ? new Date(first.timestamp).toLocaleString() : '2026-10-27 15:50 UTC',
+            status: 'approved',
+            rawStatus: 'Approved',
+            simulated: Boolean(first.simulated),
+            isZinipayRelease: true,
+            targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || '',
+            targetMethod: 'release',
+            policy: {
+              withinCap: true,
+              capLimit: '10.0 NEAR',
+              cooldownElapsed: true,
+              cooldownRemainingSecs: 0,
+              cidUnique: true,
+              reputationQualified: true,
+              reputationScore: 0,
+              tier: 'Bronze',
+            },
+            settlement: {
+              type: 'native_near',
+              targetChain: 'near',
+              targetToken: 'NEAR',
+              recipientAddress: recipientAccount,
+            },
+            votes: {
+              approve: 2,
+              reject: 0,
+              required: 2,
+            },
+          };
+          setHeroProposal(realProposal);
+          setIsRealRun(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const policyContractId = import.meta.env.VITE_POLICY_CONTRACT_ID || '';
+  const daoContractId = import.meta.env.VITE_DAO_CONTRACT_ID || '';
+
   return (
     <section className="relative pt-12 pb-20 border-b border-[var(--border-subtle)] overflow-hidden">
       {/* Background technical grid pattern */}
@@ -122,12 +185,20 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
         <div className="w-full lg:w-[480px] shrink-0">
           <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider mb-2 flex items-center justify-between">
             <span>Signature Artifact</span>
-            <span>Cryptographic Release Receipt</span>
+            {isRealRun ? (
+              <span className="tag-passed text-[10px] font-mono">
+                Verified On Testnet
+              </span>
+            ) : (
+              <span className="tag-neutral text-[10px] font-mono border border-[var(--border-subtle)] text-[var(--text-secondary)] px-2 py-0.5 rounded">
+                Sample receipt
+              </span>
+            )}
           </div>
           <ReleaseReceiptCard
-            proposal={SHOWCASE_PROPOSAL}
-            daoContractId={import.meta.env.VITE_DAO_CONTRACT_ID || ''}
-            policyContractId={import.meta.env.VITE_POLICY_CONTRACT_ID || 'zinipay-policy.testnet'}
+            proposal={heroProposal}
+            daoContractId={daoContractId}
+            policyContractId={policyContractId}
             network="testnet"
             showActions={false}
           />

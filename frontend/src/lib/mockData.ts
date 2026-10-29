@@ -16,7 +16,7 @@ export const initialProposals: Proposal[] = [
     id: 104,
     title: 'Cross-chain Intent Router Implementation (Milestone 2)',
     proposer: 'zinipay-agent.testnet',
-    recipient: 'alice.testnet',
+    recipient: 'contributor.testnet',
     amountNear: '4.5',
     amountYocto: '4500000000000000000000000',
     proofCid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
@@ -40,7 +40,7 @@ export const initialProposals: Proposal[] = [
       type: 'native_near',
       targetChain: 'near',
       targetToken: 'NEAR',
-      recipientAddress: 'alice.testnet',
+      recipientAddress: 'contributor.testnet',
     },
     votes: {
       approve: 2,

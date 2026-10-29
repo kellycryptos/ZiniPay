@@ -24,16 +24,20 @@ export function PolicyPanel({
 }: PolicyPanelProps) {
   // Compute on-chain policy limits if available
   const perPayoutCapNear = policyState
-    ? (Number(BigInt(policyState.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1)
+    ? `${(Number(BigInt(policyState.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1)} NEAR`
     : policyContractConfigured
-    ? null
-    : '10.0';
+    ? (policyState === null ? 'Unavailable' : 'Reading...')
+    : 'Not connected';
 
   const cooldownHours = policyState
-    ? (policyState.cooldown_seconds / 3600).toFixed(1)
+    ? `${(policyState.cooldown_seconds / 3600).toFixed(1)} h`
     : policyContractConfigured
-    ? null
-    : '4.0';
+    ? (policyState === null ? 'Unavailable' : 'Reading...')
+    : 'Not connected';
+
+  const dailySpendLimit = (policyState as any)?.daily_limit
+    ? `${(policyState as any).daily_limit} NEAR`
+    : 'Not connected';
 
   return (
     <div className="ledger-card p-4 flex flex-col gap-3 font-sans text-xs">
@@ -69,22 +73,22 @@ export function PolicyPanel({
 
         <div className="flex items-center justify-between text-xs">
           <span className="text-[var(--text-secondary)]">Per-payout cap</span>
-          <span className="text-white font-mono font-medium">
-            {perPayoutCapNear ? `${perPayoutCapNear} NEAR` : 'Reading...'}
+          <span className={perPayoutCapNear === 'Not connected' || perPayoutCapNear === 'Unavailable' ? 'text-[var(--text-muted)] font-mono text-xs' : 'text-white font-mono font-medium'}>
+            {perPayoutCapNear}
           </span>
         </div>
 
         <div className="flex items-center justify-between text-xs">
           <span className="text-[var(--text-secondary)]">Daily spend limit</span>
-          <span className="text-white font-mono font-medium">
-            50.0 NEAR
+          <span className={dailySpendLimit === 'Not connected' ? 'text-[var(--text-muted)] font-mono text-xs' : 'text-white font-mono font-medium'}>
+            {dailySpendLimit}
           </span>
         </div>
 
         <div className="flex items-center justify-between text-xs">
           <span className="text-[var(--text-secondary)]">Cooldown</span>
-          <span className="text-white font-mono font-medium">
-            {cooldownHours ? `${cooldownHours} h` : 'Reading...'}
+          <span className={cooldownHours === 'Not connected' || cooldownHours === 'Unavailable' ? 'text-[var(--text-muted)] font-mono text-xs' : 'text-white font-mono font-medium'}>
+            {cooldownHours}
           </span>
         </div>
       </div>

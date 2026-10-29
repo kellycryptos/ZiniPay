@@ -151,7 +151,7 @@ export function AttackAttemptsPanel() {
                 </span>
                 <span className="text-[var(--color-passed)] font-medium flex items-center gap-1 shrink-0">
                   <CheckCircle2 size={12} />
-                  <span>Enforced on-chain</span>
+                  <span>{att.blockedBy || (att.simulated ? 'Simulated block' : 'Blocked')}</span>
                 </span>
               </div>
             </div>

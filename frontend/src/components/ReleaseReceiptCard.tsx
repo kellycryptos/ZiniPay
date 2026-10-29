@@ -80,6 +80,11 @@ export function ReleaseReceiptCard({
       return;
     }
 
+    if (!policyContractId || !policyContractId.trim()) {
+      setPolicyCheck({ status: 'unknown', reason: 'Not connected', checking: false });
+      return;
+    }
+
     if (proposal.simulated) {
       setPolicyCheck({
         status: proposal.policy?.withinCap ? 'passed' : 'failed',
@@ -91,7 +96,7 @@ export function ReleaseReceiptCard({
 
     if (isInProgress) {
       if (!policyContractId || !policyContractId.trim()) {
-        setPolicyCheck({ status: 'unknown', reason: 'Policy contract not configured', checking: false });
+        setPolicyCheck({ status: 'unknown', reason: 'Not connected', checking: false });
         return;
       }
 
@@ -267,6 +272,8 @@ export function ReleaseReceiptCard({
           <span className="text-[var(--text-receipt-muted)]">Policy</span>
           {!isZinipay ? (
             <span className="tag-neutral">Not a ZiniPay release</span>
+          ) : !policyContractId || !policyContractId.trim() ? (
+            <span className="tag-neutral">Not connected</span>
           ) : isInProgress ? (
             policyCheck.checking ? (
               <span className="tag-pending">
@@ -279,6 +286,10 @@ export function ReleaseReceiptCard({
             ) : policyCheck.status === 'failed' ? (
               <span className="tag-blocked" title={policyCheck.reason}>
                 <X size={11} /> Blocked · Would be blocked now: {policyCheck.reason || 'Policy violation'}
+              </span>
+            ) : policyCheck.reason === 'Not connected' ? (
+              <span className="tag-neutral">
+                Not connected
               </span>
             ) : (
               <span className="tag-pending">

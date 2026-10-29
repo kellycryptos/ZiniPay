@@ -1,28 +1,31 @@
 import React from 'react';
-import { Layers, Terminal, Shield, Cpu, Globe, KeyRound } from 'lucide-react';
+import { Terminal, Shield, Cpu, Globe, KeyRound } from 'lucide-react';
 
 export function LandingTechStack() {
+  const envDaoContract = import.meta.env.VITE_DAO_CONTRACT_ID || '';
+  const envPolicyContract = import.meta.env.VITE_POLICY_CONTRACT_ID || '';
+
   const stack = [
     {
       name: 'Sputnik DAO v2',
       role: 'Treasury Multi-Sig & Proposal Execution',
       details: 'Sputnik DAO v2 manages community capital with configurable council quorums, bond mechanisms, and execution of on-chain FunctionCall proposals.',
       primitive: 'near-daos/sputnik-dao-contract',
-      contractId: 'sputnikv2.testnet',
+      contractId: envDaoContract || undefined,
       icon: Shield,
     },
     {
       name: 'PolicyHelper Smart Contract',
       role: 'Fail-Closed Constraint Guardrails',
-      details: 'Custom Rust contract on NEAR SDK. Enforces spend caps by contributor tier, daily ceilings, cooldown delays, and records spent CIDs to eliminate double-spend.',
+      details: 'Custom Rust contract on NEAR SDK. Enforces spend caps by contributor tier (Bronze 10N, Silver 15N, Gold 20N), cooldown delays, and records spent CIDs to eliminate double-spend.',
       primitive: 'near-sdk-rs v5',
-      contractId: 'zinipay-policy.testnet',
+      contractId: envPolicyContract || undefined,
       icon: Terminal,
     },
     {
       name: 'NEAR AI Cloud (TEE)',
       role: 'Multi-Agent Deliberation & Attestation',
-      details: 'Runs isolated agent deliberation inside Intel TDX confidential compute environments (cloud-api.near.ai). Generates verifiable attestation reports.',
+      details: 'Runs isolated agent deliberation inside Intel TDX confidential compute environments (cloud-api.near.ai). Attestation report received (not independently verified).',
       primitive: 'NEAR AI Confidential VM',
       contractId: 'cloud.near.ai',
       icon: Cpu,
@@ -32,7 +35,7 @@ export function LandingTechStack() {
       role: 'Cross-Chain Asset Settlement',
       details: 'Settles rewards into Ethereum (USDC), Solana (USDC), or Bitcoin directly from NEAR via Defuse intent solvers without manual cross-chain bridge risks.',
       primitive: 'NEAR Intents Solver Protocol',
-      contractId: 'defuse-relayer.near',
+      contractId: '1click.chaindefuser.com',
       icon: Globe,
     },
     {
@@ -40,7 +43,7 @@ export function LandingTechStack() {
       role: 'Decentralized Multi-Wallet Signing',
       details: 'Provides council members and contributors with secure transaction signing through MyNearWallet, Meteor Wallet, and HERE Wallet.',
       primitive: '@near-wallet-selector/core',
-      contractId: 'Universal Wallet Interface',
+      contractId: undefined,
       icon: KeyRound,
     },
   ];
@@ -93,10 +96,14 @@ export function LandingTechStack() {
                   </p>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] flex items-center justify-between">
-                  <span>TARGET:</span>
-                  <span className="text-white font-medium truncate max-w-[170px]">{item.contractId}</span>
-                </div>
+                {item.contractId && (
+                  <div className="mt-5 pt-3 border-t border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] flex items-center justify-between">
+                    <span>TARGET:</span>
+                    <span className="text-white font-medium truncate max-w-[170px]" title={item.contractId}>
+                      {item.contractId}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}

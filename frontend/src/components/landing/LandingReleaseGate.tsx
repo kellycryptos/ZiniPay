@@ -1,8 +1,24 @@
-import React, { useState } from 'react';
-import { FileCheck, ShieldAlert, Users, ArrowRight, CheckCircle2, Lock, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileCheck, ShieldAlert, Users, CheckCircle2, Zap } from 'lucide-react';
 
 export function LandingReleaseGate() {
   const [activeStep, setActiveStep] = useState<number>(0);
+  const [hasRunOnTestnet, setHasRunOnTestnet] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/data/verified.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.viaPolicyContract === true) {
+          setHasRunOnTestnet(true);
+        } else if (Array.isArray(data.transactions)) {
+          const run = data.transactions.some((t: any) => t.viaPolicyContract === true);
+          setHasRunOnTestnet(run);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const gates = [
     {
@@ -13,7 +29,7 @@ export function LandingReleaseGate() {
       checks: [
         'GitHub PR merged by authorized maintainer',
         'IPFS CID resolves to valid artifact sha256',
-        'NEAR AI Cloud confidential compute report verified',
+        'Attestation report received (not independently verified)',
       ],
       icon: FileCheck,
       color: 'text-white',
@@ -23,9 +39,9 @@ export function LandingReleaseGate() {
       step: '02',
       name: 'On-Chain Policy',
       tag: 'MATCH B · CONSTRAINTS',
-      desc: 'Rust smart contract enforces per-proposal spend caps, daily volume ceilings, cooldown delays, and CID anti-replay.',
+      desc: 'Rust smart contract enforces per-proposal spend caps, cooldown delays, and CID anti-replay (agent enforces daily limits).',
       checks: [
-        'Amount ≤ tier cap (Bronze 5N, Silver 15N, Gold 50N)',
+        'Amount ≤ tier cap (Bronze 10N, Silver 15N, Gold 20N)',
         'Cooldown delay elapsed since previous release',
         'CID recorded on-chain — zero double-spend allowed',
       ],
@@ -123,8 +139,10 @@ export function LandingReleaseGate() {
                 </div>
 
                 <div className="mt-6 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-                  <span>STATE:</span>
-                  <span className="tag-passed">ENFORCED</span>
+                  <span>STATUS:</span>
+                  <span className={hasRunOnTestnet ? 'tag-passed' : 'tag-neutral'}>
+                    {hasRunOnTestnet ? 'Run on testnet' : 'Implemented and unit tested'}
+                  </span>
                 </div>
               </div>
             );

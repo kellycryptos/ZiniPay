@@ -441,13 +441,17 @@ export class MultiAgentDeliberationEngine {
       const failedInspector: InspectorReview = {
         ...inspectorResult,
         approved: false,
-        critique: `REJECTED: Attestation verification failed: ${attestation.reason}`,
+        critique: inspectorResult.critique.includes('NO MODEL REVIEW')
+          ? inspectorResult.critique
+          : `REJECTED: Attestation verification failed: ${attestation.reason}`,
       };
       const failedRisk: RiskReview = {
         ...riskResult,
         approved: false,
         riskLevel: 'HIGH',
-        policyNotes: `REJECTED: Unverified TEE attestation (${attestation.reason})`,
+        policyNotes: riskResult.policyNotes.includes('NO MODEL REVIEW')
+          ? riskResult.policyNotes
+          : `REJECTED: Unverified TEE attestation (${attestation.reason})`,
       };
       return this.buildConsensus(req, failedInspector, failedRisk, tierInfo.tier, false, attestation);
     }
@@ -531,15 +535,11 @@ Evaluate the deliverable against the task description. Respond with JSON ONLY.
       };
     } catch (err: any) {
       if (err.status === 402 || err.message?.includes('402') || err.message?.includes('spending limit')) {
-        console.log('[DELIBERATION] Notice: NEAR AI Cloud account has no credits configured (402). Falling back to verified artifact score.');
-        const isSubstantive = req.deliverable.length > 5 && (req.deliverable.startsWith('http') || req.deliverable.startsWith('ipfs'));
-        const score = artifactCheck.verified ? 95 : (isSubstantive ? 80 : 40);
+        console.error('[DELIBERATION] Error: NEAR AI Cloud inference failed (HTTP 402: No spending limit configured / insufficient credits). Failing closed.');
         return {
-          approved: artifactCheck.verified,
-          score,
-          critique: artifactCheck.verified
-            ? `[SIMULATION] Artifact verified: ${artifactCheck.reason}`
-            : `[SIMULATION] Artifact unverified: ${artifactCheck.reason}`,
+          approved: false,
+          score: 0,
+          critique: '[NO MODEL REVIEW] Inspector rejected: NEAR AI Cloud HTTP 402 (No spending limit configured). Live model review failed closed.',
           artifactVerified: artifactCheck.verified,
         };
       }
@@ -624,11 +624,11 @@ Assess risk and respond with JSON ONLY.
     } catch (err: any) {
       if (err.status === 402 || err.message?.includes('402') || err.message?.includes('spending limit')) {
         return {
-          approved: Number(req.amountNear) <= 50,
-          riskLevel: Number(req.amountNear) <= 10 ? 'LOW' : 'MEDIUM',
+          approved: false,
+          riskLevel: 'HIGH',
           reputationTier: tier,
           recommendedMultiplier: tierInfo.multiplier,
-          policyNotes: `[SIMULATION] Contributor tier ${tier} qualifies under spend caps`,
+          policyNotes: '[NO MODEL REVIEW] Risk Arbiter rejected: NEAR AI Cloud HTTP 402 (No spending limit configured). Live risk analysis failed closed.',
         };
       }
       return {

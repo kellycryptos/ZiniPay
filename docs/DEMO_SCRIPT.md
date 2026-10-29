@@ -17,7 +17,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
   >
   > In the first 30 seconds, let's look at real transactions on NEARBlocks. Here is Proposal #0 on our Sputnik DAO `zinipay-demo.sputnikv2.testnet`. Notice the proposal description: it includes an attestation reference digest from NEAR AI Cloud, labeled honestly as 'Attestation report received (not independently verified)'.
   >
-  > The agent filed the proposal, but notice who approved it: Council Member 1 (`zinipay-c1.testnet`) voted VoteApprove, and the proposal remained InProgress. Only after Council Member 2 (`zinipay-c2.testnet`) cast their VoteApprove did the proposal reach quorum, transition to Approved, and disburse exactly 0.1 NEAR to the contributor (`zinipay-recipient2.testnet`). Everything you see here happened on NEAR testnet with strict role separation."*
+  > The agent filed the proposal, but notice who approved it: Council Member 1 (`zinipay-c1.testnet`) voted VoteApprove, and the proposal remained InProgress. Only after Council Member 2 (`zinipay-c2.testnet`) cast their VoteApprove did the proposal reach quorum, transition to Approved, and disburse exactly 0.1 NEAR to the contributor (`zinipay-recipient2.testnet`). This verified baseline run used a native Sputnik DAO Transfer proposal, while our PolicyHelper contract release path is implemented and unit tested. Everything you see here happened on NEAR testnet with strict role separation."*
 
 ---
 
@@ -68,7 +68,7 @@ This script outlines the video walkthrough for hackathon judges, designed to sho
 | Step | Command Line Execution |
 | :--- | :--- |
 | **Run E2E On-Chain Test** | `npm run test:e2e` |
-| **Run Deliberation CLI** | `npm run agent:propose -- --task "Task" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient "vsavchyn-dev.testnet" --amount 4.5 --dry-run` |
+| **Run Deliberation CLI** | `npm run agent:propose -- --task "Task" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" --recipient "zinipay-recipient2.testnet" --amount 0.1 --dry-run` |
 | **Run Agent Unit Tests** | `npm test --prefix agent` |
 | **Start Frontend** | `npm run frontend:dev` |
 

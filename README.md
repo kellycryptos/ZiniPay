@@ -14,11 +14,14 @@
 
 **The Problem**: Autonomous AI agents managing decentralized community treasuries pose severe existential risks: prompt injections, unbounded spending, hallucinated deliverable proofs, and silent draining of multisig funds. Conversely, purely manual human multisigs create coordination bottlenecks where small contributor bounties languish unreviewed for weeks.
 
-**The Solution**: ZiniPay introduces a **fail-closed, constrained agent layer** that works with existing Sputnik DAO v2 / Trezu treasuries without replacing human governance. The AI agent operates strictly under a **Requestor role**—evaluating technical deliverables via NEAR AI Cloud multi-agent deliberation, verifying cryptographic attestation reports, canonicalizing proofs against replay attacks, and dispatching constrained proposals to Sputnik DAO. Payouts can never execute unilaterally: spend caps, cooldowns, and CID uniqueness are strictly enforced on-chain by the `PolicyHelper` contract, and every disbursement requires an explicit human council multi-sig approval vote.
+**The Solution**: ZiniPay introduces a **fail-closed, constrained agent layer** that works with existing Sputnik DAO v2 / Trezu treasuries without replacing human governance. The AI agent operates strictly under a **Requestor role**—evaluating technical deliverables via NEAR AI Cloud multi-agent deliberation, verifying cryptographic attestation reports, canonicalizing proofs against replay attacks, and dispatching constrained proposals to Sputnik DAO. Payouts can never execute unilaterally: spend caps, cooldowns, and CID uniqueness are enforced by the `PolicyHelper` contract (implemented and unit tested in Rust), and every disbursement requires an explicit human council multi-sig approval vote.
 
 ---
 
-## 🔄 Real Architecture & Fund Flow
+## 🏗️ Architecture & Policy Guardrails (Implemented, Covered by Unit Tests, Testnet Run Pending)
+
+> [!NOTE]
+> **Implementation Status**: The multi-agent deliberation, deliverable identity binding (`verifyArtifact`), and Sputnik DAO multi-sig approval flow are live and verified on NEAR testnet. The on-chain `PolicyHelper` contract path (`FunctionCall` into `PolicyHelper::release`, atomic CID anti-replay, and reputation callbacks) is fully implemented in Rust and covered by unit tests (`cargo test`), with on-chain testnet deployment pending.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -48,7 +51,7 @@
                  ▼ add_proposal (Attached NEAR bond)
   ┌──────────────────────────────┐
   │  Sputnik DAO v2 Treasury     │ ◀─── Proposal: FunctionCall -> PolicyHelper::release
-  │  (*.sputnikv2.testnet)       │
+  │  (*.sputnikv2.testnet)       │      (Or native Transfer during bootstrap)
   └──────────────┬───────────────┘
                  │
                  ▼ act_proposal (VoteApprove)
@@ -93,9 +96,9 @@ Every capability advertised in this documentation is implemented directly in the
 
 ---
 
-## 🛡️ Attack Resilience: Tested & Verified Failure Modes
+## 🛡️ Attack Resilience (Implemented & Unit Tested — Testnet Run Pending)
 
-ZiniPay is architected to **fail closed**. All security assertions are tested in unit tests and live testnet scripts with exact error strings matching the source code:
+ZiniPay is architected to **fail closed**. All security assertions are implemented and verified via comprehensive unit tests with exact error strings matching the source code:
 
 ### 1. Deliverable CID Replay Attack
 - **Attack**: A contributor attempts to submit a previously settled deliverable CID to claim a second payout.
@@ -124,7 +127,7 @@ ZiniPay is architected to **fail closed**. All security assertions are tested in
 - **Unit Test**: Test 6 in `agent/test/deliberation.test.ts`.
 
 ### 5. Stolen / Unbound PR Attack & Cryptographic Identity Binding
-- **Attack**: An attacker submits a merged GitHub PR authored by someone else, or a PR without verifiable on-chain binding to their NEAR account.
+- **Attack**: An attacker submits a merged GitHub PR authored by someone else (`STOLEN_PR_URL` from a second GitHub account), or a PR without verifiable on-chain binding to their NEAR account.
 - **Enforcement**: Validated by `verifyArtifact` in [`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts). The agent strictly requires:
   1. The PR is merged.
   2. The PR author matches the claimed recipient GitHub handle.
@@ -133,7 +136,7 @@ ZiniPay is architected to **fail closed**. All security assertions are tested in
   - Missing binding: `PR description missing required "zinipay-recipient: <near account id>" binding`
   - Recipient mismatch: `PR zinipay-recipient binding ("<account>") does not match recipient account ("<expected>")`
   - Author mismatch: `PR author (<author>) does not match recipient handle (<handles>)`
-- **Unit Tests**: Tests 1b.1 – 1b.4 in `agent/test/deliberation.test.ts`.
+- **Unit Tests**: Tests 1b.1 – 1b.4 in `agent/test/deliberation.test.ts`. Live e2e execution against second GitHub account PR pending user input (`STOLEN_PR_URL`).
 
 ---
 
@@ -167,6 +170,9 @@ npm run test:e2e
 
 ### Verified Multi-Sig Testnet Execution
 
+> [!NOTE]
+> This verified run used a plain Sputnik DAO `Transfer` proposal; the policy contract path (`FunctionCall` into `PolicyHelper::release`) is implemented and unit tested but not yet exercised on testnet pending WASM deployment.
+
 The following run was executed and verified on NEAR Testnet with strict role separation:
 
 - **DAO Contract**: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
@@ -178,11 +184,10 @@ The following run was executed and verified on NEAR Testnet with strict role sep
 
 | Step | Action | Tx Hash | Result | Explorer Link |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Stolen PR Gate** | Pre-Flight Rejection | — | 🛡️ **BLOCKED** | Rejected `near/near-sdk-rs#1651` (Author mismatch & missing recipient binding) |
-| **2. Proposal Creation** | `add_proposal` | `3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC` | ✅ Proposal #0 Created | [View on NEARBlocks](https://testnet.nearblocks.io/txns/3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC) |
-| **3. Council 1 Vote** | `act_proposal` (`VoteApprove`) | `GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3` | ✅ Vote 1 Confirmed; Status: `InProgress` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3) |
-| **4. Council 2 Vote** | `act_proposal` (`VoteApprove`) | `9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM` | ✅ Vote 2 Confirmed; Status: `Approved` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM) |
-| **5. Payout Execution** | Sputnik DAO Receipt Transfer | *Receipt in Vote 2* | 💰 +0.1000 NEAR Transferred | Exact payout receipt verified (Balance: 10.0 ➔ 10.1 NEAR) |
+| **1. Proposal Creation** | `add_proposal` | `3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC` | ✅ Proposal #0 Created | [View on NEARBlocks](https://testnet.nearblocks.io/txns/3zsBfrczDpJqz27e8Cqe9C4PpSAmukmEBkjD7tMhemxC) |
+| **2. Council 1 Vote** | `act_proposal` (`VoteApprove`) | `GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3` | ✅ Vote 1 Confirmed; Status: `InProgress` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/GPRKU91X2hhTHcZ9BCqS2opATzEh5uucJWYx6hXbDkS3) |
+| **3. Council 2 Vote** | `act_proposal` (`VoteApprove`) | `9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM` | ✅ Vote 2 Confirmed; Status: `Approved` | [View on NEARBlocks](https://testnet.nearblocks.io/txns/9RiBxXaVFqyZALtkCztDyCyMAwFQyGHs1naKCydLN8PM) |
+| **4. Payout Execution** | Sputnik DAO Receipt Transfer | *Receipt in Vote 2* | 💰 +0.1000 NEAR Transferred | Plain Sputnik DAO Transfer payout receipt verified (Balance: 10.0 ➔ 10.1 NEAR) |
 
 ---
 
@@ -214,9 +219,9 @@ cargo test
 ```bash
 npm run agent:propose -- \
   --task "Build Sputnik DAO Three-Way Match Agent" \
-  --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
-  --recipient "vsavchyn-dev.testnet" \
-  --amount 4.5 \
+  --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" \
+  --recipient "zinipay-recipient2.testnet" \
+  --amount 0.1 \
   --dry-run
 ```
 

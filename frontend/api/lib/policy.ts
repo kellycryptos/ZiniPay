@@ -20,8 +20,8 @@ export interface PolicyConfig {
 }
 
 export const DEFAULT_POLICY_CONFIG: PolicyConfig = {
-  maxSpendPerProposal: 15_000_000_000_000_000_000_000_000n, // 15 NEAR
-  maxSpendPerDay: 50_000_000_000_000_000_000_000_000n,      // 50 NEAR
+  maxSpendPerProposal: 10_000_000_000_000_000_000_000_000n, // 10 NEAR base cap (matches contracts/policy-helper)
+  maxSpendPerDay: 50_000_000_000_000_000_000_000_000n,      // 50 NEAR (agent-side limit only)
   cooldownHours: 4,
   minReputationScore: 0,
 };

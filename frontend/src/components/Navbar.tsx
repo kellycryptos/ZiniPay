@@ -118,7 +118,7 @@ export function Navbar({
                   id="dao-contract-input"
                   value={daoContract}
                   onChange={(e) => onDaoContractChange(e.target.value.trim())}
-                  placeholder="e.g. zinipay.sputnikv2.testnet"
+                  placeholder="e.g. your-dao.sputnikv2.testnet"
                   className="w-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] focus:border-[var(--border-strong)] rounded px-2.5 py-1.5 text-white font-mono text-xs placeholder:text-gray-600 focus:outline-none"
                 />
               </div>
@@ -132,7 +132,7 @@ export function Navbar({
                   id="policy-contract-input"
                   value={policyContractId}
                   onChange={(e) => onPolicyContractChange(e.target.value.trim())}
-                  placeholder="e.g. zinipay-policy.testnet"
+                  placeholder="e.g. your-policy.testnet"
                   className="w-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] focus:border-[var(--border-strong)] rounded px-2.5 py-1.5 text-white font-mono text-xs placeholder:text-gray-600 focus:outline-none"
                 />
               </div>

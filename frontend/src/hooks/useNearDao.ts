@@ -84,7 +84,7 @@ export function useNearDao() {
             kind: {
               Transfer: {
                 token_id: '',
-                receiver_id: 'alice.testnet',
+                receiver_id: 'contributor.testnet',
                 amount: '5000000000000000000000000', // 5 NEAR
               },
             },

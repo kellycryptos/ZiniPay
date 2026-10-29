@@ -12,7 +12,7 @@ export function ThreeWayGate() {
     {
       step: '02',
       title: 'On-Chain Policy',
-      desc: 'Tier spend cap verified, cooldown elapsed, CID unspent, zero double-spend.',
+      desc: 'Tier spend cap checked, cooldown elapsed, CID unspent, zero double-spend.',
       icon: ShieldAlert,
     },
     {
@@ -41,7 +41,7 @@ export function ThreeWayGate() {
         </div>
         <div className="flex items-center space-x-2 text-[11px] font-mono text-[var(--color-passed)] bg-[var(--color-passed-bg)] px-2.5 py-1 rounded border border-[var(--color-passed-border)] w-fit">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)] animate-pulse" />
-          <span>Fail-Closed Rules Enforced</span>
+          <span>Fail-Closed Architecture</span>
         </div>
       </div>
 

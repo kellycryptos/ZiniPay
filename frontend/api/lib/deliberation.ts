@@ -1,7 +1,7 @@
 /**
  * deliberation.ts — Multi-Agent Deliberation & Proof Evaluation
  * Note: Never fabricates synthetic TEE quotes or cryptographic signatures.
- * If running without active TEE enclave hardware, explicitly marks simulated: true.
+ * Explicitly marks simulated: true and reviewType: 'format-check-only'.
  */
 
 import { getTierInfo, type ReputationTier } from './reputation.js';
@@ -17,6 +17,7 @@ export interface DeliberationRequest {
 export interface InspectorReview {
   approved: boolean;
   score: number;             // 0-100
+  reviewType: 'format-check-only';
   critique: string;
   artifactVerified: boolean;
 }
@@ -31,6 +32,7 @@ export interface RiskReview {
 
 export interface DeliberationReceipt {
   simulated: boolean;
+  reviewType: 'format-check-only';
   consensusApproved: boolean;
   overallConfidence: number;
   match1_ScopeAligned: boolean;
@@ -57,8 +59,12 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
   const score = isSubstantive ? Math.min(98, 85 + Math.floor(req.recipientReputation / 10)) : 40;
   const inspectorApproved = score >= 70;
   
+  // Policy contract base cap is 10 NEAR (Bronze: 10N, Silver: 15N, Gold: 20N)
+  const baseCap = 10;
+  const effectiveTierCap = baseCap * tierInfo.maxPerProposalMultiplier;
+
   const riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 
-    amount > 30 ? 'HIGH' : amount > 15 ? 'MEDIUM' : 'LOW';
+    amount > effectiveTierCap ? 'HIGH' : amount > baseCap ? 'MEDIUM' : 'LOW';
 
   const riskApproved = riskLevel !== 'HIGH';
 
@@ -70,10 +76,11 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
   const overallConfidence = Math.round((score + (riskLevel === 'LOW' ? 96 : riskLevel === 'MEDIUM' ? 80 : 40)) / 2);
 
   const matchCount = (match1_Scope ? 1 : 0) + (match2_Proof ? 1 : 0) + (match3_Policy ? 1 : 0);
-  const attestationSummary = `[Three-Way Match: ${matchCount}/3 ${consensusApproved ? 'PASS' : 'FAIL'}] [Tier: ${tierInfo.tier}] Inspector: ${score}/100, Risk: ${riskLevel} | Deliverable: ${req.deliverable}`;
+  const attestationSummary = `[Three-Way Match: ${matchCount}/3 ${consensusApproved ? 'PASS' : 'FAIL'}] [Tier: ${tierInfo.tier}] [Review: format-check-only] Inspector: ${score}/100, Risk: ${riskLevel} | Deliverable: ${req.deliverable}`;
 
   return {
     simulated: true, // Explicitly labeled simulation (no fake TEE enclave)
+    reviewType: 'format-check-only',
     consensusApproved,
     overallConfidence,
     match1_ScopeAligned: match1_Scope,
@@ -82,7 +89,10 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
     inspector: {
       approved: inspectorApproved,
       score,
-      critique: isSubstantive ? 'Deliverable artifact format valid; scope alignment verified' : 'Deliverable proof format invalid or missing',
+      reviewType: 'format-check-only',
+      critique: isSubstantive
+        ? 'Format check only: no model reviewed the deliverable. Deliverable artifact format matches URL/CID pattern.'
+        : 'Deliverable proof format invalid or missing',
       artifactVerified: isSubstantive,
     },
     riskArbiter: {
@@ -90,7 +100,7 @@ export function runDeliberation(req: DeliberationRequest): DeliberationReceipt {
       riskLevel,
       reputationTier: tierInfo.tier,
       recommendedMultiplier: tierInfo.multiplier,
-      policyNotes: `Requested ${amount} NEAR evaluated against ${tierInfo.tier} tier limits`,
+      policyNotes: `Requested ${amount} NEAR evaluated against policy contract ${tierInfo.tier} tier cap (${effectiveTierCap} NEAR)`,
     },
     attestationSummary,
     teeVerification: null,

@@ -154,22 +154,42 @@ async function main() {
     });
   }
 
-  // 3. Query RPC timestamps for transactions
+  // 3. Check for policy contract execution
+  const viaPolicyContract = Boolean(
+    /FunctionCall.*release|call_method.*release|Target Method:\s*release|Proposal type:\s*FunctionCall/i.test(content) &&
+    !/Policy Contract:\s*Direct DAO Transfer/i.test(content)
+  );
+
+  const recipientMatch = content.match(/Recipient Account:\s*([^\s\r\n]+)/i);
+  const prMatch = content.match(/Contributor PR:\s*([^\s\r\n]+)/i);
+  const recipient = recipientMatch ? recipientMatch[1].trim() : undefined;
+  const contributorPr = prMatch ? prMatch[1].trim().replace(/\.+$/, '') : undefined;
+
+  // 4. Query RPC timestamps for transactions
   console.log(`Resolving real block timestamps from NEAR RPC...`);
   const resolvedTxs = [];
-  for (const t of transactions) {
+  for (let i = 0; i < transactions.length; i++) {
+    const t = transactions[i];
     const timestamp = await getBlockTimestamp(t.txHash, 'agentzinipaytestnet.testnet');
-    resolvedTxs.push({
+    const enriched = {
       ...t,
+      viaPolicyContract: viaPolicyContract,
       timestamp: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
-    });
+    };
+    if (i === 0 && recipient) {
+      enriched.recipient = recipient;
+      enriched.amountNear = '0.10';
+      if (contributorPr) enriched.prUrl = contributorPr;
+    }
+    resolvedTxs.push(enriched);
   }
 
-  // 4. Output verified payload
+  // 5. Output verified payload
   const verifiedPayload = {
     generatedAt: new Date().toISOString(),
     network: 'testnet',
     sourceLog: inputFile,
+    viaPolicyContract,
     transactions: resolvedTxs,
     blockedAttacks: attacks,
   };
