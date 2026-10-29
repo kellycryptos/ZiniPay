@@ -75,7 +75,7 @@ export function LandingReleaseGate() {
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
               Fail-Closed Architecture
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               The Three-Way Release Gate
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
@@ -115,8 +115,8 @@ export function LandingReleaseGate() {
                   </div>
 
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2.5 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--color-passed)]">
-                      <Icon size={18} />
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--color-passed)]">
+                      <Icon size={20} />
                     </div>
                     <h3 className="text-base font-bold text-white tracking-tight">
                       {g.name}
@@ -131,7 +131,7 @@ export function LandingReleaseGate() {
                   <ul className="flex flex-col gap-2 font-mono text-[11px] text-slate-300 pt-3 border-t border-[var(--border-subtle)]">
                     {g.checks.map((c, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <CheckCircle2 size={13} className="text-[var(--color-passed)] shrink-0 mt-0.5" />
+                        <CheckCircle2 size={16} className="text-[var(--color-passed)] shrink-0 mt-0.5" />
                         <span className="leading-snug">{c}</span>
                       </li>
                     ))}

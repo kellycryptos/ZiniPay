@@ -130,11 +130,11 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             <span>NEAR SPUTNIK DAO + TREZU GOVERNANCE LAYER</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.15]">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.15] max-w-2xl text-balance">
             Constrained Agent Layer for Community Treasuries
           </h1>
 
-          <div className="flex flex-col gap-3 text-base text-[var(--text-secondary)] leading-relaxed">
+          <div className="flex flex-col gap-3 text-base text-[var(--text-secondary)] leading-relaxed max-w-prose">
             <p>
               Communities need to pay contributors without handing an AI the keys.
             </p>
@@ -150,17 +150,17 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
               className="btn-primary cursor-pointer text-sm py-3 px-6 shadow-lg shadow-[#00ec9710]"
             >
               <span>Open dashboard</span>
-              <ArrowRight size={15} />
+              <ArrowRight size={16} />
             </button>
 
             <a
               href="https://github.com/zinipay/zinipay"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary text-sm py-3 px-6 flex items-center gap-2"
+              className="btn-secondary text-sm py-3 px-5 flex items-center gap-2"
             >
-              <Github size={15} />
-              <span>View on GitHub</span>
+              <Github size={16} />
+              <span>View Contracts & Code</span>
             </a>
           </div>
 

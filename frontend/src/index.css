@@ -33,6 +33,9 @@
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
   --text-muted: #8D9EBA;
+
+  /* Snappy spring transition curve from design system */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html {
@@ -82,6 +85,7 @@ code, kbd, samp, pre, .font-mono {
   background-color: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
+  transition: border-color 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring);
 }
 
 .ledger-card:hover {
@@ -128,13 +132,17 @@ code, kbd, samp, pre, .font-mono {
   font-size: 0.8125rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.2s var(--ease-spring), transform 0.15s var(--ease-spring);
   font-family: 'Plus Jakarta Sans', sans-serif;
   text-decoration: none;
 }
 
 .btn-primary:hover {
   background-color: #0A634E;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -149,7 +157,7 @@ code, kbd, samp, pre, .font-mono {
   font-size: 0.8125rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  transition: all 0.2s var(--ease-spring);
   font-family: 'Plus Jakarta Sans', sans-serif;
   text-decoration: none;
 }
@@ -157,6 +165,10 @@ code, kbd, samp, pre, .font-mono {
 .btn-secondary:hover {
   background-color: var(--border-subtle);
   border-color: var(--border-strong);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
 }
 
 /* Status tags on dark canvas */

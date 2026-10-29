@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Github } from 'lucide-react';
 import { LandingHero } from './LandingHero';
 import { LandingReleaseGate } from './LandingReleaseGate';
+import { LandingTaglineSection } from './LandingTaglineSection';
 import { LandingVerifiedSection } from './LandingVerifiedSection';
 import { LandingAttacksSection } from './LandingAttacksSection';
 import { LandingHowItWorks } from './LandingHowItWorks';
@@ -26,7 +27,7 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
               className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-1 shrink-0"
             />
             <div>
-              <span className="font-extrabold text-base tracking-tight text-white font-sans">
+              <span className="font-bold text-base tracking-tight text-white font-sans">
                 ZiniPay
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] font-mono text-[var(--text-muted)] border-l border-[var(--border-subtle)] pl-2">
@@ -44,7 +45,7 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
               className="text-[var(--text-secondary)] hover:text-white transition-colors p-2"
               title="GitHub Repository"
             >
-              <Github size={18} />
+              <Github size={16} />
             </a>
 
             <button
@@ -53,7 +54,7 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
               className="btn-primary text-xs py-2 px-4 shadow-sm"
             >
               <span>Open dashboard</span>
-              <ArrowRight size={13} />
+              <ArrowRight size={16} />
             </button>
           </div>
         </div>
@@ -67,7 +68,10 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
         {/* 2. Three-way release gate as an animated flow */}
         <LandingReleaseGate />
 
-        {/* 3. Verified on testnet section */}
+        {/* 3. Mandatory Word-by-Word Tagline Reveal */}
+        <LandingTaglineSection />
+
+        {/* 4. Verified on testnet section */}
         <LandingVerifiedSection />
 
         {/* 4. Attacks that fail section */}

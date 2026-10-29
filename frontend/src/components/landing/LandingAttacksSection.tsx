@@ -60,7 +60,7 @@ export function LandingAttacksSection() {
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-blocked)]" />
               Adversarial Invariants
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Attacks That Fail
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">

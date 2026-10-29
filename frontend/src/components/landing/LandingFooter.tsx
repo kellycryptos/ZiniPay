@@ -17,7 +17,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
               alt="ZiniPay Logo"
               className="w-5 h-5 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-0.5"
             />
-            <span className="font-extrabold text-sm tracking-tight text-white font-sans">
+            <span className="font-bold text-sm tracking-tight text-white font-sans">
               ZiniPay
             </span>
             <span className="tag-neutral text-[10px]">
@@ -47,7 +47,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-white hover:text-[var(--color-passed)] transition-colors"
           >
-            <Github size={13} />
+            <Github size={16} />
             <span>GitHub Repository</span>
           </a>
 
@@ -58,7 +58,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
             className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-white transition-colors"
           >
             <span>Sputnik DAO Contracts</span>
-            <ExternalLink size={10} />
+            <ExternalLink size={14} />
           </a>
 
           <a
@@ -68,7 +68,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
             className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-white transition-colors"
           >
             <span>Trezu Governance</span>
-            <ExternalLink size={10} />
+            <ExternalLink size={14} />
           </a>
         </div>
       </div>

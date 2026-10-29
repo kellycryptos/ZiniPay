@@ -78,7 +78,7 @@ export function LandingVerifiedSection() {
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
               On-Chain Audit
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Verified on Testnet
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
@@ -93,10 +93,10 @@ export function LandingVerifiedSection() {
           <button
             type="button"
             onClick={fetchVerifiedEntries}
-            className="p-2 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors self-start sm:self-auto flex items-center gap-1.5 font-mono text-xs"
+            className="p-2 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors self-start sm:self-auto flex items-center gap-2 font-mono text-xs cursor-pointer"
             title="Refresh verified records"
           >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             <span>Sync</span>
           </button>
         </div>
@@ -107,10 +107,20 @@ export function LandingVerifiedSection() {
             Querying verified on-chain run records...
           </div>
         ) : txs.length === 0 ? (
-          <div className="ledger-card p-12 text-center flex flex-col items-center justify-center font-mono border-dashed">
+          <div className="ledger-card p-12 text-center flex flex-col items-center justify-center font-mono gap-3">
             <span className="text-sm text-[var(--text-secondary)] font-semibold">
               No verified run recorded yet
             </span>
+            <p className="text-xs text-[var(--text-muted)] max-w-md">
+              Run records update automatically when the agent or council executes proposals on testnet.
+            </p>
+            <button
+              type="button"
+              onClick={fetchVerifiedEntries}
+              className="btn-secondary text-xs py-1.5 px-3 mt-1 cursor-pointer"
+            >
+              Retry Sync
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-6">

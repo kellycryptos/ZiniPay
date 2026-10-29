@@ -237,8 +237,8 @@ export function DashboardPage({
 
               {/* Right-aligned Filter & Refresh Toolbar */}
               <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                <div className="flex items-center gap-1 bg-[var(--bg-panel-alt)] px-2 py-1 rounded border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
-                  <Filter size={11} className="text-[var(--text-muted)]" />
+                <div className="flex items-center gap-1.5 bg-[var(--bg-panel-alt)] px-2.5 py-1 rounded-md border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+                  <Filter size={14} className="text-[var(--text-muted)]" />
                   <select
                     value={intentFilter}
                     onChange={(e) => setIntentFilter(e.target.value as any)}
@@ -254,11 +254,11 @@ export function DashboardPage({
                   type="button"
                   onClick={onRefresh}
                   disabled={isLoadingOnChain}
-                  className="p-1.5 rounded bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)] cursor-pointer"
+                  className="p-1.5 rounded-md bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-subtle)] cursor-pointer"
                   title="Refresh on-chain proposals"
                   aria-label="Refresh on-chain proposals"
                 >
-                  <RefreshCw size={13} className={isLoadingOnChain ? 'animate-spin' : ''} />
+                  <RefreshCw size={16} className={isLoadingOnChain ? 'animate-spin' : ''} />
                 </button>
               </div>
             </div>
@@ -313,9 +313,11 @@ export function DashboardPage({
                 ))
               ) : (
                 /* Configured but Empty Queue State */
-                <div className="ledger-card p-10 text-center flex flex-col items-center justify-center gap-2 text-xs">
-                  <Inbox size={24} className="text-[var(--text-muted)]" />
-                  <h4 className="font-medium text-sm text-white">
+                <div className="ledger-card p-10 text-center flex flex-col items-center justify-center gap-3 text-xs">
+                  <div className="p-3 rounded-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
+                    <Inbox size={20} />
+                  </div>
+                  <h4 className="font-semibold text-sm text-white">
                     {tab === 'pending'
                       ? 'No pending payouts'
                       : tab === 'paid'
@@ -327,6 +329,34 @@ export function DashboardPage({
                       ? `Could not reach Sputnik DAO: ${daoError}. Check your network connection.`
                       : 'New requests appear here after an agent submits a deliverable for approval.'}
                   </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {daoError ? (
+                      <button
+                        type="button"
+                        onClick={onRefresh}
+                        className="btn-primary text-xs py-1.5 px-3 cursor-pointer"
+                      >
+                        Retry Connection
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setTab('new_payout')}
+                          className="btn-primary text-xs py-1.5 px-3 cursor-pointer"
+                        >
+                          Submit New Payout
+                        </button>
+                        <button
+                          type="button"
+                          onClick={onRefresh}
+                          className="btn-secondary text-xs py-1.5 px-3 cursor-pointer"
+                        >
+                          Sync On-Chain
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

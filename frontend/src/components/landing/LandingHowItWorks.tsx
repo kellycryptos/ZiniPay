@@ -42,7 +42,7 @@ export function LandingHowItWorks() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
             Operational Lifecycle
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             How It Works in 4 Steps
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
@@ -61,7 +61,7 @@ export function LandingHowItWorks() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-xl font-extrabold text-[var(--color-passed)]">
+                    <span className="font-mono text-xl font-bold text-[var(--color-passed)]">
                       {st.num}
                     </span>
                     <span className="tag-neutral text-[10px]">
@@ -79,7 +79,7 @@ export function LandingHowItWorks() {
                 </div>
 
                 <div className="mt-6 pt-3 border-t border-[var(--border-subtle)] flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)]">
-                  <Icon size={12} className="text-[var(--color-passed)]" />
+                  <Icon size={16} className="text-[var(--color-passed)]" />
                   <span>STEP {st.num} OF 04</span>
                 </div>
               </div>
