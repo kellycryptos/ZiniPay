@@ -86,7 +86,7 @@ export function LandingTaglineSection() {
         {/* Supporting mechanism footnote */}
         <div className="mt-8 flex items-center gap-3 text-xs font-mono text-[var(--text-muted)]">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
-          <span>Sputnik DAO v2 · Trezu Multi-Sig · PolicyHelper Contract</span>
+          <span>Three-Way Release Gate · Multi-Sig Consensus · Policy Constraints</span>
         </div>
       </div>
     </section>

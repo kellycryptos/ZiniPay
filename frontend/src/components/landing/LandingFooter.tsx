@@ -52,22 +52,12 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
           </a>
 
           <a
-            href="https://github.com/near-daos/sputnik-dao-contract"
+            href="https://github.com/zinipay/zinipay/tree/main/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-white transition-colors"
           >
-            <span>Sputnik DAO Contracts</span>
-            <ExternalLink size={14} />
-          </a>
-
-          <a
-            href="https://app.trezu.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-white transition-colors"
-          >
-            <span>Trezu Governance</span>
+            <span>Documentation</span>
             <ExternalLink size={14} />
           </a>
         </div>

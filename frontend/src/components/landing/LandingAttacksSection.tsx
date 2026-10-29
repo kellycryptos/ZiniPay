@@ -37,7 +37,7 @@ export function LandingAttacksSection() {
     {
       title: 'Unauthorized Direct Caller Bypass',
       vector: 'DIRECT CALL BYPASS',
-      description: 'Attacker directly invokes the release() method on the PolicyHelper contract without Sputnik DAO multi-sig approval.',
+      description: 'Attacker directly invokes the release() method on the contract without council multi-sig approval.',
       defense: 'Contract asserts predecessor_account_id == dao_account_id. Funds cannot move without council multi-sig consensus.',
       rejectionCode: 'Only owner or designated DAO can call this',
     },
@@ -45,7 +45,7 @@ export function LandingAttacksSection() {
       title: 'Hallucinated or Stolen Deliverable',
       vector: 'FABRICATED EVIDENCE',
       description: 'Contributor submits a third-party GitHub PR authored by someone else or a non-existent repo artifact.',
-      defense: 'Multi-agent deliberation via NEAR AI Cloud cross-references PR committer identity, merge status, and CI test output before constructing any proposal.',
+      defense: 'Multi-agent deliberation cross-references PR committer identity, merge status, and CI test output before constructing any proposal.',
       rejectionCode: 'Committer identity mismatch: recipient does not match PR author',
     },
   ];

@@ -20,15 +20,15 @@ export function LandingHowItWorks() {
     {
       num: '03',
       title: 'Policy-Constrained Proposal',
-      actor: 'Sputnik DAO v2',
-      desc: 'Agent crafts an on-chain proposal calling PolicyHelper::release(), committing the deliverable CID and recipient payout atomically.',
+      actor: 'Treasury Contract',
+      desc: 'Agent crafts an on-chain proposal committing the deliverable CID, policy constraints, and payout atomically.',
       icon: FileCheck2,
     },
     {
       num: '04',
       title: 'Human Council Vote',
       actor: 'Multi-Sig Quorum',
-      desc: 'Elected council members inspect the Release Receipt in Trezu, cast their on-chain votes, and trigger atomic payout or cross-chain intent.',
+      desc: 'Elected council members inspect the Release Receipt, cast their on-chain votes, and trigger atomic payout or cross-chain intent.',
       icon: CheckCircle2,
     },
   ];

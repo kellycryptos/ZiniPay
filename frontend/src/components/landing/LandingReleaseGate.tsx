@@ -53,11 +53,11 @@ export function LandingReleaseGate() {
       step: '03',
       name: 'Human Quorum',
       tag: 'MATCH C · MULTI-SIG',
-      desc: 'Sputnik DAO v2 council members review the receipt in Trezu and sign with their private keys before funds move.',
+      desc: 'Elected council members review the receipt and sign with their private keys before funds move.',
       checks: [
         'Multi-sig threshold required (e.g. 2 of 3 council seats)',
         'Agent never holds release keys — function-call only',
-        'Settles natively in NEAR or cross-chain via NEAR Intents',
+        'Settles natively or cross-chain via atomic intent routing',
       ],
       icon: Users,
       color: 'text-white',
@@ -158,12 +158,12 @@ export function LandingReleaseGate() {
             <div>
               <div className="text-white font-bold">Settlement Destination Flexibility</div>
               <div className="text-[var(--text-muted)] text-[11px] mt-0.5">
-                Native NEAR payouts direct from Sputnik DAO, or cross-chain USDC/SOL/BTC via NEAR Intents.
+                Native treasury payouts direct from multi-sig, or cross-chain USDC/SOL/BTC via atomic solver intents.
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="tag-neutral text-[10px]">NEAR NATIVE</span>
+            <span className="tag-neutral text-[10px]">NATIVE ASSET</span>
             <span className="tag-neutral text-[10px]">ETHEREUM INTENT</span>
             <span className="tag-neutral text-[10px]">SOLANA INTENT</span>
           </div>

@@ -39,11 +39,20 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
           {/* Nav Actions */}
           <div className="flex items-center gap-4">
             <a
+              href="https://github.com/zinipay/zinipay/tree/main/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-colors"
+            >
+              Docs
+            </a>
+
+            <a
               href="https://github.com/zinipay/zinipay"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--text-secondary)] hover:text-white transition-colors p-2"
-              title="GitHub Repository"
+              className="text-[var(--text-secondary)] hover:text-white transition-colors p-1"
+              title="Git Repository"
             >
               <Github size={16} />
             </a>
@@ -51,10 +60,10 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
             <button
               type="button"
               onClick={onNavigateToApp}
-              className="btn-primary text-xs py-2 px-4 shadow-sm"
+              className="btn-primary text-xs py-2 px-4 shadow-sm cursor-pointer"
             >
-              <span>Open dashboard</span>
-              <ArrowRight size={16} />
+              <span>Open Dashboard</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -74,17 +83,17 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
         {/* 4. Verified on testnet section */}
         <LandingVerifiedSection />
 
-        {/* 4. Attacks that fail section */}
+        {/* 5. Attacks that fail section */}
         <LandingAttacksSection />
 
-        {/* 5. How it works in 4 steps */}
+        {/* 6. How it works in 4 steps */}
         <LandingHowItWorks />
 
-        {/* 6. Tech stack with NEAR primitives actually used */}
+        {/* 7. Tech stack with primitives actually used */}
         <LandingTechStack />
       </main>
 
-      {/* 7. Footer with GitHub link */}
+      {/* 8. Footer with GitHub link */}
       <LandingFooter onNavigateToApp={onNavigateToApp} />
     </div>
   );

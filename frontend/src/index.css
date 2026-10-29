@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #121721;
-  --bg-panel: #1A2230;
-  --bg-panel-alt: #222C3D;
-  --bg-panel-header: #1E2736;
-  --border-subtle: #28354A;
-  --border-strong: #384964;
+  --bg-canvas: #0A0C10;
+  --bg-panel: #11141D;
+  --bg-panel-alt: #161C28;
+  --bg-panel-header: #131822;
+  --border-subtle: #1E2638;
+  --border-strong: #2D384E;
 
   /* Receipt Paper Surface (Paper on Desk) */
   --bg-receipt: #FDFDFE;
@@ -18,21 +18,21 @@
   --border-receipt: #E2E8F0;
 
   /* Accents */
-  --color-passed: #0D7A5F;
-  --color-passed-bg: rgba(13, 122, 95, 0.12);
-  --color-passed-border: rgba(13, 122, 95, 0.35);
+  --color-passed: #00EC97;
+  --color-passed-bg: rgba(0, 236, 151, 0.08);
+  --color-passed-border: rgba(0, 236, 151, 0.25);
 
-  --color-blocked: #B91C1C;
-  --color-blocked-bg: rgba(185, 28, 28, 0.12);
-  --color-blocked-border: rgba(185, 28, 28, 0.35);
+  --color-blocked: #EF4444;
+  --color-blocked-bg: rgba(239, 68, 68, 0.10);
+  --color-blocked-border: rgba(239, 68, 68, 0.30);
 
-  --color-pending: #B45309;
-  --color-pending-bg: rgba(180, 83, 9, 0.12);
-  --color-pending-border: rgba(180, 83, 9, 0.35);
+  --color-pending: #F59E0B;
+  --color-pending-bg: rgba(245, 158, 11, 0.10);
+  --color-pending-border: rgba(245, 158, 11, 0.30);
 
   --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #8D9EBA;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
 
   /* Snappy spring transition curve from design system */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -127,18 +127,19 @@ code, kbd, samp, pre, .font-mono {
   justify-content: center;
   gap: 0.5rem;
   background-color: var(--color-passed);
-  color: #FFFFFF;
+  color: #0A0C10;
   font-weight: 600;
   font-size: 0.8125rem;
   padding: 0.5rem 1rem;
   border-radius: 6px;
-  transition: background-color 0.2s var(--ease-spring), transform 0.15s var(--ease-spring);
+  transition: all 0.2s var(--ease-spring);
   font-family: 'Plus Jakarta Sans', sans-serif;
   text-decoration: none;
 }
 
 .btn-primary:hover {
-  background-color: #0A634E;
+  background-color: #1DFDB1;
+  box-shadow: 0 0 16px rgba(0, 236, 151, 0.25);
 }
 
 .btn-primary:active {
