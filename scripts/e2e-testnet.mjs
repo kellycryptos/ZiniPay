@@ -39,7 +39,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const networkId = process.env.NEAR_NETWORK || 'testnet';
-const nodeUrl = networkId === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://rpc.testnet.near.org';
+const nodeUrl = process.env.NEAR_NODE_URL || (networkId === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://test.rpc.fastnear.com');
 const explorerUrl = networkId === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 
 const agentAccountId = process.env.AGENT_ACCOUNT_ID || process.env.NEAR_ACCOUNT_ID;
