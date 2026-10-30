@@ -20,31 +20,35 @@ const outputPath = path.join(process.cwd(), 'frontend', 'public', 'data', 'verif
 const attackEventsPath = path.join(process.cwd(), 'frontend', 'public', 'data', 'attack_events.jsonl');
 
 async function getBlockTimestamp(txHash, senderId, network = 'testnet') {
-  const rpcUrl = network === 'mainnet' ? 'https://rpc.mainnet.near.org' : 'https://rpc.testnet.near.org';
-  try {
-    const res = await axios.post(rpcUrl, {
-      jsonrpc: '2.0',
-      id: 'tx-timestamp',
-      method: 'EXPERIMENTAL_tx_status',
-      params: [txHash, senderId],
-    }, { timeout: 6000 });
-
-    const blockHash = res.data?.result?.transaction_outcome?.block_hash;
-    if (blockHash) {
-      const blockRes = await axios.post(rpcUrl, {
+  const rpcUrls = network === 'mainnet'
+    ? ['https://rpc.mainnet.near.org']
+    : ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
+  for (const rpcUrl of rpcUrls) {
+    try {
+      const res = await axios.post(rpcUrl, {
         jsonrpc: '2.0',
-        id: 'block-timestamp',
-        method: 'block',
-        params: { block_id: blockHash },
+        id: 'tx-timestamp',
+        method: 'EXPERIMENTAL_tx_status',
+        params: [txHash, senderId],
       }, { timeout: 6000 });
 
-      const header = blockRes.data?.result?.header;
-      if (header?.timestamp) {
-        return Math.floor(Number(header.timestamp) / 1_000_000);
+      const blockHash = res.data?.result?.transaction_outcome?.block_hash;
+      if (blockHash) {
+        const blockRes = await axios.post(rpcUrl, {
+          jsonrpc: '2.0',
+          id: 'block-timestamp',
+          method: 'block',
+          params: { block_id: blockHash },
+        }, { timeout: 6000 });
+
+        const header = blockRes.data?.result?.header;
+        if (header?.timestamp) {
+          return Math.floor(Number(header.timestamp) / 1_000_000);
+        }
       }
+    } catch (err) {
+      // Try next RPC
     }
-  } catch (err) {
-    // If RPC unavailable or tx pruned, return null
   }
   return null;
 }
@@ -111,7 +115,7 @@ async function main() {
   const stolenMatch = content.match(/Stolen \/ Unbound PR[^\r\n]*[\s\S]*?BLOCKED by agent:\s*([^\r\n]+)/i);
   if (stolenMatch) {
     attacks.push({
-      vector: 'Stolen / Unbound PR',
+      vector: 'Stolen Deliverable / Author Mismatch',
       status: 'BLOCKED',
       rejectionReason: stolenMatch[1].trim(),
       blockedBy: 'DeliberationEngine (Artifact Verification & Recipient Binding)',
@@ -119,37 +123,40 @@ async function main() {
   }
 
   // Parse Attack 1: Replay CID (if contract deployed)
-  const replayMatch = content.match(/Attack Scenario 1[^\r\n]*[\s\S]*?(?:Attack 1 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
+  const replayMatch = content.match(/Attack Scenario 1[^\r\n]*[\s\S]*?Attack 1 BLOCKED[^\r\n]*: "([^"\r\n]+)"[\s\S]*?Tx Hash:\s*([1-9A-HJ-NP-za-km-z]{40,50})/i);
   if (replayMatch) {
-    const replayError = replayMatch[1] || replayMatch[2] || 'CID already used — duplicate release attempt blocked';
     attacks.push({
       vector: 'Replay Deliverable CID',
       status: 'BLOCKED',
-      rejectionReason: replayError,
+      rejectionReason: replayMatch[1].trim(),
+      txHash: replayMatch[2].trim(),
+      explorerUrl: `https://testnet.nearblocks.io/txns/${replayMatch[2].trim()}`,
       blockedBy: 'PolicyHelper (On-Chain)',
     });
   }
 
   // Parse Attack 2: Over-Cap Spend (if contract deployed)
-  const overCapMatch = content.match(/Attack Scenario 2[^\r\n]*[\s\S]*?(?:Attack 2 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|check_policy returned false|Rejection reason: ([^\r\n]+))/i);
+  const overCapMatch = content.match(/Attack Scenario 2[^\r\n]*[\s\S]*?Attack 2 BLOCKED[^\r\n]*: "([^"\r\n]+)"[\s\S]*?Tx Hash:\s*([1-9A-HJ-NP-za-km-z]{40,50})/i);
   if (overCapMatch) {
-    const overCapError = overCapMatch[1] || overCapMatch[2] || 'Amount exceeds per-proposal effective cap';
     attacks.push({
       vector: 'Over-Cap Treasury Spend',
       status: 'BLOCKED',
-      rejectionReason: overCapError,
+      rejectionReason: overCapMatch[1].trim(),
+      txHash: overCapMatch[2].trim(),
+      explorerUrl: `https://testnet.nearblocks.io/txns/${overCapMatch[2].trim()}`,
       blockedBy: 'PolicyHelper (On-Chain)',
     });
   }
 
   // Parse Attack 3: Unauthorized Caller (if contract deployed)
-  const unauthMatch = content.match(/Attack Scenario 3[^\r\n]*[\s\S]*?(?:Attack 3 BLOCKED with [^\r\n]*: "([^"\r\n]+)"|Rejection reason: ([^\r\n]+))/i);
+  const unauthMatch = content.match(/Attack Scenario 3[^\r\n]*[\s\S]*?Attack 3 BLOCKED[^\r\n]*: "([^"\r\n]+)"[\s\S]*?Tx Hash:\s*([1-9A-HJ-NP-za-km-z]{40,50})/i);
   if (unauthMatch) {
-    const unauthError = unauthMatch[1] || unauthMatch[2] || 'Only owner or designated DAO can call this';
     attacks.push({
       vector: 'Unauthorized Release Caller',
       status: 'BLOCKED',
-      rejectionReason: unauthError,
+      rejectionReason: unauthMatch[1].trim(),
+      txHash: unauthMatch[2].trim(),
+      explorerUrl: `https://testnet.nearblocks.io/txns/${unauthMatch[2].trim()}`,
       blockedBy: 'PolicyHelper (On-Chain)',
     });
   }
@@ -184,6 +191,13 @@ async function main() {
     resolvedTxs.push(enriched);
   }
 
+  // Disclosures required for audit integrity
+  const disclosures = [
+    'Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).',
+    'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
+    'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
+  ];
+
   // 5. Output verified payload
   const verifiedPayload = {
     generatedAt: new Date().toISOString(),
@@ -192,6 +206,7 @@ async function main() {
     viaPolicyContract,
     transactions: resolvedTxs,
     blockedAttacks: attacks,
+    disclosures,
   };
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });

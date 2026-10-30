@@ -73,8 +73,10 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
         if (first && first.txHash) {
           const recipientAccount = first.recipient || 'zinipay-recipient2.testnet';
           const payoutNear = first.amountNear || '0.10';
+          const propIdMatch = first.label ? first.label.match(/Proposal #(\d+)/i) : null;
+          const proposalId = propIdMatch ? parseInt(propIdMatch[1], 10) : (first.index !== undefined ? Math.max(0, first.index - 1) : 5);
           const realProposal: Proposal = {
-            id: first.index !== undefined ? Math.max(0, first.index - 1) : 0,
+            id: proposalId,
             title: first.prUrl ? `Merged GitHub PR: ${first.prUrl}` : 'Contributor Deliverable Release (GitHub PR #1)',
             proposer: 'agentzinipaytestnet.testnet',
             recipient: recipientAccount,

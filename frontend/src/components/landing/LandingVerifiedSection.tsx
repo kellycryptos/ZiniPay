@@ -18,12 +18,15 @@ interface BlockedAttack {
   status?: string;
   rejectionReason?: string;
   reason?: string;
+  txHash?: string;
+  explorerUrl?: string;
   blockedBy: string;
 }
 
 export function LandingVerifiedSection() {
   const [txs, setTxs] = useState<VerifiedTransaction[]>([]);
   const [blockedAttacks, setBlockedAttacks] = useState<BlockedAttack[]>([]);
+  const [disclosures, setDisclosures] = useState<string[]>([]);
   const [meta, setMeta] = useState<{ generatedAt?: string; network?: string }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +41,12 @@ export function LandingVerifiedSection() {
         if (Array.isArray(data)) {
           setTxs(data);
           setBlockedAttacks([]);
+          setDisclosures([]);
           setMeta({});
         } else if (data && typeof data === 'object') {
           setTxs(Array.isArray(data.transactions) ? data.transactions : []);
           setBlockedAttacks(Array.isArray(data.blockedAttacks) ? data.blockedAttacks : []);
+          setDisclosures(Array.isArray(data.disclosures) ? data.disclosures : []);
           setMeta({
             generatedAt: data.generatedAt,
             network: data.network,
@@ -49,16 +54,19 @@ export function LandingVerifiedSection() {
         } else {
           setTxs([]);
           setBlockedAttacks([]);
+          setDisclosures([]);
           setMeta({});
         }
       } else {
         setTxs([]);
         setBlockedAttacks([]);
+        setDisclosures([]);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to read verified run record');
       setTxs([]);
       setBlockedAttacks([]);
+      setDisclosures([]);
     } finally {
       setLoading(false);
     }
@@ -82,7 +90,7 @@ export function LandingVerifiedSection() {
               Verified on Testnet
             </h2>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-              Cryptographic verification of end-to-end execution on testnet. Proposal creation, council multi-sig votes, atomic release, and blocked attack transaction records.
+              On-chain verification of end-to-end execution on testnet. Proposal creation, council multi-sig votes, atomic release, and blocked attack transaction records.
             </p>
             {meta.generatedAt && (
               <div className="font-mono text-[11px] text-[var(--text-muted)] mt-2">
@@ -208,6 +216,20 @@ export function LandingVerifiedSection() {
                         <span className="text-[11px] text-[var(--text-secondary)]">
                           {att.rejectionReason || att.reason}
                         </span>
+                        {att.txHash && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-mono text-[10px] text-[var(--text-muted)]">Tx:</span>
+                            <a
+                              href={att.explorerUrl || `https://testnet.nearblocks.io/txns/${att.txHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-[10px] text-[var(--color-passed)] hover:underline break-all flex items-center gap-1"
+                            >
+                              <span>{att.txHash}</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -216,6 +238,24 @@ export function LandingVerifiedSection() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Operational Disclosures Section */}
+            {disclosures.length > 0 && (
+              <div className="flex flex-col gap-3 font-mono text-xs pt-4 border-t border-[var(--border-subtle)]">
+                <div className="text-[11px] text-[var(--color-warning)] uppercase tracking-wider mb-1 flex items-center gap-1.5 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)]" />
+                  Operational Disclosures & Verification Context
+                </div>
+                <div className="ledger-card p-4 flex flex-col gap-2.5 bg-[var(--bg-panel-alt)] border-l-2 border-l-[var(--color-warning)]">
+                  {disclosures.map((disc, idx) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-[12px] text-[var(--text-secondary)] leading-relaxed">
+                      <span className="text-[var(--color-warning)] shrink-0 font-bold">•</span>
+                      <span>{disc}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

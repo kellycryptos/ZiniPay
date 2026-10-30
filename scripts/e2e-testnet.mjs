@@ -250,8 +250,8 @@ async function run() {
   logAttackEvent({
     vector: 'Stolen / Author Mismatch PR',
     caller: recipientAccountId,
-    details: `Deliverable: '${stolenPrUrl}' with claimed recipient '${recipientAccountId}'`,
-    rejectionReason: stolenCheck.reason,
+    details: `Deliverable: an unrelated merged PR from another author with claimed recipient '${recipientAccountId}'`,
+    rejectionReason: `PR author does not match recipient handle (${recipientGithubHandle}, ${recipientAccountId})`,
     blockedBy: 'DeliberationEngine (Artifact Verification & Recipient Binding)',
     simulated: false,
   });
@@ -512,81 +512,128 @@ async function run() {
     });
     console.log(`  ✓ Silver Tier Cap: ${utils.format.formatNearAmount(newCap, 2)} NEAR (1.5x multiplier active!)`);
 
-    // Three Contract Attack Scenarios
-    console.log(`\n[8/8] Testing Contract Attack Scenarios (Must Fail Closed)...`);
+    // Three Contract Attack Scenarios (Real Failed Transactions with Verified Receipts)
+    console.log(`\n[8/8] Testing Contract Attack Scenarios (Must Fail Closed via Real Transactions)...`);
 
-    // Attack 1: Replay attack (Duplicate CID)
+    // Attack 1: Replay attack (Duplicate CID via real FunctionCall)
     const replayRecipient = 'zinipay-fresh-check.testnet';
-    console.log(`  Attack Scenario 1: Replaying identical CID (${canonicalCid})...`);
+    console.log(`  Attack Scenario 1: Replaying identical CID (${canonicalCid}) via real transaction...`);
+    let attack1TxHash = null;
+    let attack1PanicMsg = null;
     try {
-      await agentAccount.viewFunction({
+      await councilAccount.functionCall({
         contractId: policyContractId,
-        methodName: 'check_policy',
+        methodName: 'release',
         args: {
           recipient: replayRecipient,
           amount: payoutAmountYocto,
           cid: canonicalCid,
         },
+        gas: BigInt('100000000000000'),
+        attachedDeposit: BigInt(payoutAmountYocto),
       });
       console.error(`  ❌ SECURITY FAILURE: Policy contract allowed duplicate CID replay!`);
       process.exit(1);
     } catch (err) {
+      attack1TxHash = err.transaction_outcome?.id;
+      if (attack1TxHash) {
+        const txStatus = await councilNear.connection.provider.txStatus(attack1TxHash, councilAccountId);
+        for (const r of txStatus.receipts_outcome || []) {
+          for (const l of r.outcome?.logs || []) {
+            if (l.includes('CID already used')) {
+              attack1PanicMsg = l;
+              break;
+            }
+          }
+        }
+      }
       const expectedSubstring = 'CID already used';
-      if (!err.message.includes(expectedSubstring) && !err.message.includes('WasmTrap(Unreachable)')) {
+      const actualError = attack1PanicMsg || err.message || '';
+      if (!actualError.includes(expectedSubstring)) {
         console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 1 (Replay):`);
         console.error(`     Expected to contain: "${expectedSubstring}"`);
-        console.error(`     Actual error message: "${err.message}"`);
+        console.error(`     Actual error message: "${actualError}"`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 1 BLOCKED with verified on-chain panic: "${expectedSubstring}"`);
+      console.log(`  ✓ Attack 1 BLOCKED on-chain with verified panic: "${actualError}"`);
+      if (attack1TxHash) {
+        console.log(`    Tx Hash: ${attack1TxHash}`);
+        console.log(`    Explorer: ${explorerUrl}/txns/${attack1TxHash}`);
+        recordTx(`Blocked Attack 1: Replay CID (${canonicalCid})`, attack1TxHash);
+      }
       logAttackEvent({
         vector: 'Replay CID',
-        caller: replayRecipient,
-        details: `Attempted replay of deliverable CID '${canonicalCid}'`,
-        rejectionReason: err.message,
+        caller: councilAccountId,
+        details: `Attempted replay of deliverable CID '${canonicalCid}' for fresh recipient '${replayRecipient}'`,
+        rejectionReason: actualError,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
       });
     }
 
-    // Attack 2: Over-cap attack
-    const realEffectiveCapYocto = await agentAccount.viewFunction({
-      contractId: policyContractId,
-      methodName: 'get_effective_cap',
-      args: { account: recipientAccountId },
+    // Attack 2: Over-cap spend attempt via real FunctionCall
+    const capRes = await agentNear.connection.provider.query({
+      request_type: 'call_function',
+      account_id: policyContractId,
+      method_name: 'get_effective_cap',
+      args_base64: Buffer.from(JSON.stringify({ account: recipientAccountId })).toString('base64'),
+      finality: 'optimistic'
     });
-    const oneNearYocto = BigInt(utils.format.parseNearAmount('1') || '1000000000000000000000000');
+    const realEffectiveCapYocto = Buffer.from(capRes.result).toString('utf-8').trim();
+    const oneNearYocto = BigInt('1000000000000000000000000');
     const excessiveAmount = (BigInt(realEffectiveCapYocto) + oneNearYocto).toString();
     const capNearFormatted = utils.format.formatNearAmount(realEffectiveCapYocto, 2);
     const excessiveNearFormatted = utils.format.formatNearAmount(excessiveAmount, 2);
 
-    console.log(`  Attack Scenario 2: Over-cap spend attempt (Requesting ${excessiveNearFormatted} NEAR vs real cap ${capNearFormatted} NEAR)...`);
+    console.log(`  Attack Scenario 2: Over-cap spend attempt via real transaction (Requesting ${excessiveNearFormatted} NEAR vs real cap ${capNearFormatted} NEAR)...`);
+    let attack2TxHash = null;
+    let attack2PanicMsg = null;
     try {
-      await agentAccount.viewFunction({
+      await councilAccount.functionCall({
         contractId: policyContractId,
-        methodName: 'check_policy',
+        methodName: 'release',
         args: {
           recipient: recipientAccountId,
           amount: excessiveAmount,
           cid: `${canonicalCid}-overcap`,
         },
+        gas: BigInt('100000000000000'),
+        attachedDeposit: BigInt(excessiveAmount),
       });
       console.error(`  ❌ SECURITY FAILURE: Policy contract allowed over-cap payout!`);
       process.exit(1);
     } catch (err) {
-      const expectedSubstring = 'exceeds per-proposal effective cap';
-      if (!err.message.includes(expectedSubstring) && !err.message.includes('WasmTrap(Unreachable)')) {
+      attack2TxHash = err.transaction_outcome?.id;
+      if (attack2TxHash) {
+        const txStatus = await councilNear.connection.provider.txStatus(attack2TxHash, councilAccountId);
+        for (const r of txStatus.receipts_outcome || []) {
+          for (const l of r.outcome?.logs || []) {
+            if (l.includes('exceeds effective tier cap')) {
+              attack2PanicMsg = l;
+              break;
+            }
+          }
+        }
+      }
+      const expectedSubstring = 'exceeds effective tier cap';
+      const actualError = attack2PanicMsg || err.message || '';
+      if (!actualError.includes(expectedSubstring)) {
         console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 2 (Over-Cap):`);
         console.error(`     Expected to contain: "${expectedSubstring}"`);
-        console.error(`     Actual error message: "${err.message}"`);
+        console.error(`     Actual error message: "${actualError}"`);
         process.exit(1);
       }
-      console.log(`  ✓ Attack 2 BLOCKED with verified on-chain panic: "${expectedSubstring}"`);
+      console.log(`  ✓ Attack 2 BLOCKED on-chain with verified panic: "${actualError}"`);
+      if (attack2TxHash) {
+        console.log(`    Tx Hash: ${attack2TxHash}`);
+        console.log(`    Explorer: ${explorerUrl}/txns/${attack2TxHash}`);
+        recordTx(`Blocked Attack 2: Over-Cap Spend (${excessiveNearFormatted} NEAR)`, attack2TxHash);
+      }
       logAttackEvent({
         vector: 'Over-Cap Spend',
-        caller: recipientAccountId,
+        caller: councilAccountId,
         details: `Requested ${excessiveNearFormatted} NEAR exceeding real effective cap of ${capNearFormatted} NEAR for recipient '${recipientAccountId}'`,
-        rejectionReason: err.message,
+        rejectionReason: actualError,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
       });
@@ -594,6 +641,8 @@ async function run() {
 
     // Attack 3: Unauthorized caller calling release directly
     console.log(`  Attack Scenario 3: Unauthorized caller invoking release()...`);
+    let attack3TxHash = null;
+    let attack3PanicMsg = null;
     try {
       await agentAccount.functionCall({
         contractId: policyContractId,
@@ -609,21 +658,38 @@ async function run() {
       console.error(`  ❌ SECURITY FAILURE: Unauthorized account was permitted to invoke release()!`);
       process.exit(1);
     } catch (err) {
-      const errStr = JSON.stringify(err) + ' ' + (err.message || '');
-      const matchesAuth = errStr.includes('owner or DAO') || errStr.includes('owner or designated DAO') || errStr.includes('unreachable') || errStr.includes('FunctionCallError');
-      if (!matchesAuth) {
+      attack3TxHash = err.transaction_outcome?.id;
+      if (attack3TxHash) {
+        const txStatus = await agentNear.connection.provider.txStatus(attack3TxHash, agentAccountId);
+        for (const r of txStatus.receipts_outcome || []) {
+          for (const l of r.outcome?.logs || []) {
+            if (l.includes('Only owner or designated DAO can call this')) {
+              attack3PanicMsg = l;
+              break;
+            }
+          }
+        }
+      }
+      const expectedSubstring = 'Only owner or designated DAO can call this';
+      const actualError = attack3PanicMsg || err.message || '';
+      if (!actualError.includes(expectedSubstring) && !JSON.stringify(err).includes('owner or designated DAO')) {
         console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 3 (Unauthorized Caller):`);
-        console.error(`     Expected to contain: "owner or DAO"`);
-        console.error(`     Actual error message: "${err.message}"`);
+        console.error(`     Expected to contain: "${expectedSubstring}"`);
+        console.error(`     Actual error message: "${actualError}"`);
         process.exit(1);
       }
-      const firstLine = 'Only owner or designated DAO can call this (Guest Execution Error)';
-      console.log(`  ✓ Attack 3 BLOCKED with verified authorization panic: "${firstLine}"`);
+      const displayMsg = attack3PanicMsg || 'Only owner or designated DAO can call this';
+      console.log(`  ✓ Attack 3 BLOCKED with verified authorization panic: "${displayMsg}"`);
+      if (attack3TxHash) {
+        console.log(`    Tx Hash: ${attack3TxHash}`);
+        console.log(`    Explorer: ${explorerUrl}/txns/${attack3TxHash}`);
+        recordTx(`Blocked Attack 3: Unauthorized Caller (${agentAccountId})`, attack3TxHash);
+      }
       logAttackEvent({
         vector: 'Unauthorized Caller',
         caller: agentAccountId,
         details: `Non-owner / non-DAO caller '${agentAccountId}' invoked release() directly`,
-        rejectionReason: err.message,
+        rejectionReason: displayMsg,
         blockedBy: 'PolicyHelper (On-Chain)',
         simulated: false,
       });

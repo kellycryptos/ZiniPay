@@ -85,43 +85,45 @@ impl PolicyHelper {
 
         // 1. Reputation gate
         let rep = self.reputation_scores.get(&recipient).unwrap_or(0);
-        if self.min_reputation > 0 {
-            require!(
-                rep >= self.min_reputation,
-                format!(
-                    "Recipient reputation {} below minimum threshold {}",
-                    rep, self.min_reputation
-                )
+        if self.min_reputation > 0 && rep < self.min_reputation {
+            let msg = format!(
+                "Recipient reputation {} below minimum threshold {}",
+                rep, self.min_reputation
             );
+            env::log_str(&msg);
+            env::panic_str(&msg);
         }
 
         // 2. Amount cap with reputation tier multiplier
         let effective_cap = self.get_effective_cap(Some(recipient.clone()), None);
-        require!(
-            amount.0 <= effective_cap,
-            format!(
+        if amount.0 > effective_cap {
+            let msg = format!(
                 "Amount {} exceeds effective tier cap {} for recipient {}",
                 amount.0, effective_cap, recipient
-            )
-        );
+            );
+            env::log_str(&msg);
+            env::panic_str(&msg);
+        }
 
         // 3. Cooldown between releases
         if let Some(last_ts) = self.last_release.get(&recipient) {
             let elapsed_secs = (env::block_timestamp() - last_ts) / 1_000_000_000;
-            require!(
-                elapsed_secs >= self.cooldown_seconds,
-                format!(
+            if elapsed_secs < self.cooldown_seconds {
+                let msg = format!(
                     "Cooldown not elapsed. {} seconds remaining.",
                     self.cooldown_seconds - elapsed_secs
-                )
-            );
+                );
+                env::log_str(&msg);
+                env::panic_str(&msg);
+            }
         }
 
         // 4. CID uniqueness (Anti-Replay / zero-double-spend)
-        require!(
-            !self.used_cids.contains(&cid),
-            "CID already used — duplicate release attempt blocked"
-        );
+        if self.used_cids.contains(&cid) {
+            let msg = "CID already used — duplicate release attempt blocked";
+            env::log_str(msg);
+            env::panic_str(msg);
+        }
 
         // ATOMIC STATE RECORDING: mark CID used and record release timestamp
         self.used_cids.insert(&cid);

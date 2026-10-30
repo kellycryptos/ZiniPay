@@ -10,7 +10,7 @@ jobs:
           targets: wasm32-unknown-unknown
       - run: cargo test
         working-directory: contracts/policy-helper
-      - run: cargo install cargo-near --locked
+      - uses: taiki-e/install-action@cargo-near
       - run: cargo near build non-reproducible-wasm --no-abi
         working-directory: contracts/policy-helper
       - uses: actions/upload-artifact@v4
