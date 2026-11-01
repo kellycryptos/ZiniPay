@@ -1,19 +1,45 @@
-name: build-wasm
-on: workflow_dispatch
+name: CI & WASM Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
 jobs:
-  build:
+  contract-tests-and-build:
+    name: Rust Contract Tests & WASM Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - run: cargo test
+      - name: Run Contract Unit Tests
+        run: cargo test
         working-directory: contracts/policy-helper
-      - uses: taiki-e/install-action@cargo-near
-      - run: cargo near build non-reproducible-wasm --no-abi
+      - name: Install cargo-near
+        uses: taiki-e/install-action@cargo-near
+      - name: Build PolicyHelper WASM
+        run: cargo near build non-reproducible-wasm --no-abi
         working-directory: contracts/policy-helper
-      - uses: actions/upload-artifact@v4
+      - name: Upload Contract WASM Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: zinipay_policy_helper
           path: contracts/policy-helper/target/near/*.wasm
+
+  agent-tests:
+    name: Agent Unit Tests & Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm ci || npm install
+      - name: Run Agent Unit Test Suite
+        run: npm test

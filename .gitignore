@@ -19,7 +19,8 @@ target/
 
 zinipay/
 *.tsbuildinfo
-screenshots/
+/screenshots/
+!docs/screenshots/
 frontend/scripts/
 
 e2e-output.txt

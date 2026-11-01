@@ -31,7 +31,8 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
   evidenceType: 'github_pr',
   evidenceDetails: 'GitHub Repo: org/repo | PR #1 merged',
   createdAt: 'Sample / Unrecorded',
-  status: 'pending_quorum',
+  status: 'approved',
+  rawStatus: 'Approved',
   simulated: true,
   isZinipayRelease: true,
   targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || '',
@@ -53,7 +54,7 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
     recipientAddress: 'contributor.testnet',
   },
   votes: {
-    approve: 1,
+    approve: 2,
     reject: 0,
     required: 2,
   },
@@ -62,65 +63,101 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
 export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
   const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
   const [isRealRun, setIsRealRun] = useState<boolean>(false);
+  const [isApprovedRun, setIsApprovedRun] = useState<boolean>(false);
   const [hoveredGate, setHoveredGate] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/data/verified.json')
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        const txs = Array.isArray(data) ? data : data?.transactions || [];
-        const first = txs[0];
-        if (first && first.txHash) {
-          const recipientAccount = first.recipient || 'zinipay-recipient2.testnet';
-          const payoutNear = first.amountNear || '0.10';
-          const propIdMatch = first.label ? first.label.match(/Proposal #(\d+)/i) : null;
-          const proposalId = propIdMatch ? parseInt(propIdMatch[1], 10) : (first.index !== undefined ? Math.max(0, first.index - 1) : 5);
+        if (!data) {
+          setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+          setIsRealRun(false);
+          setIsApprovedRun(false);
+          return;
+        }
+
+        const txs: any[] = Array.isArray(data) ? data : data?.transactions || [];
+
+        // Select the payout entry strictly by kind === "payout" and status === "Approved"
+        const payoutTx = txs.find((t: any) => t.kind === 'payout' && t.status === 'Approved');
+
+        // Check that ALL required fields are present with NO fabricated fallbacks
+        const hasAllRequiredFields = Boolean(
+          payoutTx &&
+          typeof payoutTx.proposalId === 'number' &&
+          typeof payoutTx.recipient === 'string' &&
+          payoutTx.recipient.length > 0 &&
+          typeof payoutTx.amountNear === 'string' &&
+          payoutTx.amountNear.length > 0 &&
+          typeof payoutTx.amountYocto === 'string' &&
+          payoutTx.amountYocto.length > 0 &&
+          typeof payoutTx.txHash === 'string' &&
+          payoutTx.txHash.length > 0 &&
+          typeof payoutTx.proposer === 'string' &&
+          payoutTx.proposer.length > 0 &&
+          (payoutTx.prTitle || payoutTx.deliverable)
+        );
+
+        if (hasAllRequiredFields) {
+          const deliverableVal = payoutTx.deliverable ? payoutTx.deliverable : payoutTx.prTitle;
+          const titleVal = payoutTx.prTitle ? payoutTx.prTitle : payoutTx.deliverable;
+
+          // Deliberation summary: strictly reflects whether deliberation was simulated or live
+          const isSimulated = payoutTx.deliberationMode === 'simulated' || Boolean(payoutTx.simulated);
+          const summaryText = payoutTx.summary
+            ? payoutTx.summary
+            : isSimulated
+            ? 'Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.'
+            : 'Deliberation: live model consensus. Multi-sig human approval completed on Sputnik DAO.';
+
           const realProposal: Proposal = {
-            id: proposalId,
-            title: first.prUrl ? `Merged GitHub PR: ${first.prUrl}` : 'Contributor Deliverable Release (GitHub PR #1)',
-            proposer: 'agentzinipaytestnet.testnet',
-            recipient: recipientAccount,
-            amountNear: payoutNear,
-            amountYocto: '100000000000000000000000',
-            txHash: first.txHash,
-            proofCid: first.prUrl || 'kellycryptos/ZiniPay#1',
-            summary: 'Deliberation consensus APPROVED. Multi-sig human approval completed on Sputnik DAO.',
+            id: payoutTx.proposalId,
+            title: titleVal,
+            proposer: payoutTx.proposer,
+            recipient: payoutTx.recipient,
+            amountNear: payoutTx.amountNear,
+            amountYocto: payoutTx.amountYocto,
+            txHash: payoutTx.txHash,
+            proofCid: deliverableVal,
+            summary: summaryText,
             evidenceType: 'github_pr',
-            evidenceDetails: `GitHub PR #1 merged | zinipay-recipient: ${recipientAccount} | Tx: ${first.txHash}`,
-            createdAt: first.timestamp ? new Date(first.timestamp).toLocaleString() : '2026-10-27 15:50 UTC',
+            evidenceDetails: `Deliverable: ${deliverableVal} | Recipient: ${payoutTx.recipient} | Tx: ${payoutTx.txHash}`,
+            createdAt: payoutTx.timestamp ? new Date(payoutTx.timestamp).toLocaleString() : 'Recorded Testnet Run',
             status: 'approved',
-            rawStatus: 'Approved',
-            simulated: Boolean(first.simulated),
+            rawStatus: payoutTx.status,
+            simulated: isSimulated,
             isZinipayRelease: true,
-            targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || '',
+            targetContract: payoutTx.targetContract ? payoutTx.targetContract : (import.meta.env.VITE_POLICY_CONTRACT_ID || ''),
             targetMethod: 'release',
-            policy: {
-              withinCap: true,
-              capLimit: '10.0 NEAR',
-              cooldownElapsed: true,
-              cooldownRemainingSecs: 0,
-              cidUnique: true,
-              reputationQualified: true,
-              reputationScore: 0,
-              tier: 'Bronze',
-            },
+            policy: payoutTx.policy || (payoutTx.tier || typeof payoutTx.reputationScore === 'number' ? {
+              tier: payoutTx.tier,
+              reputationScore: payoutTx.reputationScore,
+              capLimit: payoutTx.effectiveCapNear ? `${payoutTx.effectiveCapNear} NEAR` : undefined,
+            } : undefined as any),
             settlement: {
               type: 'native_near',
               targetChain: 'near',
               targetToken: 'NEAR',
-              recipientAddress: recipientAccount,
+              recipientAddress: payoutTx.recipient,
             },
-            votes: {
-              approve: 2,
-              reject: 0,
-              required: 2,
-            },
+            votes: payoutTx.votes || undefined as any,
           };
+
           setHeroProposal(realProposal);
           setIsRealRun(true);
+          setIsApprovedRun(true);
+        } else {
+          setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+          setIsRealRun(false);
+          setIsApprovedRun(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+        setIsRealRun(false);
+        setIsApprovedRun(false);
+      });
   }, []);
 
   const policyContractId = import.meta.env.VITE_POLICY_CONTRACT_ID || '';
@@ -159,18 +196,18 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
             <span className="text-[var(--color-passed)] font-mono">v1.0 Testnet Verified</span>
           </div>
 
-          {/* Headline with balanced scale and tight leading */}
-          <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-bold tracking-tight text-white leading-[1.18] max-w-xl text-balance">
-            Constrained Agent Layer for Community Treasuries
+          {/* Headline with display font, balanced scale, and tight leading */}
+          <h1 className="font-display text-3xl sm:text-5xl lg:text-[52px] font-bold tracking-tight text-white leading-[1.12] max-w-xl text-balance">
+            Your community's money, with three locks.
           </h1>
 
-          {/* Subtext with generous breathing room and clear mechanism */}
-          <div className="flex flex-col gap-2.5 text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-prose">
-            <p>
-              Communities need to pay contributors without handing an AI the keys.
+          {/* Subtext with warm human metaphor */}
+          <div className="flex flex-col gap-2.5 text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-prose">
+            <p className="font-semibold text-white/95 text-lg sm:text-xl">
+              The agent can ask. It can't take. Two humans still turn the keys.
             </p>
-            <p className="text-white font-medium text-sm sm:text-base">
-              An agent deliberates and proposes, smart contracts enforce immutable spend caps, and elected human councils hold the final quorum.
+            <p className="text-xs sm:text-sm text-slate-400">
+              Autonomous AI agents verify deliverable evidence and prepare proposals. Smart contracts enforce spend caps on-chain. Human councils hold the multi-sig quorum.
             </p>
           </div>
 
@@ -352,14 +389,14 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
                     <ExternalLink size={10} />
                   </a>
                 ) : (
-                  <span className="tag-neutral text-[10px] font-mono">
-                    SAMPLE ARTIFACT
+                  <span className="tag-neutral text-[10px] font-mono font-bold text-amber-300 border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
+                    SAMPLE RECEIPT
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Embedded Release Receipt Card */}
+            {/* Embedded Release Receipt Card with Rubber Stamp */}
             <div className="rounded-xl overflow-hidden shadow-inner border border-black/[0.06]">
               <ReleaseReceiptCard
                 proposal={heroProposal}
@@ -367,6 +404,8 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
                 policyContractId={policyContractId}
                 network="testnet"
                 showActions={false}
+                rubberStamp={isRealRun && isApprovedRun ? 'PAID' : false}
+                isSample={!isRealRun}
               />
             </div>
 
@@ -376,7 +415,7 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
                 <span className="text-white font-medium">PolicyHelper</span>
                 <span>·</span>
                 <span className="truncate max-w-[130px] sm:max-w-[170px] text-slate-400">
-                  {policyContractId || 'zinipay-policy.testnet'}
+                  {policyContractId || 'Configured on chain'}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-[var(--color-passed)] font-medium">

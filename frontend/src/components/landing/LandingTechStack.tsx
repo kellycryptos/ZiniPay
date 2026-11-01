@@ -57,7 +57,7 @@ export function LandingTechStack() {
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
             Infrastructure
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
             Core Infrastructure & Integrations
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">

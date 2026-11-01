@@ -15,6 +15,11 @@
     "agent:propose": "tsx agent/src/index.ts propose",
     "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
     "setup:testnet": "node scripts/setup-testnet.mjs",
-    "test:e2e": "node scripts/e2e-testnet.mjs"
+    "test": "npm --workspace=@zinipay/agent test",
+    "test:e2e": "node scripts/e2e-testnet.mjs",
+    "verify:testnet": "node scripts/verify-testnet.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }

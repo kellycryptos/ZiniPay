@@ -69,27 +69,27 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
         </div>
       </header>
 
-      {/* Main Landing Sections in Exact Order */}
+      {/* Main Landing Sections in Alternating Rhythm (Dark -> Paper -> Dark -> Paper) */}
       <main className="flex-1 flex flex-col">
-        {/* 1. Hero */}
+        {/* 1. Hero (Dark Desk) */}
         <LandingHero onNavigateToApp={onNavigateToApp} />
 
-        {/* 2. Three-way release gate as an animated flow */}
+        {/* 2. Three-Way Release Gate (Paper Desk) */}
         <LandingReleaseGate />
 
-        {/* 3. Mandatory Word-by-Word Tagline Reveal */}
+        {/* 3. Word-by-Word Tagline Reveal (Dark Desk) */}
         <LandingTaglineSection />
 
-        {/* 4. Verified on testnet section */}
-        <LandingVerifiedSection />
-
-        {/* 5. Attacks that fail section */}
+        {/* 4. Attacks That Fail — Refused Tickets (Paper Desk) */}
         <LandingAttacksSection />
 
-        {/* 6. How it works in 4 steps */}
+        {/* 5. Verified on Testnet — Ticket-Stub Strip (Dark Desk) */}
+        <LandingVerifiedSection />
+
+        {/* 6. How It Works in 4 Steps (Paper Desk) */}
         <LandingHowItWorks />
 
-        {/* 7. Tech stack with primitives actually used */}
+        {/* 7. Core Infrastructure & Integrations (Dark Desk) */}
         <LandingTechStack />
       </main>
 

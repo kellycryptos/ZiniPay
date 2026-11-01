@@ -17,7 +17,7 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
               alt="ZiniPay Logo"
               className="w-5 h-5 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-0.5"
             />
-            <span className="font-bold text-sm tracking-tight text-white font-sans">
+            <span className="font-display font-bold text-base tracking-tight text-white">
               ZiniPay
             </span>
             <span className="tag-neutral text-[10px]">

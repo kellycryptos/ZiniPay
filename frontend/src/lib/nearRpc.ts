@@ -345,7 +345,7 @@ export async function fetchDaoProposals(
       const rawList = JSON.parse(decoded) as DaoOnChainProposal[];
 
       return rawList.map((p) => {
-        let recipient = 'community.near';
+        let recipient = '';
         let amountYocto = '0';
         let proofCid = '';
         let targetContract = '';
@@ -354,7 +354,7 @@ export async function fetchDaoProposals(
 
         if (p.kind?.Transfer) {
           amountYocto = p.kind.Transfer.amount || '0';
-          recipient = p.kind.Transfer.receiver_id || 'community.near';
+          recipient = p.kind.Transfer.receiver_id || '';
         } else if (p.kind?.FunctionCall) {
           targetContract = p.kind.FunctionCall.receiver_id || '';
           const action = p.kind.FunctionCall.actions?.[0];

@@ -15,6 +15,29 @@ ZiniPay is a fail-closed execution layer that enables autonomous AI agents to ev
 
 ---
 
+## Quick Check for Reviewers
+
+Reviewers and judges can verify the entire codebase and live testnet deployment in under 60 seconds with **zero private keys, zero wallet setup, and no `.env` required**:
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Run agent unit test suite (fail-closed logic, anti-replay, 1Click quote API)
+npm test --prefix agent
+# Expected: All agent tests completed successfully! (12 passing tests)
+
+# 3. Run smart contract unit test suite (requires Rust)
+cd contracts/policy-helper && cargo test && cd ../..
+# Expected: test result: ok. 12 passed; 0 failed
+
+# 4. Run keyless on-chain testnet verification suite
+npm run verify:testnet
+# Expected: 18 PASSED / 0 FAILED (DAO roles, Proposal #5 Approved, 15N cap, burned CID, 7 explorer receipts)
+```
+
+---
+
 ## How It Works
 
 ZiniPay operates via a **Three-Way Release Gate** that separates evaluation, policy enforcement, and final fund disbursement across three distinct boundaries:
@@ -31,7 +54,7 @@ ZiniPay operates via a **Three-Way Release Gate** that separates evaluation, pol
          ▼
   [2. Gate 2: On-Chain Policy Constraints]
          │  • PolicyHelper contract view: check_policy()
-         │  • Contributor tier limits (Bronze <= 20N, Silver <= 60N, Gold)
+         │  • Contributor tier limits (Bronze: 10N, Silver: 15N, Gold: 20N)
          │  • Cooldown timers (e.g., 24 hours between payouts)
          │  • Anti-replay registry: duplicate CIDs rejected on-chain
          ▼
@@ -52,7 +75,7 @@ Before any on-chain action is initiated, the agent evaluates the technical deliv
 ### Gate 2: On-Chain Policy Constraints
 The `PolicyHelper` smart contract enforces programmatic guardrails directly in contract execution:
 - **Caller Restriction**: The contract's `release` method only accepts execution calls initiated by the designated DAO treasury.
-- **Dynamic Tier Caps**: Enforces payout limits based on contributor reputation scores (Bronze: up to 20 NEAR; Silver: up to 60 NEAR; Gold: council-approved custom limits).
+- **Dynamic Tier Caps**: Enforces payout limits based on contributor reputation scores (Bronze [0-19 pts]: 1.0x / 10 NEAR; Silver [20-59 pts]: 1.5x / 15 NEAR; Gold [60+ pts]: 2.0x / 20 NEAR).
 - **Anti-Replay Registry**: Records every settled CID in an on-chain `UnorderedSet`. Duplicate attempts fail immediately with `CID already used — duplicate release attempt blocked`.
 - **Pre-Flight Simulation**: The agent executes `check_policy` via view call before submitting proposals, preventing invalid payouts from wasting gas or locking DAO proposal bonds.
 - **Atomic Rollback**: If the outgoing payout transfer fails, the contract's `on_release_done` callback rolls back CID consumption and resets cooldown timers.
@@ -220,11 +243,31 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
+## Development Timeline & Prior Work Disclosure
+
+To maintain complete transparency with judges and evaluators regarding work performed prior to the official November 1 hackathon start:
+
+- **Prior Work Notice**: All work through October 30, 2026 predates the November 1 hackathon start.
+- **October 22, 2026**: Initial repository setup, base monorepo architecture, initial Rust `PolicyHelper` smart contract source (`ebc3a98`), Three-Way Gate UI, Vercel config, Sputnik DAO v2 integration, and NEAR Wallet Selector.
+- **October 24, 2026**: Policy contract authorization checks & unit tests (`45996e2`), fail-closed deliberation with Zod validation, deliverable canonicalization, NEAR Intents 1Click API integration, and initial testnet scripts.
+- **October 25, 2026**: Policy contract atomic transfer callbacks & rollback (`1e0a1a8`), reputation tier alignment and cap ceiling tests (`63f4c9b`, `9e1357f`), PR author & recipient identity binding verification, and early attack scenarios.
+- **October 27, 2026**: Contributor deliverable PR #1 specification and merge, GitHub Actions WASM build workflow, /app Paper on Dark Desk redesign, and baseline testnet execution (Proposal #0).
+- **October 29, 2026**: Landing page design system, scroll-triggered tagline reveal, FASTNEAR RPC fallback, and product documentation refactor.
+- **October 30, 2026**: Deployment of `zinipay-policy2.testnet` (code hash `cb1dcd4d...`), audit run executing Proposal #5 (FunctionCall into `PolicyHelper::release`), 2-of-2 council quorum approval, contributor Silver tier promotion, and 3 blocked on-chain attack transactions (replay CID, over-cap spend, unauthorized caller).
+- **Built During the Hackathon (November 1–14, 2026)**:
+  - **Nov 1, 2026 — Keyless On-Chain Verification Suite**: Created zero-credential verification suite (`scripts/verify-testnet.mjs`) checking Sputnik DAO roles, Proposal #5 execution status, PolicyHelper WASM code hash, reputation tier scaling (15N Silver cap), deliverable CID burning, and 3 on-chain blocked attack transaction receipts (18 passing checks).
+  - **Nov 1, 2026 — CI Automated Contract Testing**: Added automated Rust contract unit tests (`cargo test`) and agent test suites to GitHub Actions workflow (`.github/workflows/build-wasm.yml`).
+  - **Nov 1, 2026 — Zero-Fabrication Landing Page & Hero Receipt**: Redesigned landing page for Social Money track with matched `#121721` canvas, Fraunces display typography, dynamic physical rubber stamp (`PAID` on 2/2 quorum), and strict schema-backed receipt reading directly from on-chain RPC and run logs with zero hardcoded fallbacks.
+  - **Nov 1, 2026 — Data Pipeline Fail-Safe**: Hardened `scripts/record-verified.mjs` and `LandingHero.tsx` with strict selection (`kind === "payout"`, `status === "Approved"`) and tested automated fallback to `SAMPLE` receipt with stamp suppression when data is missing.
+  - **Nov 1, 2026 — Offline-Resilient Intents Test Suite**: Hardened `agent/test/intents-live.test.ts` to gracefully handle external 1Click API rate limiting/outages without crashing CI builds.
+
+---
+
 ## Known Limitations & Audit Disclosures
 
 To maintain absolute transparency with judges and auditors, the following architectural boundaries and operational disclosures are documented:
 
-1. **Owner-Controlled Reset Powers**: The policy contract includes administrative helper methods (`unburn_cid`, `reset_cooldown`, `update_reputation`) currently callable by the contract owner (`zinipay-c1.testnet`). For the hackathon testnet environment, these allowed reproducible e2e test execution without waiting 24 hours between runs. In production, these methods will be migrated to DAO-only execution, requiring a full Sputnik DAO council multi-sig vote to execute.
+1. **Owner-Controlled Reset Powers**: The policy contract includes administrative helper methods (`unburn_cid`, `reset_cooldown`, `update_reputation`) currently callable by the contract owner (`zinipay-c1.testnet`). In this testnet testing environment, these allowed reproducible e2e test execution without waiting 24 hours between runs. In production, these methods will be migrated to DAO-only execution, requiring a full Sputnik DAO council multi-sig vote to execute.
 2. **Agent-Side Daily Ceilings**: Daily volume spend ceilings are currently enforced in the agent daemon memory and pre-flight deliberation layer. The on-chain `PolicyHelper` contract enforces hard per-proposal tier caps (Bronze: 10N, Silver: 15N, Gold: 20N) and per-recipient cooldown timers.
 3. **Deliberation Simulation Fallback**: When NEAR AI Cloud returns HTTP 402 (spending limit / payment required on cloud.near.ai), the deliberation engine falls back to local deterministic heuristic deliberation with explicit `simulated: true` flagging.
 4. **Attestation Verification Scope**: NEAR AI Cloud TEE attestation reports are retrieved with client-generated 32-byte nonces. The attestation report is logged and checked for structure, but is not yet independently verified against Intel TDX root CA certificates on-chain.

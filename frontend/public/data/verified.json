@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T10:02:42.779Z",
+  "generatedAt": "2026-11-01T15:30:15.968Z",
   "network": "testnet",
   "sourceLog": "e2e-output.txt",
   "viaPolicyContract": true,
@@ -10,10 +10,14 @@
       "txHash": "H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b",
       "explorerUrl": "https://testnet.nearblocks.io/txns/H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:20.327Z",
+      "timestamp": "2026-11-01T15:28:48.119Z",
+      "kind": "proposal_creation",
+      "proposalId": 5,
       "recipient": "zinipay-recipient2.testnet",
       "amountNear": "0.10",
-      "prUrl": "https://github.com/kellycryptos/ZiniPay/pull/1"
+      "amountYocto": "100000000000000000000000",
+      "deliverable": "kellycryptos/ZiniPay#1",
+      "prTitle": "kellycryptos/ZiniPay#1"
     },
     {
       "index": 2,
@@ -21,7 +25,7 @@
       "txHash": "AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL",
       "explorerUrl": "https://testnet.nearblocks.io/txns/AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:23.304Z"
+      "timestamp": "2026-11-01T15:29:00.168Z"
     },
     {
       "index": 3,
@@ -29,7 +33,36 @@
       "txHash": "4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
       "explorerUrl": "https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:25.754Z"
+      "timestamp": "2026-11-01T15:29:12.190Z",
+      "kind": "payout",
+      "proposalId": 5,
+      "recipient": "zinipay-recipient2.testnet",
+      "amountNear": "0.10",
+      "amountYocto": "100000000000000000000000",
+      "status": "Approved",
+      "prTitle": "kellycryptos/ZiniPay#1",
+      "deliverable": "kellycryptos/ZiniPay#1",
+      "proposer": "agentzinipaytestnet.testnet",
+      "deliberationMode": "simulated",
+      "summary": "Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.",
+      "reputationScore": 25,
+      "tier": "Silver",
+      "effectiveCapNear": "15.0",
+      "votes": {
+        "approve": 2,
+        "reject": 0,
+        "required": 2
+      },
+      "policy": {
+        "withinCap": true,
+        "capLimit": "15.0 NEAR",
+        "cooldownElapsed": true,
+        "cooldownRemainingSecs": 0,
+        "cidUnique": true,
+        "reputationQualified": true,
+        "reputationScore": 25,
+        "tier": "Silver"
+      }
     },
     {
       "index": 4,
@@ -37,7 +70,7 @@
       "txHash": "Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB",
       "explorerUrl": "https://testnet.nearblocks.io/txns/Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:33.899Z"
+      "timestamp": "2026-11-01T15:29:24.217Z"
     },
     {
       "index": 5,
@@ -45,7 +78,7 @@
       "txHash": "Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
       "explorerUrl": "https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:38.261Z"
+      "timestamp": "2026-11-01T15:29:36.238Z"
     },
     {
       "index": 6,
@@ -53,7 +86,7 @@
       "txHash": "ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
       "explorerUrl": "https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T10:00:15.838Z"
+      "timestamp": "2026-11-01T15:29:48.270Z"
     },
     {
       "index": 7,
@@ -61,7 +94,7 @@
       "txHash": "7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
       "explorerUrl": "https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
       "viaPolicyContract": true,
-      "timestamp": "2026-10-30T09:46:47.307Z"
+      "timestamp": "2026-11-01T15:30:00.296Z"
     }
   ],
   "blockedAttacks": [

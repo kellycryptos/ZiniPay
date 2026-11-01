@@ -202,12 +202,15 @@ export function StepByStepProposeForm({
         const delib = data.deliberation;
         const pol = data.policy;
 
+        const confScore = typeof delib?.inspector?.score === 'number' ? delib.inspector.score : undefined;
         setDeliberationStatus({
           status: 'passed',
           reason: delib?.reviewType === 'format-check-only'
             ? 'Format check only: deliverable pattern valid (no model reviewed deliverable; simulation).'
-            : `Multi-agent consensus passed (${delib?.inspector?.score || 88}/100 confidence). Attestation generated.`,
-          score: delib?.inspector?.score || 88,
+            : confScore !== undefined
+            ? `Multi-agent consensus passed (${confScore}/100 confidence). Attestation generated.`
+            : 'Multi-agent consensus passed. Attestation generated.',
+          score: confScore ?? 0,
           attestationSummary: delib?.attestationSummary || 'Report received (not independently verified)',
           simulated: Boolean(data.simulated || isDemo),
           reviewType: delib?.reviewType || 'format-check-only',

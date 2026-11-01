@@ -13,6 +13,8 @@ interface ReleaseReceiptCardProps {
   onInspectDeliberation?: (proposal: Proposal) => void;
   onExecuteIntent?: (proposal: Proposal) => void;
   showActions?: boolean;
+  rubberStamp?: boolean | 'PAID' | 'APPROVED';
+  isSample?: boolean;
 }
 
 export function ReleaseReceiptCard({
@@ -25,9 +27,13 @@ export function ReleaseReceiptCard({
   onInspectDeliberation,
   onExecuteIntent,
   showActions = true,
+  rubberStamp,
+  isSample,
 }: ReleaseReceiptCardProps) {
   const explorerBase = network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
-  const quorumReached = proposal.votes.approve >= proposal.votes.required;
+  const quorumReached = proposal.votes
+    ? proposal.votes.approve >= proposal.votes.required
+    : (proposal.status === 'approved' || proposal.status === 'settled');
 
   // Strict check: only genuine ZiniPay release proposals or explicit demo simulations get gate results
   // A proposal that is not a FunctionCall to the configured policy contract's release method must show all three gate rows as "Not a ZiniPay release".
@@ -150,11 +156,33 @@ export function ReleaseReceiptCard({
     : null;
 
   return (
-    <article className="receipt-card p-4 sm:p-5 text-xs text-[var(--text-receipt)] transition-all w-full max-w-full">
+    <article className="receipt-card p-4 sm:p-5 text-xs text-[var(--text-receipt)] transition-all w-full max-w-full relative overflow-hidden">
+      {/* Physical Rubber Stamp Overlay (Landed when council quorum is reached/approved) */}
+      {Boolean(rubberStamp) && isApproved && (
+        <div
+          className="pointer-events-none absolute right-3 sm:right-6 top-12 sm:top-14 z-20 animate-stamp-thunk select-none"
+          aria-label="Stamp: Approved and Paid"
+        >
+          <div className="border-[3px] border-double border-[#065F46] text-[#065F46] bg-[#065F46]/[0.08] backdrop-blur-[0.5px] px-3 py-1 sm:px-4 sm:py-1.5 rounded-sm shadow-sm flex flex-col items-center justify-center">
+            <span className="font-display font-black text-xl sm:text-2xl tracking-[0.22em] leading-none text-[#065F46] uppercase">
+              {typeof rubberStamp === 'string' ? rubberStamp : 'PAID'}
+            </span>
+            <span className="text-[8px] sm:text-[9px] font-mono tracking-widest text-[#065F46] font-bold mt-1 uppercase border-t border-[#065F46]/40 pt-0.5">
+              2 OF 2 COUNCIL QUORUM
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Receipt Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border-receipt)] text-xs gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-[var(--text-receipt)]">Release receipt #{proposal.id}</span>
+          {isSample && (
+            <span className="tag-neutral text-[10px] font-mono font-bold tracking-wide uppercase bg-amber-50 text-amber-800 border-amber-300">
+              Sample
+            </span>
+          )}
           {!isZinipay && (
             <span className="tag-neutral text-[11px]">
               Not a ZiniPay release
@@ -194,7 +222,9 @@ export function ReleaseReceiptCard({
 
       {/* Task Description */}
       <div className="py-3 font-sans">
-        <h4 className="font-semibold text-sm text-[var(--text-receipt)] tracking-tight leading-snug">{proposal.title}</h4>
+        <h4 className={`font-semibold text-sm text-[var(--text-receipt)] tracking-tight leading-snug ${rubberStamp ? 'pr-20 sm:pr-28' : ''}`}>
+          {proposal.title}
+        </h4>
         {proposal.summary && (
           <p className="text-xs text-[var(--text-receipt-secondary)] mt-1.5 leading-relaxed line-clamp-2">
             {proposal.summary}
@@ -319,7 +349,7 @@ export function ReleaseReceiptCard({
             <span className="tag-neutral">Not a ZiniPay release</span>
           ) : quorumStatus === 'passed' ? (
             <span className="tag-passed">
-              <Check size={11} /> Passed · Quorum reached ({proposal.votes.approve} of {proposal.votes.required} votes)
+              <Check size={11} /> Passed · Quorum reached {proposal.votes ? `(${proposal.votes.approve} of ${proposal.votes.required} votes)` : ''}
             </span>
           ) : quorumStatus === 'blocked' ? (
             <span className="tag-blocked">
@@ -327,21 +357,41 @@ export function ReleaseReceiptCard({
             </span>
           ) : (
             <span className="tag-pending">
-              <Clock size={11} /> Pending · {proposal.votes.approve} of {proposal.votes.required} council votes
+              <Clock size={11} /> Pending · {proposal.votes ? `${proposal.votes.approve} of ${proposal.votes.required} council votes` : 'Awaiting council quorum'}
             </span>
           )}
         </div>
 
-        {/* Vote Counts */}
-        <div className="ledger-row">
-          <span className="text-[var(--text-receipt-muted)]">Votes</span>
-          <span className="text-[var(--text-receipt)] text-xs">
-            <span className="text-[var(--color-passed)] font-semibold">{proposal.votes.approve} approve</span>
-            <span className="text-[var(--text-receipt-muted)] mx-1.5">/</span>
-            <span className="text-[var(--color-blocked)] font-semibold">{proposal.votes.reject} reject</span>
-            <span className="text-[var(--text-receipt-muted)] ml-1.5">({proposal.votes.required} required)</span>
-          </span>
-        </div>
+        {/* Contributor Tier & Policy Cap (rendered only if recorded) */}
+        {proposal.policy?.tier && (
+          <div className="ledger-row">
+            <span className="text-[var(--text-receipt-muted)]">Contributor tier</span>
+            <div className="flex items-center gap-1.5 font-mono text-xs">
+              <span className="font-semibold text-[var(--text-receipt)]">{proposal.policy.tier}</span>
+              {typeof proposal.policy.reputationScore === 'number' && (
+                <span className="text-[var(--text-receipt-secondary)]">({proposal.policy.reputationScore} pts)</span>
+              )}
+              {proposal.policy.capLimit && (
+                <span className="text-[var(--text-receipt-muted)]">· Cap {proposal.policy.capLimit}</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Vote Counts (rendered only if recorded) */}
+        {proposal.votes && typeof proposal.votes.approve === 'number' && (
+          <div className="ledger-row">
+            <span className="text-[var(--text-receipt-muted)]">Votes</span>
+            <span className="text-[var(--text-receipt)] text-xs">
+              <span className="text-[var(--color-passed)] font-semibold">{proposal.votes.approve} approve</span>
+              <span className="text-[var(--text-receipt-muted)] mx-1.5">/</span>
+              <span className="text-[var(--color-blocked)] font-semibold">{proposal.votes.reject} reject</span>
+              {typeof proposal.votes.required === 'number' && (
+                <span className="text-[var(--text-receipt-muted)] ml-1.5">({proposal.votes.required} required)</span>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Explorer / Tx Link */}
         <div className="ledger-row pt-0.5">

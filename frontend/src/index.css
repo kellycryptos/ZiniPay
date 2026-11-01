@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #0A0C10;
+  --bg-canvas: #121721;
   --bg-panel: #11141D;
   --bg-panel-alt: #161C28;
   --bg-panel-header: #131822;
@@ -33,6 +33,22 @@
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
+
+  /* Paper Desk Canvas (Alternating Rhythm) */
+  --bg-paper-desk: #F7F5F0;
+  --bg-paper-card: #FFFFFF;
+  --border-paper-subtle: #E6E1D8;
+  --border-paper-strong: #D5CEBF;
+  --text-paper-heading: #0F172A;
+  --text-paper-body: #334155;
+  --text-paper-caption: #475569;
+
+  /* Historic Palette Accents: Spruce, Carmine, and Warm Brass */
+  --color-spruce: #0D7A5F;
+  --color-spruce-deep: #064E3B;
+  --color-carmine: #B91C1C;
+  --color-carmine-deep: #7F1D1D;
+  --color-warm-brass: #D97706;
 
   /* Snappy spring transition curve from design system */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -137,7 +153,7 @@ code, kbd, samp, pre, .font-mono {
   justify-content: center;
   gap: 0.5rem;
   background-color: var(--color-passed);
-  color: #0A0C10;
+  color: #121721;
   font-weight: 600;
   font-size: 0.8125rem;
   padding: 0.5rem 1rem;
@@ -285,6 +301,59 @@ code, kbd, samp, pre, .font-mono {
   border-color: #94A3B8;
 }
 
+/* Rubber Stamp Keyframes & Animation (Scale 1.2 to 1.0, Rotated -6deg) */
+@keyframes stampLand {
+  0% {
+    opacity: 0;
+    transform: scale(1.2) rotate(-6deg);
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+
+.animate-stamp-thunk {
+  animation: stampLand 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/* 200ms Hover Lift (Transform Only) */
+.hover-lift {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Perforated edge patterns for tickets & stubs */
+.stub-notch-left {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  transform: translateY(-50%);
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  pointer-events: none;
+}
+
+.stub-notch-right {
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  transform: translateY(-50%);
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  pointer-events: none;
+}
+
 /* Accessibility: respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -294,5 +363,11 @@ code, kbd, samp, pre, .font-mono {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+    transform: none !important;
+  }
+  .animate-stamp-thunk {
+    animation: none !important;
+    opacity: 0.95 !important;
+    transform: rotate(-6deg) !important;
   }
 }

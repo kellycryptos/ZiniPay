@@ -37,6 +37,8 @@ export function PolicyPanel({
 
   const dailySpendLimit = (policyState as any)?.daily_limit
     ? `${(policyState as any).daily_limit} NEAR`
+    : policyContractConfigured
+    ? 'Agent-side only'
     : 'Not connected';
 
   return (

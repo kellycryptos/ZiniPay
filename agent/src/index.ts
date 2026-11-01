@@ -12,13 +12,71 @@
 import 'dotenv/config';
 import { Command } from 'commander';
 import chalk from 'chalk';
+import axios from 'axios';
 
 import { SputnikDAO, type ProposalKind } from './dao.js';
-import { PolicyEngine, type PolicyConfig } from './policy.js';
+import { PolicyEngine, type PolicyConfig, normalizeDeliverable } from './policy.js';
 import { MultiAgentDeliberationEngine } from './deliberation.js';
 import { ReputationLedger, getTierInfo } from './reputation.js';
 import { NearIntents } from './intents.js';
 import { logAttackEvent } from './attackLogger.js';
+
+// ─── Helpers for On-Chain View Queries & Formatting ───────────────────────────
+
+async function queryContractView<T>(
+  nodeUrl: string,
+  contractId: string,
+  methodName: string,
+  args: Record<string, unknown> = {}
+): Promise<T | null> {
+  try {
+    const res = await axios.post(
+      nodeUrl,
+      {
+        jsonrpc: '2.0',
+        id: 'agent-view-query',
+        method: 'query',
+        params: {
+          request_type: 'call_function',
+          finality: 'final',
+          account_id: contractId,
+          method_name: methodName,
+          args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+        },
+      },
+      { timeout: 6000 }
+    );
+    if (res.data?.result?.result) {
+      const str = Buffer.from(res.data.result.result).toString('utf8');
+      return JSON.parse(str) as T;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function parseYocto(val: string | number | bigint): bigint {
+  if (typeof val === 'bigint') return val;
+  const str = val.toString().trim();
+  if (str.toLowerCase().includes('e+')) {
+    const [mantissa, expStr] = str.toLowerCase().split('e+');
+    const exp = parseInt(expStr, 10);
+    const [whole, frac = ''] = mantissa.split('.');
+    const totalDigits = whole + frac;
+    const shift = exp - frac.length;
+    return BigInt(totalDigits + '0'.repeat(Math.max(0, shift)));
+  }
+  return BigInt(str.split('.')[0]);
+}
+
+function formatNearAmount(yocto: bigint): string {
+  const whole = yocto / 10n ** 24n;
+  const frac = yocto % 10n ** 24n;
+  if (frac === 0n) return `${whole} NEAR`;
+  const fracStr = frac.toString().padStart(24, '0').slice(0, 4).replace(/0+$/, '');
+  return `${whole}.${fracStr} NEAR`;
+}
 
 // ─── Lazy Config Helper ──────────────────────────────────────────────────────
 
@@ -34,11 +92,16 @@ function getConfig(dryRun: boolean = false) {
 
   return {
     network: process.env.NEAR_NETWORK ?? 'testnet',
-    accountId: getEnv('NEAR_ACCOUNT_ID', 'zinipay-agent.testnet'),
-    privateKey: getEnv('NEAR_PRIVATE_KEY', 'ed25519:3D4YuaHz5ndfUXAUsafDbg16p8837eDemoKeyForDryRun'),
+    nodeUrl:
+      process.env.NEAR_NODE_URL ??
+      (process.env.NEAR_NETWORK === 'mainnet'
+        ? 'https://rpc.mainnet.near.org'
+        : 'https://test.rpc.fastnear.com'),
+    accountId: getEnv('NEAR_ACCOUNT_ID', 'agentzinipaytestnet.testnet'),
+    privateKey: getEnv('NEAR_PRIVATE_KEY', ''),
     daoContractId: getEnv('DAO_CONTRACT_ID', 'zinipay-demo.sputnikv2.testnet'),
-    policyContractId: process.env.POLICY_CONTRACT_ID ?? '',
-    proposalBond: process.env.PROPOSAL_BOND ?? '1000000000000000000000000',  // 1 NEAR
+    policyContractId: process.env.POLICY_CONTRACT_ID ?? 'zinipay-policy2.testnet',
+    proposalBond: process.env.PROPOSAL_BOND ?? '1000000000000000000000000', // 1 NEAR
     dbPath: process.env.DB_PATH ?? './zinipay.json',
     openaiBaseUrl: process.env.OPENAI_BASE_URL ?? 'https://cloud-api.near.ai/v1',
     openaiApiKey: getEnv('OPENAI_API_KEY', 'mock-key-for-dry-run'),
@@ -49,7 +112,7 @@ function getConfig(dryRun: boolean = false) {
 
 const policyConfig: PolicyConfig = {
   maxSpendPerProposal: BigInt(process.env.MAX_SPEND_PER_PROPOSAL ?? '10000000000000000000000000'), // 10 NEAR
-  maxSpendPerDay: BigInt(process.env.MAX_SPEND_PER_DAY ?? '50000000000000000000000000'),           // 50 NEAR
+  maxSpendPerDay: BigInt(process.env.MAX_SPEND_PER_DAY ?? '50000000000000000000000000'), // 50 NEAR
   cooldownHours: Number(process.env.COOLDOWN_HOURS ?? '24'),
   minReputationScore: Number(process.env.MIN_REPUTATION_SCORE ?? '0'),
 };
@@ -72,6 +135,7 @@ program
   .requiredOption('-d, --deliverable <proof>', 'Deliverable URL, IPFS CID, or code commit')
   .requiredOption('-r, --recipient <account>', 'NEAR account ID of the contributor')
   .requiredOption('-a, --amount <near>', 'Amount in NEAR (e.g. "5")')
+  .option('-g, --github-handle <handle>', 'GitHub username matching author of the pull request')
   .option('--cross-chain <chain>', 'Route payment via NEAR Intents to another chain (e.g. "ethereum")')
   .option('--cross-chain-address <addr>', 'Recipient address on the destination chain')
   .option('--cross-chain-token <token>', 'Output token on the destination chain (default: USDC)')
@@ -83,6 +147,7 @@ program
       deliverable: opts.deliverable,
       recipient: opts.recipient,
       amountNear: opts.amount,
+      githubHandle: opts.githubHandle,
       crossChain: opts.crossChain,
       crossChainAddress: opts.crossChainAddress,
       crossChainToken: opts.crossChainToken,
@@ -128,6 +193,7 @@ interface ProposeOpts {
   deliverable: string;
   recipient: string;
   amountNear: string;
+  githubHandle?: string;
   crossChain?: string;
   crossChainAddress?: string;
   crossChainToken?: string;
@@ -162,19 +228,82 @@ async function runPropose(opts: ProposeOpts) {
   const intents = new NearIntents(cfg.intentsApiUrl);
 
   const amountYocto = BigInt(SputnikDAO.parseNear(opts.amountNear));
-  const recipientRep = reputation.getScore(opts.recipient);
-  const tierInfo = getTierInfo(recipientRep);
+
+  // ── Contributor Reputation & Cap (On-Chain / Local Fallback) ────────────
+  let recipientRep = reputation.getScore(opts.recipient);
+  let tierInfo = getTierInfo(recipientRep);
+  let repDataSource = '[Local Ledger]';
+  let effectiveCapYocto: bigint =
+    (BigInt(policyConfig.maxSpendPerProposal) *
+      BigInt(Math.floor(tierInfo.maxPerProposalMultiplier * 100))) /
+    100n;
+
+  if (cfg.policyContractId) {
+    const onChainScore = await queryContractView<number>(
+      cfg.nodeUrl,
+      cfg.policyContractId,
+      'get_reputation',
+      { account: opts.recipient }
+    );
+    if (onChainScore !== null && onChainScore !== undefined) {
+      recipientRep = onChainScore;
+      tierInfo = getTierInfo(recipientRep);
+      repDataSource = `[On-Chain: ${cfg.policyContractId}]`;
+    }
+
+    const onChainCap = await queryContractView<string | number>(
+      cfg.nodeUrl,
+      cfg.policyContractId,
+      'get_effective_cap',
+      { recipient: opts.recipient }
+    );
+    if (onChainCap !== null && onChainCap !== undefined) {
+      effectiveCapYocto = parseYocto(onChainCap);
+    }
+  }
 
   console.log(chalk.bold.cyan('\n🪙🤖 ZiniPay — Multi-Agent Deliberation & Constrained Release\n'));
   console.log(`  Task:        ${opts.task}`);
   console.log(`  Deliverable: ${opts.deliverable}`);
-  console.log(`  Recipient:   ${opts.recipient} [Tier: ${chalk.yellow(tierInfo.tier)} | Score: ${recipientRep.toFixed(1)}]`);
-  console.log(`  Requested:   ${opts.amountNear} NEAR (Multiplier: ${tierInfo.multiplier}x)`);
+  console.log(
+    `  Recipient:   ${opts.recipient} [Tier: ${chalk.yellow(tierInfo.tier)} | Score: ${recipientRep} ${repDataSource}]`
+  );
+  console.log(
+    `  Requested:   ${opts.amountNear} NEAR [Spend Cap: ${tierInfo.maxPerProposalMultiplier}x base | Reward Multiplier: ${tierInfo.multiplier}x]`
+  );
   if (opts.crossChain) console.log(`  Settlement:  Cross-chain via NEAR Intents → ${opts.crossChain}`);
   if (opts.dryRun) console.log(chalk.yellow('\n  [SIMULATION / DRY RUN — no on-chain transactions will be broadcast]\n'));
 
   // ── Step 1: Three-Way Match Verification ──────────────────────────────────
   console.log(chalk.cyan('[1/4] Running Three-Way Match Policy Clearance...'));
+  const canonicalCid = normalizeDeliverable(opts.deliverable);
+
+  // 1a. On-chain CID check if policy contract configured
+  let onChainCidUsed: boolean | null = null;
+  if (cfg.policyContractId) {
+    onChainCidUsed = await queryContractView<boolean>(
+      cfg.nodeUrl,
+      cfg.policyContractId,
+      'cid_used',
+      { cid: canonicalCid }
+    );
+  }
+
+  if (onChainCidUsed === true) {
+    const reason = `Deliverable proof "${canonicalCid}" has already been settled on-chain (zero-double-spend protection).`;
+    console.log(chalk.red(`\n  ✗ THREE-WAY MATCH FAILED: ${reason}`));
+    logAttackEvent({
+      vector: 'Replay Deliverable',
+      caller: opts.recipient,
+      details: `Requested ${opts.amountNear} NEAR for deliverable '${canonicalCid}'`,
+      rejectionReason: reason,
+      blockedBy: 'PolicyHelper (On-Chain Gate)',
+      simulated: opts.dryRun,
+    });
+    process.exit(1);
+  }
+
+  // 1b. Local policy validation (caps, daily limits, cooldown)
   const policyResult = policy.check({
     recipientId: opts.recipient,
     amountYocto,
@@ -199,18 +328,25 @@ async function runPropose(opts: ProposeOpts) {
     process.exit(1);
   }
 
-  const effectiveCapNear = Number(policyResult.effectiveCapYocto) / 1e24;
   console.log(chalk.green(`  ✓ Match A: Deliverable proof attached`));
-  console.log(chalk.green(`  ✓ Match B: Stayed under ${policyResult.tier} tier cap (${effectiveCapNear} NEAR max)`));
-  console.log(chalk.green(`  ✓ Match C: Zero-replay confirmed (deliverable not previously paid)`));
+  console.log(chalk.green(`  ✓ Match B: Stayed under ${tierInfo.tier} tier cap (${formatNearAmount(effectiveCapYocto)} max)`));
+  if (cfg.policyContractId && onChainCidUsed === false) {
+    console.log(chalk.green(`  ✓ Match C: Zero-replay confirmed on-chain (cid_used: false on ${cfg.policyContractId})`));
+  } else if (!cfg.policyContractId) {
+    console.log(chalk.yellow(`  ✓ Match C: Replay check: local record only (no policy contract configured)`));
+  } else {
+    console.log(chalk.green(`  ✓ Match C: Zero-replay confirmed (deliverable not previously paid)`));
+  }
 
   // ── Step 2: Multi-Agent Deliberation ──────────────────────────────────────
   console.log(chalk.cyan('\n[2/4] Executing Multi-Agent Deliberation via NEAR AI Cloud (Inspector + Risk Arbiter)...'));
+  const recipientGithub = opts.githubHandle || process.env.RECIPIENT_GITHUB_HANDLE;
   const deliberation = await deliberationEngine.deliberate({
     taskDescription: opts.task,
     deliverable: opts.deliverable,
     amountNear: opts.amountNear,
     recipientId: opts.recipient,
+    recipientGithub,
     recipientReputation: recipientRep,
     dryRun: opts.dryRun,
   });
@@ -338,7 +474,11 @@ async function runPropose(opts: ProposeOpts) {
     console.log(chalk.gray(`  Treasury Target:   ${cfg.daoContractId}`));
     console.log(chalk.gray(`  Proposing Agent:   ${cfg.accountId} (Function-Call Key)`));
     console.log(chalk.gray(`  Attached Deposit:  ${SputnikDAO.formatNear(cfg.proposalBond)} NEAR bond`));
-    console.log(chalk.gray(`  Contributor Tier:  ${policyResult.tier} (${tierInfo.maxPerProposalMultiplier}x cap)`));
+    console.log(
+      chalk.gray(
+        `  Contributor Tier:  ${tierInfo.tier} (${tierInfo.maxPerProposalMultiplier}x cap | ${tierInfo.multiplier}x reward bonus)`
+      )
+    );
     console.log(chalk.gray(`  Deliberation:      Inspector ${deliberation.inspector.score}/100 · Risk ${deliberation.riskArbiter.riskLevel}`));
     console.log(chalk.gray(`  Proposal Payload:`));
     console.log(JSON.stringify({ description, kind: proposalKind }, null, 2));

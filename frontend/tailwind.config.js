@@ -4,11 +4,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        display: ['"Fraunces"', 'serif'],
         sans: ['"Plus Jakarta Sans"', '"Space Grotesk"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['"IBM Plex Mono"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       colors: {
-        canvas: '#0A0B0E',
+        canvas: '#121721',
         panel: '#111318',
         'panel-alt': '#161922',
         'panel-header': '#141720',

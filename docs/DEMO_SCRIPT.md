@@ -6,10 +6,14 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
 
 ## ⏱️ Timeline & Scene Breakdown
 
-### 🎬 Scene 1: Real On-Chain Settlement on Explorer (0:00 – 1:00)
-**Goal**: Demonstrate on-chain execution of Proposal #5 (FunctionCall into `PolicyHelper::release`) and multi-sig quorum with real transaction explorer receipts.
+### 🎬 Scene 1: Real On-Chain Settlement on Explorer (0:00 – 0:40)
+**Goal**: Demonstrate on-chain execution of Proposal #5 (FunctionCall into `PolicyHelper::release`) and multi-sig quorum with preloaded transaction receipts.
 
-- **Screen**: Web browser opened to [https://testnet.nearblocks.io](https://testnet.nearblocks.io)
+- **Screen**: Web browser with 4 preloaded tabs:
+  1. Proposal #5 on Sputnik DAO
+  2. Blocked Replay CID attack
+  3. Blocked Over-Cap attack
+  4. Blocked Unauthorized Caller attack
 - **Voiceover**:
   > *"Decentralized community treasuries face a dilemma: giving AI agents unchecked spending power invites catastrophic prompt-injection exploits, while purely manual multisigs bottleneck operations.
   >
@@ -29,25 +33,45 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
 
 ---
 
-### 🎬 Scene 2: Deliberation CLI & Identity Binding (1:00 – 1:40)
-**Goal**: Demonstrate how the agent evaluates deliverables and fails closed.
+### 🎬 Scene 2: Deliberation CLI & Identity Binding (0:40 – 1:40)
+**Goal**: Demonstrate legitimate deliverable verification and fail-closed defense against deliverable theft.
 
 - **Screen**: Terminal split-screen (VS Code / CLI)
-- **Command to Run**:
+
+- **Step A: Legitimate Contributor Deliverable (PR #1)**
   ```bash
   npm run agent:propose -- \
     --task "Implement Sputnik DAO Three-Way Gate" \
     --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" \
     --recipient "zinipay-recipient2.testnet" \
+    --github-handle "kellycryptos" \
     --amount 0.1 \
     --dry-run
   ```
-- **Voiceover**:
-  > *"Behind each proposal is our deliberation pipeline:
-  > First, the deliverable verifier checks that the pull request is merged, matches the committer handle, and verifies that the PR description includes an explicit identity binding line: `zinipay-recipient: <account.testnet>`. Without this line, the agent rejects the deliverable to prevent deliverable theft.
-  > Second, the agent simulates on-chain policy against our PolicyHelper contract.
-  > Third, the agent requests a hardware enclave attestation report from NEAR AI Cloud with a fresh 32-byte nonce. Note that we fetch and log this report, but do not yet verify it independently on-chain.
-  > [If live credit available: 'Here the dual-agent review ran against Llama 3.3 70B on NEAR AI Cloud.' / If simulation: 'Because NEAR AI Cloud returned 402 payment required on this run, deliberation fell back to deterministic local simulation with explicit simulation tagging.']*
+  - **Voiceover**:
+    > *"Now let's look at the agent layer in the terminal. In these dry runs, the GitHub PR verification and on-chain policy queries are 100% real, while the agent model evaluation runs in local simulation because NEAR AI Cloud credit was not configured.
+    >
+    > When a contributor submits work, the agent runs our evaluation pipeline:
+    > In Gate 1, policy clearance reads the contract state directly on-chain: it confirms the deliverable proof is attached, verifies it stays under the recipient's Silver tier cap (15 NEAR max), and confirms zero-replay against `zinipay-policy2.testnet`.
+    > In Gate 2, the Inspector Agent verifies the real GitHub PR #1: it confirms the PR is merged, matches the author handle @kellycryptos, and checks that the PR description explicitly binds `zinipay-recipient: zinipay-recipient2.testnet`.
+    > The Inspector scores it 95/100, the Risk Arbiter confirms LOW risk, and deliberation reaches consensus: APPROVED.
+    > In Gate 3, the agent formats a constrained FunctionCall proposal for `zinipay-policy2.testnet` ready for Sputnik DAO council multi-sig review."*
+
+- **Step B: Stolen / Spoofed PR Attack Attempt**
+  ```bash
+  npm run agent:propose -- \
+    --task "Implement Sputnik DAO Three-Way Gate" \
+    --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
+    --recipient "zinipay-recipient2.testnet" \
+    --github-handle "kellycryptos" \
+    --amount 0.1 \
+    --dry-run
+  ```
+  - **Voiceover**:
+    > *"Now watch what happens when an attacker tries to claim someone else's merged pull request—here an unrelated PR from near-sdk-rs:
+    > Gate 1 passes policy clearance, but Gate 2 immediately halts:
+    > The Inspector Agent queries the real GitHub API and flags: 'PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet)'.
+    > The Consensus Verdict halts immediately with REJECTED. The agent logs the exploit attempt to attack_events.jsonl and refuses to format or submit any proposal."*
 
 ---
 

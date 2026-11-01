@@ -140,7 +140,7 @@ export function LandingTaglineSection() {
         </div>
 
         {/* Rhythmic 3-Line Statement with Embedded Interactive Visual Tokens */}
-        <div className="flex flex-col gap-5 sm:gap-6 text-xl sm:text-2xl md:text-3xl lg:text-[32px] tracking-tight leading-relaxed sm:leading-[1.5] select-none text-balance font-normal">
+        <div className="font-display flex flex-col gap-5 sm:gap-6 text-xl sm:text-2xl md:text-3xl lg:text-[32px] tracking-tight leading-relaxed sm:leading-[1.5] select-none text-balance font-medium">
           {TAGLINE_LINES.map((line) => {
             const BadgeIcon = line.badge.icon;
 
