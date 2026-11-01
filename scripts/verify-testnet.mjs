@@ -32,7 +32,7 @@ const TX_RPC_ENDPOINTS = [
 const DAO_ID = 'zinipay-demo.sputnikv2.testnet';
 const POLICY_ID = 'zinipay-policy2.testnet';
 
-// Expected hash comes from the verified on-chain testnet deployment of PolicyHelper at zinipay-policy2.testnet (built from commit 0952e25)
+// Expected hash from the deployed testnet contract at zinipay-policy2.testnet (source believed to match commit 8e8ef52, not independently reproduced)
 const EXPECTED_CODE_HASHES = [
   'Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy', // Base58 on-chain code_hash returned by NEAR RPC
   'cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2', // Hex representation
@@ -210,12 +210,10 @@ async function main() {
     );
   } else {
     const isSim = desc.includes('[SIMULATION]') || desc.includes('not independently verified');
-    report(
-      '2.3',
-      'Model Review Attestation Status',
-      true,
-      isSim ? 'Simulated run (attestation report received, not independently verified)' : 'No model review signature recorded'
-    );
+    const msg = isSim
+      ? 'Simulated run (attestation report received, not independently verified)'
+      : 'No model review signature recorded';
+    console.log(`  ℹ [INFO] 2.3: Model Review Attestation Status — ${msg}`);
   }
 
   // ── 3. PolicyHelper Contract Deployment ───────────────────────────────────
@@ -223,7 +221,7 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  console.log(`  ℹ [INFO] 3.2: Deployed WASM code hash ${policyAcct?.code_hash || 'unknown'}, source believed commit 8e8ef52, not independently reproduced`);
+  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'}, source believed to match commit 8e8ef52, not independently reproduced`);
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');

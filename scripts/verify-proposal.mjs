@@ -134,6 +134,30 @@ async function verifyProposal() {
     console.log(`      Quorum:       ${proposal.vote_counts.council[0]} Approve / ${proposal.vote_counts.council[1]} Reject`);
   }
 
+  // Model Review Attestation Extraction
+  const descSdkMatch = proposal.description?.match(/response signature verified \(SDK 0\.2\.1\):\s*kind=([^,\s]+),\s*id=([^\]\s]+)/i);
+  let recordedCompletionId = descSdkMatch ? descSdkMatch[2] : null;
+  let recordedSignatureKind = descSdkMatch ? descSdkMatch[1] : null;
+
+  const verifiedPathForModel = path.join(process.cwd(), 'frontend', 'public', 'data', 'verified.json');
+  if (!recordedCompletionId && fs.existsSync(verifiedPathForModel)) {
+    try {
+      const vJson = JSON.parse(fs.readFileSync(verifiedPathForModel, 'utf8'));
+      const tx = vJson.transactions?.find(t => t.proposalId === proposalId);
+      if (tx?.completionId) {
+        recordedCompletionId = tx.completionId;
+        recordedSignatureKind = tx.signatureKind || 'provider_tee';
+      }
+    } catch {}
+  }
+
+  if (recordedCompletionId) {
+    console.log(`      Model Review: Verified (SDK 0.2.1) [ID: ${recordedCompletionId} | Kind: ${recordedSignatureKind || 'provider_tee'}]`);
+  } else {
+    const isSim = proposal.description?.includes('[SIMULATION]') || proposal.description?.includes('not independently verified');
+    console.log(`      Model Review: ${isSim ? 'Simulated run (attestation report received, not independently verified)' : 'None recorded'}`);
+  }
+
   // 2. Validate Proposal Kind & Target
   console.log(`\n[2/5] Inspecting Proposal Execution Target...`);
   const kind = proposal.kind;
@@ -290,6 +314,7 @@ async function verifyProposal() {
   console.log(`════════════════════════════════════════════════════════════════════`);
   console.log(`  Proposal Status:      ${proposal.status}`);
   console.log(`  Log Format:           ${logFormatFound || 'None'}`);
+  console.log(`  Model Review:         ${recordedCompletionId ? `✓ VERIFIED (SDK 0.2.1) [ID: ${recordedCompletionId}, Kind: ${recordedSignatureKind || 'provider_tee'}]` : 'Simulated run (attestation report received, not independently verified)'}`);
   console.log(`  Recipient Match:      ${recipientMatch ? '✓ MATCH' : '✗ MISMATCH'}`);
   console.log(`      Proposed:         ${proposedRecipient}`);
   console.log(`      Disbursed To:     ${settledRecipient || 'N/A'}`);

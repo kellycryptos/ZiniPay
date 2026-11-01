@@ -14,7 +14,7 @@
 | 2 | **Sputnik DAO v2 Factory Naming** | Testnet factory is `sputnikv2.testnet` (not `sputnikdao2` or `sputnik-dao`) | Commit `26a2ac3`, `scripts/create-dao.mjs` | Fixed factory contract ID in automated DAO deployment scripts |
 | 3 | **Function-Call Keys Cannot Attach Deposits** | NEAR protocol rule: FC keys are strictly deposit=0 | Commit `b9dae32`, `scripts/setup-testnet.mjs` (`CannotAttachDeposit`) | Agent proposer uses funded account with small operating balance dedicated to bonds |
 | 4 | **DAO Creation Deposit & Base64 Payload** | `sputnikv2.testnet::create` requires Base64 JSON and >= 6 NEAR storage deposit | `scripts/create-dao.mjs` lines 44-55 | Automated base64 serialization and attached 6 NEAR deposit in `create-dao.mjs` |
-| 5 | **Windows PowerShell Escaping with near-cli** | PowerShell strips quotes from inline JSON arguments (`--args '{"id": 5}'`) | Commit `0952e25`, `5760d2d` | Bypassed shell CLI; migrated testnet actions to programmatic `near-api-js` scripts |
+| 5 | **Windows PowerShell JSON Quoting & CLI Incompatibilities** | PowerShell strips quotes from inline JSON arguments (`--args '{"id": 5}'`); `near-cli` fragile on Windows | `scripts/e2e-testnet.mjs` (commit `5760d2d`), `scripts/create-dao.mjs` | Avoided shell quoting pitfalls by standardizing on programmatic `near-api-js` scripts with typed JSON payloads |
 | 6 | **Single-Council Agent Self-Approval Hazard** | Initial DAO had only the agent account in council | Commit `e9a6b92`, `scripts/create-dao.mjs` | Enforced 2-of-2 human council multi-sig (`zinipay-c1`, `zinipay-c2`) with agent as Requestor |
 | 7 | **Contract Initialization Arguments Deserialization** | Deploy script passed wrong argument names (`owner_id`, `dao_contract`) | `scripts/setup-testnet.mjs` / `contracts/policy-helper/src/lib.rs` line 92 | Corrected init argument names to `owner` and `dao_account_id` matching Rust struct |
 | 8 | **NEAR Testnet Public RPC Instability** | `rpc.testnet.near.org` intermittent 503 / 408 / rate limits | Commit `0952e25`, `scripts/verify-testnet.mjs` | Implemented multi-RPC client prioritizing FastNEAR (`test.rpc.fastnear.com`) and Archival RPC |
@@ -89,13 +89,13 @@
 
 ### 5. Windows PowerShell JSON Quoting & CLI Incompatibilities
 - **Date**: October 27–29, 2026
-- **What I Tried**: Invoked `near-cli` commands from PowerShell to interact with Sputnik DAO and Policy contracts.
+- **What I Tried**: Testing command-line invocations with inline JSON arguments in Windows PowerShell.
 - **Exact Error**:
   ```text
   Error: Unexpected token 'i', "id: 5" is not valid JSON
   ```
 - **Surprise**: Windows PowerShell treats single quotes differently from POSIX shells and strips double quotes from inline JSON arguments before passing them to Node/executable CLIs.
-- **The Fix**: Migrated critical contract interaction workflows (`create-dao.mjs`, `e2e-testnet.mjs`, `verify-testnet.mjs`) to programmatic Node.js scripts using `near-api-js`, passing JSON objects directly and eliminating shell quoting issues.
+- **The Fix**: Standardized contract interaction and test workflows (`create-dao.mjs`, `e2e-testnet.mjs`, `verify-testnet.mjs`) on programmatic Node.js scripts using `near-api-js`, passing typed JavaScript objects directly and eliminating shell quoting pitfalls.
 
 ---
 

@@ -815,8 +815,11 @@ mod tests {
         testing_env!(ctx.build());
         contract.release(recipient, amount, cid);
 
-        // check_policy with uppercase variant for a different recipient should panic on CID duplicate,
-        // rather than being masked by alice's unelapsed cooldown
+        // Advance timestamp beyond cooldown (3600s) to 5000s so cooldown check never masks CID check
+        let ctx2 = get_context(dao.clone(), amount.0, 5_000_000_000_000);
+        testing_env!(ctx2.build());
+
+        // check_policy with uppercase variant for other recipient must panic with exact duplicate CID message
         let upper_cid = "BAFYBEIGDYRZT5SFP7UDM7HU76UH7Y26NF3EFUYLQABF3OCLGTQY55FBZDI".to_string();
         contract.check_policy(other, amount, upper_cid);
     }

@@ -13,10 +13,30 @@
 
 import { z } from 'zod';
 import OpenAI from 'openai';
-import { InferenceClient, type VerifiedCompletionResult } from '@nearai/inference-sdk';
 import axios from 'axios';
 import crypto from 'crypto';
 import { getTierInfo, type ReputationTier } from './reputation.js';
+
+export interface VerifiedCompletionResult {
+  id?: string;
+  completionId?: string;
+  signatureKind?: 'provider_tee' | 'gateway';
+  [key: string]: any;
+}
+
+export function isNodeVersionSupportedForSdk(minVersion = '24.22.1'): boolean {
+  const current = process.versions.node;
+  if (!current) return false;
+  const currentParts = current.split('.').map((p) => parseInt(p, 10));
+  const minParts = minVersion.split('.').map((p) => parseInt(p, 10));
+  for (let i = 0; i < 3; i++) {
+    const c = currentParts[i] || 0;
+    const m = minParts[i] || 0;
+    if (c > m) return true;
+    if (c < m) return false;
+  }
+  return true;
+}
 
 export interface AttestationVerificationResult {
   reportReceived: boolean;
@@ -361,7 +381,7 @@ export async function fetchAndVerifyAttestation(opts: {
 }
 
 export class MultiAgentDeliberationEngine {
-  private client: InferenceClient | OpenAI | any;
+  private client: any = null;
   private model: string;
   private apiKey: string;
   private baseUrl: string;
@@ -369,19 +389,49 @@ export class MultiAgentDeliberationEngine {
   constructor(opts: { baseUrl: string; apiKey: string; model: string }) {
     this.apiKey = opts.apiKey;
     this.baseUrl = opts.baseUrl;
-    const cleanBase = opts.baseUrl.endsWith('/') ? opts.baseUrl : `${opts.baseUrl}/`;
-    try {
-      this.client = new InferenceClient({
-        apiKey: opts.apiKey || 'dummy-key',
-        baseUrl: cleanBase,
-      });
-    } catch {
-      this.client = new OpenAI({
-        baseURL: opts.baseUrl,
-        apiKey: opts.apiKey || 'dummy-key',
-      });
-    }
     this.model = opts.model;
+  }
+
+  private async runSimulationDeliberation(
+    req: DeliberationRequest,
+    tier: ReputationTier,
+    customLabel?: string,
+  ): Promise<ThreeWayMatchResult> {
+    const tierInfo = getTierInfo(req.recipientReputation);
+    const artifactCheck = await verifyArtifact(req.deliverable, req.recipientId, req.recipientGithub);
+    const isSubstantive = req.deliverable.length > 5 && (req.deliverable.startsWith('http') || req.deliverable.startsWith('ipfs'));
+    const score = artifactCheck.verified ? 95 : (isSubstantive ? 80 : 40);
+
+    const critiqueSuffix = customLabel ? ` (${customLabel})` : '';
+
+    const inspector: InspectorReview = {
+      approved: artifactCheck.verified,
+      score,
+      critique: artifactCheck.verified
+        ? `[SIMULATION] Artifact verified: ${artifactCheck.reason}${critiqueSuffix}`
+        : `[SIMULATION] Artifact unverified: ${artifactCheck.reason}${critiqueSuffix}`,
+      artifactVerified: artifactCheck.verified,
+    };
+
+    const riskArbiter: RiskReview = {
+      approved: Number(req.amountNear) <= 50,
+      riskLevel: Number(req.amountNear) > 20 ? 'MEDIUM' : 'LOW',
+      reputationTier: tier,
+      recommendedMultiplier: tierInfo.multiplier,
+      policyNotes: `[SIMULATION] Contributor tier ${tier} qualifies under spend caps${critiqueSuffix}`,
+    };
+
+    const attestation = await fetchAndVerifyAttestation({
+      baseUrl: this.baseUrl,
+      apiKey: this.apiKey,
+      model: this.model,
+      dryRun: true,
+    });
+    if (customLabel) {
+      attestation.reason = customLabel;
+    }
+
+    return this.buildConsensus(req, inspector, riskArbiter, tier, true, attestation);
   }
 
   async deliberate(req: DeliberationRequest): Promise<ThreeWayMatchResult> {
@@ -412,35 +462,29 @@ export class MultiAgentDeliberationEngine {
 
       // Mock / Fast dry-run mode explicitly requested via --dry-run
       console.log('[SIMULATION] MultiAgentDeliberationEngine running in dry-run mode (mock model deliberation)');
-      const artifactCheck = await verifyArtifact(req.deliverable, req.recipientId, req.recipientGithub);
-      const isSubstantive = req.deliverable.length > 5 && (req.deliverable.startsWith('http') || req.deliverable.startsWith('ipfs'));
-      const score = artifactCheck.verified ? 95 : (isSubstantive ? 80 : 40);
+      return this.runSimulationDeliberation(req, tierInfo.tier);
+    }
 
-      const inspector: InspectorReview = {
-        approved: artifactCheck.verified,
-        score,
-        critique: artifactCheck.verified
-          ? `[SIMULATION] Artifact verified: ${artifactCheck.reason}`
-          : `[SIMULATION] Artifact unverified: ${artifactCheck.reason}`,
-        artifactVerified: artifactCheck.verified,
-      };
+    // Live AI Deliberation via dynamic InferenceClient or injected test client
+    const fallbackLabel = 'model verification not run (SDK unavailable on this Node version)';
 
-      const riskArbiter: RiskReview = {
-        approved: Number(req.amountNear) <= 50,
-        riskLevel: Number(req.amountNear) > 20 ? 'MEDIUM' : 'LOW',
-        reputationTier: tierInfo.tier,
-        recommendedMultiplier: tierInfo.multiplier,
-        policyNotes: `[SIMULATION] Contributor tier ${tierInfo.tier} qualifies under spend caps`,
-      };
+    if (!this.client) {
+      if (!isNodeVersionSupportedForSdk('24.22.1')) {
+        console.warn(`[DELIBERATION] Node ${process.versions.node} < 24.22.1: ${fallbackLabel}`);
+        return this.runSimulationDeliberation(req, tierInfo.tier, fallbackLabel);
+      }
 
-      const attestation = await fetchAndVerifyAttestation({
-        baseUrl: this.baseUrl,
-        apiKey: this.apiKey,
-        model: this.model,
-        dryRun: true,
-      });
-
-      return this.buildConsensus(req, inspector, riskArbiter, tierInfo.tier, true, attestation);
+      try {
+        const sdk = await import('@nearai/inference-sdk');
+        const cleanBase = this.baseUrl.endsWith('/') ? this.baseUrl : `${this.baseUrl}/`;
+        this.client = new sdk.InferenceClient({
+          apiKey: this.apiKey,
+          baseUrl: cleanBase,
+        });
+      } catch (err: any) {
+        console.warn(`[DELIBERATION] Failed to load @nearai/inference-sdk: ${err.message}. Falling back: ${fallbackLabel}`);
+        return this.runSimulationDeliberation(req, tierInfo.tier, fallbackLabel);
+      }
     }
 
     // Live AI Deliberation via configured LLM
@@ -760,7 +804,11 @@ Assess risk and respond with JSON ONLY.
 
     let attestationTag = '';
     if (simulated) {
-      attestationTag = ' [Attestation report received (not independently verified)]';
+      if (attestation?.reason) {
+        attestationTag = ` [${attestation.reason}]`;
+      } else {
+        attestationTag = ' [Attestation report received (not independently verified)]';
+      }
     } else if (attestation?.verified && attestation.completionId) {
       const sigKind = attestation.signatureKind || 'provider_tee';
       attestationTag = ` [Gateway and model attestation checked, response signature verified (SDK 0.2.1): kind=${sigKind}, id=${attestation.completionId}]`;

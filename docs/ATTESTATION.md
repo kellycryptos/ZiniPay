@@ -94,7 +94,10 @@ The response is a JSON object containing cryptographic hardware quotes and ident
 
 ZiniPay integrates the official [`@nearai/inference-sdk`](https://github.com/nearai/inference-sdk) (`v0.2.1`) to turn unverified inference reports into cryptographically checked execution proofs:
 
-### **What the SDK Verifies**
+> [!IMPORTANT]
+> **On-Chain Record Status (Proposal #5)**: The proposal on record in `verified.json` (Proposal #5 on `zinipay-demo.sputnikv2.testnet`) was generated during initial testnet deployment in simulation mode (`[SIMULATION]`) prior to NEAR AI Cloud credit funding. Its attestation status is strictly recorded as **`Simulated run (attestation report received, not independently verified)`**. ZiniPay makes **no claim of verified Intel TDX hardware quotes** for Proposal #5 until a live funded run is executed. The `@nearai/inference-sdk@0.2.1` client is dynamically loaded to verify quotes whenever a funded key and supported Node runtime (>= 24.22.1) are present.
+
+### **What the SDK is Designed to Verify**
 
 According to the official SDK verification guide:
 1. **Gateway Attestation Preflight**: Before sending an inference request, `InferenceClient` verifies the NEAR AI Cloud Gateway's Intel TDX DCAP hardware quote against Intel's Provisioning Certification Service (PCS). In Node.js, it captures the gateway's TLS SPKI fingerprint and pins all subsequent model metadata and inference requests to that attested identity.
