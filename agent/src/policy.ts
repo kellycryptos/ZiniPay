@@ -82,14 +82,14 @@ export function normalizeDeliverable(raw: string): string {
   // 2. Canonicalize IPFS CID: ipfs://<cid>
   if (s.startsWith('ipfs://')) {
     s = s.replace(/^ipfs:\/\//, '').split(/[/?#]/)[0];
-    return s.trim();
+    return s.trim().toLowerCase();
   }
 
   // 3. Generic HTTP/HTTPS URL
   try {
     const u = new URL(s);
     const host = u.host.toLowerCase();
-    const pathname = u.pathname.replace(/\/+$/, '');
+    const pathname = u.pathname.replace(/\/+$/, '').toLowerCase();
     return `${u.protocol}//${host}${pathname}`;
   } catch {
     // 4. Fallback string: lowercase, strip query/fragment/trailing slash

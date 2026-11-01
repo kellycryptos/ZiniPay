@@ -694,6 +694,64 @@ async function run() {
         simulated: false,
       });
     }
+
+    // Attack 4: Case-Variant Replay Attack (Duplicate CID with case variant e.g. uppercase / lowercase)
+    const caseVariantCid = canonicalCid.toUpperCase() === canonicalCid
+      ? canonicalCid.toLowerCase()
+      : canonicalCid.toUpperCase();
+    console.log(`  Attack Scenario 4: Case-variant CID replay attempt (${caseVariantCid} vs original ${canonicalCid})...`);
+    let attack4TxHash = null;
+    let attack4PanicMsg = null;
+    try {
+      await councilAccount.functionCall({
+        contractId: policyContractId,
+        methodName: 'release',
+        args: {
+          recipient: replayRecipient,
+          amount: payoutAmountYocto,
+          cid: caseVariantCid,
+        },
+        gas: BigInt('100000000000000'),
+        attachedDeposit: BigInt(payoutAmountYocto),
+      });
+      console.error(`  ❌ SECURITY FAILURE: Policy contract allowed case-variant CID replay (${caseVariantCid})!`);
+      process.exit(1);
+    } catch (err) {
+      attack4TxHash = err.transaction_outcome?.id;
+      if (attack4TxHash) {
+        const txStatus = await councilNear.connection.provider.txStatus(attack4TxHash, councilAccountId);
+        for (const r of txStatus.receipts_outcome || []) {
+          for (const l of r.outcome?.logs || []) {
+            if (l.includes('CID already used')) {
+              attack4PanicMsg = l;
+              break;
+            }
+          }
+        }
+      }
+      const expectedSubstring = 'CID already used';
+      const actualError = attack4PanicMsg || err.message || '';
+      if (!actualError.includes(expectedSubstring)) {
+        console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 4 (Case-Variant Replay):`);
+        console.error(`     Expected to contain: "${expectedSubstring}"`);
+        console.error(`     Actual error message: "${actualError}"`);
+        process.exit(1);
+      }
+      console.log(`  ✓ Attack 4 BLOCKED on-chain with verified panic: "${actualError}"`);
+      if (attack4TxHash) {
+        console.log(`    Tx Hash: ${attack4TxHash}`);
+        console.log(`    Explorer: ${explorerUrl}/txns/${attack4TxHash}`);
+        recordTx(`Blocked Attack 4: Case-Variant CID Replay (${caseVariantCid})`, attack4TxHash);
+      }
+      logAttackEvent({
+        vector: 'Case-Variant CID Replay',
+        caller: councilAccountId,
+        details: `Attempted replay of deliverable with case variant '${caseVariantCid}' for fresh recipient '${replayRecipient}'`,
+        rejectionReason: actualError,
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
+    }
   }
 
   // ── Step 9: Final Summary Table ───────────────────────────────────────────

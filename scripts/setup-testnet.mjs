@@ -55,10 +55,9 @@ Next steps (run these in your terminal):
 
   Then export the private key for ${agentAccount} from your keystore.
 
-─── 3. Add the agent as a Requestor in Trezu ──────────────────────────────────
-  - Go to https://app.trezu.org (or testnet equivalent)
-  - Open your treasury → Settings → Members
-  - Add ${agentAccount} as a Requestor role
+─── 3. Add the agent as a Requestor in Sputnik DAO ───────────────────────────
+  - Open your DAO policy settings (via Trezu or near-cli)
+  - Add ${agentAccount} to the Requestor role
 
 ─── 4. Fill in agent/.env ─────────────────────────────────────────────────────
   NEAR_NETWORK=testnet

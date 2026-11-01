@@ -15,6 +15,13 @@ export async function runPolicyTests() {
   console.assert(normPr2 === 'near/repo-contracts#42', `Expected near/repo-contracts#42, got ${normPr2}`);
   console.log('✓ Test 1: GitHub PR canonicalized to owner/repo#number');
 
+  // Test 1c: Case-variant deliverable canonicalization (e.g. KELLYCRYPTOS/ZiniPay#1)
+  const rawPrA = 'KELLYCRYPTOS/ZiniPay#1';
+  const rawPrB = '  kellycryptos/zinipay#1  ';
+  console.assert(normalizeDeliverable(rawPrA) === 'kellycryptos/zinipay#1', 'Uppercase repo/owner must lowercase');
+  console.assert(normalizeDeliverable(rawPrB) === 'kellycryptos/zinipay#1', 'Whitespace and case variant matches');
+  console.log('✓ Test 1c: Case-variant deliverable normalized to lowercase');
+
   // Test 2: IPFS canonicalization
   const ipfs1 = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi/path?query=1';
   const normIpfs = normalizeDeliverable(ipfs1);

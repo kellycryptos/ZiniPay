@@ -4,8 +4,9 @@
  * Wraps the key Sputnik DAO v2 contract methods:
  *   add_proposal, act_proposal, get_policy, get_proposals, get_proposal
  *
- * The agent uses a function-call key, not a full-access key.
- * This limits what the key can do to only the allowed methods.
+ * The agent uses a dedicated funded proposer account with a full-access key
+ * (required to attach the non-zero proposal bond), or a restricted function-call key
+ * if operating under a 0-bond DAO policy.
  */
 
 import { connect, KeyPair, keyStores, utils } from 'near-api-js';

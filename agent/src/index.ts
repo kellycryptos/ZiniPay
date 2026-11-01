@@ -6,7 +6,7 @@
  *   - Multi-Agent Deliberation (Inspector Agent + Risk Arbiter Agent via NEAR AI Cloud)
  *   - Reputation-Tier Scaled Caps (Bronze / Silver / Gold)
  *   - Cross-Chain Value Settlement via NEAR Intents
- *   - Restricted Function-Call Execution on Sputnik DAO / Trezu
+ *   - Constrained Proposal Execution on Sputnik DAO v2 (Requestor Role)
  */
 
 import 'dotenv/config';
@@ -123,7 +123,7 @@ const program = new Command();
 
 program
   .name('zinipay-agent')
-  .description('ZiniPay: Constrained Release Agent for Trezu / Sputnik DAO')
+  .description('ZiniPay: Constrained Release Agent for Sputnik DAO')
   .version('1.0.0');
 
 // ── propose command ───────────────────────────────────────────────────────────
@@ -376,7 +376,7 @@ async function runPropose(opts: ProposeOpts) {
   }
 
   // ── Step 3: Build Proposal Struct ─────────────────────────────────────────
-  console.log(chalk.cyan('\n[3/4] Constructing Constrained Proposal for Sputnik DAO / Trezu...'));
+  console.log(chalk.cyan('\n[3/4] Constructing Constrained Proposal for Sputnik DAO...'));
 
   let proposalKind: ProposalKind;
   let intentInfo: string | null = null;
@@ -468,11 +468,16 @@ async function runPropose(opts: ProposeOpts) {
   }
 
   if (opts.dryRun) {
+    const isZeroBond = cfg.proposalBond === '0';
+    const keyTypeDesc = isZeroBond
+      ? 'Function-Call Key (0-Bond Role)'
+      : 'Full-Access Key (Dedicated Proposer Account)';
+
     console.log(chalk.yellow('\n  ┌─────────────────────────────────────────────────────────────┐'));
     console.log(chalk.yellow('  │                 THREE-WAY MATCH PASS REPORT                 │'));
     console.log(chalk.yellow('  └─────────────────────────────────────────────────────────────┘'));
     console.log(chalk.gray(`  Treasury Target:   ${cfg.daoContractId}`));
-    console.log(chalk.gray(`  Proposing Agent:   ${cfg.accountId} (Function-Call Key)`));
+    console.log(chalk.gray(`  Proposing Agent:   ${cfg.accountId} (${keyTypeDesc})`));
     console.log(chalk.gray(`  Attached Deposit:  ${SputnikDAO.formatNear(cfg.proposalBond)} NEAR bond`));
     console.log(
       chalk.gray(
@@ -482,7 +487,7 @@ async function runPropose(opts: ProposeOpts) {
     console.log(chalk.gray(`  Deliberation:      Inspector ${deliberation.inspector.score}/100 · Risk ${deliberation.riskArbiter.riskLevel}`));
     console.log(chalk.gray(`  Proposal Payload:`));
     console.log(JSON.stringify({ description, kind: proposalKind }, null, 2));
-    console.log(chalk.bold.green('\n  ✓ THREE-WAY MATCH & DELIBERATION VERIFIED: Ready for live Sputnik DAO / Trezu submission!\n'));
+    console.log(chalk.bold.green('\n  ✓ THREE-WAY MATCH & DELIBERATION VERIFIED: Ready for live Sputnik DAO submission!\n'));
     return;
   }
 
@@ -498,9 +503,7 @@ async function runPropose(opts: ProposeOpts) {
   await reputation.recordProposalSubmitted(opts.recipient);
 
   console.log(chalk.bold.green(`\n  ✓ Proposal #${proposalId} submitted to ${cfg.daoContractId}`));
-  console.log(`\n  View in Trezu Treasury:`);
-  console.log(chalk.underline(`  https://app.trezu.org`));
-  console.log(`\n  View on NEAR Explorer:`);
+  console.log(`\n  View Proposal on NEAR Explorer:`);
   console.log(chalk.underline(
     `  https://${cfg.network === 'testnet' ? 'testnet.' : ''}nearblocks.io/accounts/${cfg.daoContractId}`,
   ));

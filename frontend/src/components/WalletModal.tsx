@@ -47,7 +47,7 @@ export function WalletModal({
     },
     {
       id: 'zinipay-agent.testnet',
-      label: 'ZiniPay Agent (Function-Call Key)',
+      label: 'ZiniPay Agent (Proposer Key, 0 Council Votes)',
       role: 'agent' as const,
       balance: '0.25 NEAR (Simulated)',
     },

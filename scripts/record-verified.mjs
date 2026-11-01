@@ -221,6 +221,19 @@ async function main() {
     });
   }
 
+  // Parse Attack 4: Case-Variant Replay Attack (if contract deployed)
+  const caseVariantMatch = content.match(/Attack Scenario 4[^\r\n]*[\s\S]*?Attack 4 BLOCKED[^\r\n]*: "([^"\r\n]+)"[\s\S]*?Tx Hash:\s*([1-9A-HJ-NP-za-km-z]{40,50})/i);
+  if (caseVariantMatch) {
+    attacks.push({
+      vector: 'Case-Variant CID Replay',
+      status: 'BLOCKED',
+      rejectionReason: caseVariantMatch[1].trim(),
+      txHash: caseVariantMatch[2].trim(),
+      explorerUrl: `https://testnet.nearblocks.io/txns/${caseVariantMatch[2].trim()}`,
+      blockedBy: 'PolicyHelper (On-Chain)',
+    });
+  }
+
   // 3. Check for policy contract execution
   const viaPolicyContract = Boolean(
     /FunctionCall.*release|call_method.*release|Target Method:\s*release|Proposal type:\s*FunctionCall/i.test(content) &&

@@ -18,7 +18,7 @@ export function ThreeWayGate() {
     {
       step: '03',
       title: 'Human Quorum',
-      desc: 'Sputnik DAO v2 council votes in Trezu. Payout released natively or via NEAR Intents.',
+      desc: 'Sputnik DAO v2 council votes on-chain. Payout released natively or via NEAR Intents.',
       icon: Users,
     },
   ];

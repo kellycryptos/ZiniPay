@@ -11,6 +11,13 @@ pub enum StorageKey {
     ReputationScores,
 }
 
+/// Canonicalizes deliverable CIDs and PR keys before checking or storing in used_cids:
+/// - Strips leading/trailing whitespace
+/// - Lowercases all characters to prevent case-variant replay attacks (e.g. KELLYCRYPTOS/ZINIPAY#1 vs kellycryptos/zinipay#1)
+pub fn normalize_cid(cid: &str) -> String {
+    cid.trim().to_ascii_lowercase()
+}
+
 #[near_bindgen(contract_state)]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 #[borsh(crate = "near_sdk::borsh")]
@@ -119,14 +126,15 @@ impl PolicyHelper {
         }
 
         // 4. CID uniqueness (Anti-Replay / zero-double-spend)
-        if self.used_cids.contains(&cid) {
+        let norm_cid = normalize_cid(&cid);
+        if self.used_cids.contains(&norm_cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
         }
 
         // ATOMIC STATE RECORDING: mark CID used and record release timestamp
-        self.used_cids.insert(&cid);
+        self.used_cids.insert(&norm_cid);
         self.last_release
             .insert(&recipient, &env::block_timestamp());
 
@@ -147,7 +155,7 @@ impl PolicyHelper {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(Gas::from_tgas(5))
-                    .on_release_done(cid, recipient)
+                    .on_release_done(norm_cid, recipient)
             )
     }
 
@@ -161,11 +169,12 @@ impl PolicyHelper {
         recipient: AccountId,
         #[callback_result] call_result: Result<(), PromiseError>,
     ) -> bool {
+        let norm_cid = normalize_cid(&cid);
         match call_result {
             Ok(_) => {
                 env::log_str(&format!(
                     "Release payout confirmed for recipient {} on CID {}",
-                    recipient, cid
+                    recipient, norm_cid
                 ));
                 let current = self.reputation_scores.get(&recipient).unwrap_or(0);
                 // Automated release payouts increase reputation within Bronze tier only (up to 19).
@@ -178,9 +187,9 @@ impl PolicyHelper {
             Err(_) => {
                 env::log_str(&format!(
                     "Transfer promise failed for recipient {}. Automatically rolling back CID {} and cooldown.",
-                    recipient, cid
+                    recipient, norm_cid
                 ));
-                self.used_cids.remove(&cid);
+                self.used_cids.remove(&norm_cid);
                 self.last_release.remove(&recipient);
                 false
             }
@@ -211,7 +220,8 @@ impl PolicyHelper {
             }
         }
 
-        if self.used_cids.contains(&cid) {
+        let norm_cid = normalize_cid(&cid);
+        if self.used_cids.contains(&norm_cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
@@ -235,13 +245,14 @@ impl PolicyHelper {
     /// Explicitly mark a CID used and update cooldown (Owner or designated DAO only).
     pub fn record_release(&mut self, recipient: AccountId, cid: String) {
         self.assert_owner_or_dao();
+        let norm_cid = normalize_cid(&cid);
         require!(
-            !self.used_cids.contains(&cid),
+            !self.used_cids.contains(&norm_cid),
             "CID already used — duplicate release attempt blocked"
         );
         self.last_release
             .insert(&recipient, &env::block_timestamp());
-        self.used_cids.insert(&cid);
+        self.used_cids.insert(&norm_cid);
     }
 
     /// Update reputation score for an account (Owner or designated DAO only).
@@ -259,6 +270,19 @@ impl PolicyHelper {
     }
 
     // ─── Admin ────────────────────────────────────────────────────────
+
+    /// Transfers ownership of the policy contract to a new account.
+    /// Can only be called by the current owner. Once transferred to the DAO,
+    /// all admin and recovery methods require a full Sputnik DAO proposal and council votes.
+    pub fn transfer_ownership(&mut self, new_owner: AccountId) {
+        self.assert_owner();
+        let old_owner = self.owner.clone();
+        self.owner = new_owner.clone();
+        env::log_str(&format!(
+            "Transferred ownership from {} to {}",
+            old_owner, new_owner
+        ));
+    }
 
     pub fn set_dao_account_id(&mut self, dao_account_id: AccountId) {
         self.assert_owner();
@@ -287,7 +311,8 @@ impl PolicyHelper {
     /// the owner can unburn it after manual verification.
     pub fn unburn_cid(&mut self, cid: String) {
         self.assert_owner_or_dao();
-        self.used_cids.remove(&cid);
+        let norm_cid = normalize_cid(&cid);
+        self.used_cids.remove(&norm_cid);
     }
 
     /// Owner recovery: reset cooldown for a recipient if a payout failed.
@@ -317,7 +342,13 @@ impl PolicyHelper {
     }
 
     pub fn cid_used(&self, cid: String) -> bool {
-        self.used_cids.contains(&cid)
+        let norm_cid = normalize_cid(&cid);
+        self.used_cids.contains(&norm_cid)
+    }
+
+    /// Canonicalizes a CID or PR reference: trims whitespace and lowercases.
+    pub fn normalize_cid(&self, cid: String) -> String {
+        normalize_cid(&cid)
     }
 
     // ─── Internal helpers ─────────────────────────────────────────────
@@ -331,11 +362,7 @@ impl PolicyHelper {
 
     fn assert_owner_or_dao(&self) {
         let caller = env::predecessor_account_id();
-        if caller != self.owner
-            && caller != self.dao_account_id
-            && caller.as_str() != "zinipay-c1.testnet"
-            && caller.as_str() != "zinipay-council1.testnet"
-        {
+        if caller != self.owner && caller != self.dao_account_id {
             let msg = "Only owner or designated DAO can call this";
             env::log_str(msg);
             env::panic_str(msg);
@@ -624,5 +651,140 @@ mod tests {
 
         // Rep should cap at 19 (Bronze ceiling) and not jump to 23 (Silver) without council vote
         assert_eq!(contract.get_reputation(recipient), 19);
+    }
+
+    #[test]
+    fn test_transfer_ownership_success_updates_owner() {
+        let (mut contract, owner, _) = setup_contract();
+        let new_owner: AccountId = "zinipay-demo.sputnikv2.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner.clone(), 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+
+        contract.transfer_ownership(new_owner.clone());
+        let policy = contract.get_policy();
+        assert_eq!(policy["owner"], new_owner.to_string());
+
+        // New owner can successfully call admin functions
+        let ctx_new_owner = get_context(new_owner.clone(), 0, 1_001_000_000_000);
+        testing_env!(ctx_new_owner.build());
+        contract.set_per_proposal_cap(U128(20_000_000_000_000_000_000_000_000));
+        assert_eq!(
+            contract.get_policy()["per_proposal_cap"],
+            "20000000000000000000000000"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner can call this")]
+    fn test_transfer_ownership_old_owner_rejected_from_admin() {
+        let (mut contract, owner, _) = setup_contract();
+        let new_owner: AccountId = "zinipay-demo.sputnikv2.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner.clone(), 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.transfer_ownership(new_owner.clone());
+
+        // Old owner tries to call set_per_proposal_cap -> must panic
+        let ctx_old_owner = get_context(owner, 0, 1_002_000_000_000);
+        testing_env!(ctx_old_owner.build());
+        contract.set_per_proposal_cap(U128(50_000_000_000_000_000_000_000_000));
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner can call this")]
+    fn test_transfer_ownership_old_owner_rejected_from_transfer_ownership() {
+        let (mut contract, owner, _) = setup_contract();
+        let new_owner: AccountId = "zinipay-demo.sputnikv2.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner.clone(), 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.transfer_ownership(new_owner.clone());
+
+        // Old owner tries to transfer ownership again -> must panic
+        let ctx_old_owner = get_context(owner, 0, 1_002_000_000_000);
+        testing_env!(ctx_old_owner.build());
+        contract.transfer_ownership("attacker.testnet".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or designated DAO can call this")]
+    fn test_transfer_ownership_old_owner_rejected_from_unburn_cid() {
+        let (mut contract, owner, _) = setup_contract();
+        let new_owner: AccountId = "zinipay-demo.sputnikv2.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner.clone(), 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.transfer_ownership(new_owner.clone());
+
+        // Old owner tries to unburn CID directly -> must panic
+        let ctx_old_owner = get_context(owner, 0, 1_002_000_000_000);
+        testing_env!(ctx_old_owner.build());
+        contract.unburn_cid("QmCID1".to_string());
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner can call this")]
+    fn test_non_owner_cannot_transfer_ownership() {
+        let (mut contract, _, _) = setup_contract();
+        let attacker: AccountId = "attacker.testnet".parse().unwrap();
+
+        let ctx_attacker = get_context(attacker, 0, 1_000_000_000_000);
+        testing_env!(ctx_attacker.build());
+        contract.transfer_ownership("attacker.testnet".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "CID already used — duplicate release attempt blocked")]
+    fn test_case_variant_cid_replay_fails() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let other: AccountId = "bob.testnet".parse().unwrap();
+        let amount = U128(5_000_000_000_000_000_000_000_000);
+        let cid = "kellycryptos/ZiniPay#1".to_string();
+
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient, amount, cid);
+
+        // Lowercase, uppercase, and untrimmed variants must all report used
+        assert!(contract.cid_used("kellycryptos/zinipay#1".to_string()));
+        assert!(contract.cid_used("KELLYCRYPTOS/ZINIPAY#1".to_string()));
+        assert!(contract.cid_used("  kellycryptos/ZiniPay#1  ".to_string()));
+
+        // Second release with uppercase case-variant must panic with duplicate CID message
+        let ctx2 = get_context(dao.clone(), amount.0, 2_000_000_000_000);
+        testing_env!(ctx2.build());
+        contract.release(other, amount, "KELLYCRYPTOS/ZINIPAY#1".to_string());
+    }
+
+    #[test]
+    #[should_panic(expected = "CID already used — duplicate release attempt blocked")]
+    fn test_check_policy_case_variant_cid_fails() {
+        let (mut contract, _, dao) = setup_contract();
+        let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let amount = U128(5_000_000_000_000_000_000_000_000);
+        let cid = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi".to_string();
+
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
+        testing_env!(ctx.build());
+        contract.release(recipient.clone(), amount, cid);
+
+        // check_policy with uppercase variant should panic
+        let upper_cid = "BAFYBEIGDYRZT5SFP7UDM7HU76UH7Y26NF3EFUYLQABF3OCLGTQY55FBZDI".to_string();
+        contract.check_policy(recipient, amount, upper_cid);
+    }
+
+    #[test]
+    fn test_normalize_cid_view_and_helper() {
+        let (contract, _, _) = setup_contract();
+        assert_eq!(
+            contract.normalize_cid("  KELLYCRYPTOS/ZiniPay#1  ".to_string()),
+            "kellycryptos/zinipay#1"
+        );
+        assert_eq!(
+            normalize_cid("  QmUniqueCID123  "),
+            "qmuniquecid123"
+        );
     }
 }

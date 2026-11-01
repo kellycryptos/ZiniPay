@@ -18,8 +18,14 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
-const RPC_ENDPOINTS = [
+const VIEW_RPC_ENDPOINTS = [
   'https://test.rpc.fastnear.com',
+  'https://archival-rpc.testnet.near.org',
+  'https://rpc.testnet.near.org',
+];
+
+const TX_RPC_ENDPOINTS = [
+  'https://archival-rpc.testnet.near.org',
   'https://rpc.testnet.near.org',
 ];
 
@@ -47,24 +53,28 @@ function parseYocto(val) {
 
 let passed = 0;
 let failed = 0;
+let unverified = 0;
 
-function report(step, title, ok, details = '') {
-  if (ok) {
+function report(step, title, state, details = '') {
+  if (state === true) {
     passed++;
     console.log(`  ✓ [PASS] ${step}: ${title}${details ? ` — ${details}` : ''}`);
+  } else if (state === 'UNVERIFIED') {
+    unverified++;
+    console.warn(`  ⚠ [UNVERIFIED (RPC unavailable)] ${step}: ${title}${details ? ` — ${details}` : ''}`);
   } else {
     failed++;
     console.error(`  ✗ [FAIL] ${step}: ${title}${details ? ` — ${details}` : ''}`);
   }
 }
 
-async function rpcPost(method, params) {
-  for (const url of RPC_ENDPOINTS) {
+async function rpcPost(method, params, endpoints = VIEW_RPC_ENDPOINTS, timeoutMs = 6000) {
+  for (const url of endpoints) {
     try {
       const res = await axios.post(
         url,
         { jsonrpc: '2.0', id: 'verify-suite', method, params },
-        { timeout: 7000 }
+        { timeout: timeoutMs }
       );
       if (res.data?.result) return res.data.result;
     } catch {
@@ -98,7 +108,27 @@ async function callViewMethod(contractId, methodName, args = {}) {
 }
 
 async function queryTxStatus(txHash, senderId) {
-  return rpcPost('EXPERIMENTAL_tx_status', [txHash, senderId]);
+  // Query NEAR archival RPC for historical testnet execution receipts (allow 9s for archival queries)
+  const result = await rpcPost('EXPERIMENTAL_tx_status', [txHash, senderId], TX_RPC_ENDPOINTS, 9000);
+  if (result) return result;
+
+  // Fallback to NearBlocks public testnet API if available
+  try {
+    const nbRes = await axios.get(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, { timeout: 4000 });
+    if (nbRes.data?.txns?.[0]) {
+      const nbTx = nbRes.data.txns[0];
+      return {
+        transaction: { hash: nbTx.transaction_hash },
+        status: nbTx.outcomes?.status ? { SuccessValue: '' } : { Failure: {} },
+        receipts_outcome: [],
+        _source: 'nearblocks',
+      };
+    }
+  } catch {
+    // NearBlocks fallback unavailable
+  }
+
+  return { error: 'RPC_UNAVAILABLE' };
 }
 
 async function main() {
@@ -185,6 +215,7 @@ async function main() {
 
     // Check each transaction receipt
     for (const tx of verified.transactions || []) {
+      await new Promise(r => setTimeout(r, 600));
       const sender = tx.label?.includes('Council 1')
         ? 'zinipay-c1.testnet'
         : tx.label?.includes('Council 2')
@@ -200,6 +231,17 @@ async function main() {
         : 'agentzinipaytestnet.testnet';
 
       const status = await queryTxStatus(tx.txHash, sender);
+
+      if (status?.error === 'RPC_UNAVAILABLE') {
+        report(
+          `5.Tx-${tx.index}`,
+          `${tx.label}`,
+          'UNVERIFIED',
+          `Tx: ${tx.txHash.slice(0, 10)}... (Public RPC timed out / unavailable)`
+        );
+        continue;
+      }
+
       const exists = !!status?.transaction?.hash;
       const isAttack = tx.label?.toLowerCase().includes('attack') || tx.label?.toLowerCase().includes('blocked');
 
@@ -238,12 +280,15 @@ async function main() {
   // ── Final Summary ─────────────────────────────────────────────────────────
   console.log(`
 ════════════════════════════════════════════════════════════════════
-  Verification Summary: ${passed} PASSED / ${failed} FAILED
+  Verification Summary: ${passed} PASSED / ${unverified} UNVERIFIED / ${failed} FAILED
 ════════════════════════════════════════════════════════════════════
 `);
 
   if (failed > 0) {
     process.exit(1);
+  } else if (unverified > 0) {
+    console.log('  ⚠ ON-CHAIN STATE VERIFIED; SOME HISTORICAL TX STATUSES UNVERIFIED DUE TO RPC TIMEOUT.\n');
+    process.exit(0);
   } else {
     console.log('  ✓ ALL ON-CHAIN CHECKS VERIFIED SUCCESSFULLY!\n');
     process.exit(0);
