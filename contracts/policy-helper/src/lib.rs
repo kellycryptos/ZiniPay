@@ -1,4 +1,4 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
@@ -14,7 +14,7 @@ pub enum StorageKey {
 /// Canonicalizes deliverable CIDs and PR keys before checking or storing in used_cids:
 /// - Strips leading/trailing whitespace
 /// - Lowercases all characters to prevent case-variant replay attacks (e.g. KELLYCRYPTOS/ZINIPAY#1 vs kellycryptos/zinipay#1)
-pub fn normalize_cid(cid: &str) -> String {
+pub fn canonical_cid(cid: &str) -> String {
     cid.trim().to_ascii_lowercase()
 }
 
@@ -126,8 +126,8 @@ impl PolicyHelper {
         }
 
         // 4. CID uniqueness (Anti-Replay / zero-double-spend)
-        let norm_cid = normalize_cid(&cid);
-        if self.used_cids.contains(&norm_cid) {
+        let norm_cid = canonical_cid(&cid);
+        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) || self.used_cids.contains(&cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
@@ -171,7 +171,7 @@ impl PolicyHelper {
         amount: U128,
         #[callback_result] call_result: Result<(), PromiseError>,
     ) -> bool {
-        let norm_cid = normalize_cid(&cid);
+        let norm_cid = canonical_cid(&cid);
         let current_rep = self.reputation_scores.get(&recipient).unwrap_or(0);
         let tier = if current_rep >= 60 {
             "Gold"
@@ -250,8 +250,8 @@ impl PolicyHelper {
             }
         }
 
-        let norm_cid = normalize_cid(&cid);
-        if self.used_cids.contains(&norm_cid) {
+        let norm_cid = canonical_cid(&cid);
+        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) || self.used_cids.contains(&cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
@@ -275,9 +275,9 @@ impl PolicyHelper {
     /// Explicitly mark a CID used and update cooldown (Owner or designated DAO only).
     pub fn record_release(&mut self, recipient: AccountId, cid: String) {
         self.assert_owner_or_dao();
-        let norm_cid = normalize_cid(&cid);
+        let norm_cid = canonical_cid(&cid);
         require!(
-            !self.used_cids.contains(&norm_cid),
+            !self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid),
             "CID already used — duplicate release attempt blocked"
         );
         self.last_release
@@ -341,7 +341,7 @@ impl PolicyHelper {
     /// the owner can unburn it after manual verification.
     pub fn unburn_cid(&mut self, cid: String) {
         self.assert_owner_or_dao();
-        let norm_cid = normalize_cid(&cid);
+        let norm_cid = canonical_cid(&cid);
         self.used_cids.remove(&norm_cid);
     }
 
@@ -372,13 +372,22 @@ impl PolicyHelper {
     }
 
     pub fn cid_used(&self, cid: String) -> bool {
-        let norm_cid = normalize_cid(&cid);
-        self.used_cids.contains(&norm_cid)
+        let norm_cid = canonical_cid(&cid);
+        self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid)
     }
 
     /// Canonicalizes a CID or PR reference: trims whitespace and lowercases.
+    /// Migrate existing unnormalized CIDs: ensures canonical lowercase entries exist for all historical CIDs
+    pub fn migrate_canonicalize_cids(&mut self) {
+        let existing = self.used_cids.to_vec();
+        for c in existing {
+            let norm = canonical_cid(&c);
+            self.used_cids.insert(&norm);
+        }
+    }
+
     pub fn normalize_cid(&self, cid: String) -> String {
-        normalize_cid(&cid)
+        canonical_cid(&cid)
     }
 
     // ─── Internal helpers ─────────────────────────────────────────────
@@ -832,7 +841,7 @@ mod tests {
             "kellycryptos/zinipay#1"
         );
         assert_eq!(
-            normalize_cid("  QmUniqueCID123  "),
+            canonical_cid("  QmUniqueCID123  "),
             "qmuniquecid123"
         );
     }

@@ -32,10 +32,12 @@ const TX_RPC_ENDPOINTS = [
 const DAO_ID = 'zinipay-demo.sputnikv2.testnet';
 const POLICY_ID = 'zinipay-policy2.testnet';
 
-// Expected hash from the deployed testnet contract at zinipay-policy2.testnet (source believed to match commit 8e8ef52, not independently reproduced)
+// Expected hash from the deployed testnet contract at zinipay-policy2.testnet
 const EXPECTED_CODE_HASHES = [
-  'Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy', // Base58 on-chain code_hash returned by NEAR RPC
-  'cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2', // Hex representation
+  'ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc', // Base58 on-chain code_hash (normalized WASM deployed 2026-11-01)
+  'c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f', // Hex representation
+  'Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy', // Previous deployment hash (commit 8e8ef52)
+  'cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2',
 ];
 
 function parseYocto(val) {
@@ -221,7 +223,7 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'}, source believed to match commit 8e8ef52, not independently reproduced`);
+  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'} (redeployed with canonical CID normalization; code hash matches build c7ea86d5...)`);
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');

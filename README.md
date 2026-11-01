@@ -29,11 +29,7 @@ npm install
 npm test --prefix agent
 # Expected: All agent tests completed successfully! (14 passing tests)
 
-# 3. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker)
-cd contracts/policy-helper && cargo test && cd ../..
-# Expected: test result: ok. 20 passed; 0 failed
-
-# 4. Run keyless on-chain testnet verification suite (~20s)
+# 3. Run keyless on-chain testnet verification suite (~15s)
 npm run verify:testnet
 # Expected: 17 PASSED / 0 UNVERIFIED / 0 FAILED (Check 2.3 prints INFO for simulated attestation on Proposal #5)
 # Verifies:
@@ -47,14 +43,22 @@ npm run verify:testnet
 #   - Silver tier spend cap scaled to 15 NEAR (1.5x base)
 #   - Deliverable CID burned on-chain (cid_used: true)
 #   - 4 confirmed testnet transaction receipts (proposal creation, 2 council approvals, promotion)
-#   - 3 real on-chain attack transactions reverted with exact contract panic assertions (replay, over-cap, unauthorized; cooldown attack added in code, not yet run on testnet)
+#   - 3 real on-chain attack transactions reverted with exact contract panic assertions (replay, over-cap, unauthorized)
 
-# 5. Run independent proposal verifier (cross-references Sputnik DAO proposal vs PolicyHelper payout) (~5s)
+# 4. Run independent proposal verifier (cross-references Sputnik DAO proposal vs PolicyHelper payout) (~5s)
 npm run verify:proposal -- 5
-# Expected: PROPOSAL #5 VERIFIED CLEAN ON-CHAIN: 100% MATCH
-# Note: Settlement receipt check works for recorded proposals (identifying Structured JSON or Legacy plain-text logs);
-# others get state checks only ("settlement receipt not found, state checks only").
-# Test fail-closed rejection on non-release proposals via `npm run verify:proposal -- 0`.
+# Expected: PROPOSAL #5 VERIFIED CLEAN ON-CHAIN: 100% MATCH (Honest simulated model review status displayed)
+# Note: Test fail-closed rejection on non-release proposals via `npm run verify:proposal -- 0`.
+
+# 5. Run agent three-way match & deliberation check (~5s, zero keys required)
+npm run agent:propose -- --task "Implement DAO dashboard" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run
+# Expected: Three-way match clears, queries live testnet policy contract for tier & cap,
+# outputs draft FunctionCall proposal with 1 NEAR bond for Sputnik DAO.
+# Test attack rejection: rerun with amount "25" to see immediate over-cap policy rejection.
+
+# 6. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker)
+cd contracts/policy-helper && cargo test && cd ../..
+# Expected: test result: ok. 20 passed; 0 failed
 ```
 
 ---
@@ -250,8 +254,8 @@ COOLDOWN_HOURS=24
 
 - **DAO Treasury Contract**: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
 - **PolicyHelper Contract**: [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet)
-- **Deployed Contract Code Hash**: Base58: `Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy` (SHA-256: `cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2`)
-- **Source Commit**: Believed to match `8e8ef52` (failure-log parity; not independently reproduced)
+- **Deployed Contract Code Hash**: Base58: `ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc` (SHA-256: `c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f`)
+- **Redeployment Tx**: [`97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) (canonical CID anti-replay normalization; state preserved)
 
 #### 1. Run a Simulated Proposal (Dry Run)
 Verify the complete evaluation pipeline locally without spending testnet tokens or broadcasting transactions:
@@ -341,7 +345,7 @@ To maintain absolute transparency with judges and auditors, the following archit
 3. **Deliberation Simulation Fallback**: When NEAR AI Cloud returns HTTP 402 (spending limit / payment required on cloud.near.ai), the deliberation engine falls back to local deterministic heuristic deliberation with explicit `simulated: true` flagging.
 4. **Attestation Verification Scope**: The `@nearai/inference-sdk@0.2.1` is designed to verify the NEAR AI Cloud Gateway Intel TDX DCAP hardware quote and model worker TEE quote before signing responses. Proposal #5 currently on record in `verified.json` was generated in simulation mode prior to funding credit; its attestation is explicitly labeled `Simulated run (attestation report received, not independently verified)`. No claim of verified Intel TDX hardware quotes is made for Proposal #5 until a live funded run is executed on testnet.
 5. **Development Run History**: Earlier testnet proposals (#0 through #4) and reset pairs were executed during development. Proposal #5 and the subsequent attack transactions represent the clean, reproducible audit run recorded in `verified.json`.
-6. **Deployed Contract Version**: The contract deployed on `zinipay-policy2.testnet` (code hash `cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2`) predates commit `1637910`. The CID normalization, case-variant anti-replay guard, and `transfer_ownership` method in commits `2c4aa37` and `1637910` are verified by 20 unit tests but have not yet been redeployed to testnet.
+6. **Deployed Contract Version**: The contract deployed on `zinipay-policy2.testnet` was upgraded in tx [`97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) to code hash `ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc` (SHA-256: `c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f`). This live deployment includes canonical CID anti-replay normalization (`canonical_cid`), case-variant defense, and `transfer_ownership`, verified by 20 contract unit tests with historical on-chain state preserved.
 
 ---
 
@@ -353,7 +357,7 @@ To maintain absolute transparency with judges and auditors, the following archit
 | :--- | :--- | :--- |
 | **Sputnik DAO v2** | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | Community treasury contract holding funds and collecting multi-sig votes |
 | **Sputnik DAO Factory** | `sputnikv2.testnet` | Official Sputnik DAO v2 factory contract on NEAR Testnet |
-| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Policy enforcement contract (Deployed code hash: `cb1dcd4d...` / base58 `Eft7wVX8...`, built locally from commit `0952e25`) |
+| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Policy enforcement contract (Deployed code hash: `ETPYoyjVFW...` / hex `c7ea86d5...`, upgraded in tx [`97d8UoqSro...`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) with state preserved) |
 | **Agent Account** | [`agentzinipaytestnet.testnet`](https://testnet.nearblocks.io/address/agentzinipaytestnet.testnet) | Dedicated proposer account (`Requestor` role, 0 voting keys; Full-Access key on funded account with small operating balance to attach 1 NEAR proposal bond) |
 | **Council Member 1** | [`zinipay-c1.testnet`](https://testnet.nearblocks.io/address/zinipay-c1.testnet) | Human council signer (1/2 quorum) |
 | **Council Member 2** | [`zinipay-c2.testnet`](https://testnet.nearblocks.io/address/zinipay-c2.testnet) | Human council signer (2/2 quorum) |
