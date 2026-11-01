@@ -155,23 +155,44 @@ impl PolicyHelper {
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(Gas::from_tgas(5))
-                    .on_release_done(norm_cid, recipient)
+                    .on_release_done(norm_cid, recipient, amount)
             )
     }
 
     /// Callback invoked after the payout transfer promise completes.
-    /// If the transfer succeeded, logs confirmation and awards on-chain reputation.
+    /// Emits a single structured JSON log containing the settlement outcome for audit indexing.
+    /// If the transfer succeeded, awards on-chain reputation.
     /// If the transfer failed, unmarks the CID and clears the cooldown automatically.
     #[private]
     pub fn on_release_done(
         &mut self,
         cid: String,
         recipient: AccountId,
+        amount: U128,
         #[callback_result] call_result: Result<(), PromiseError>,
     ) -> bool {
         let norm_cid = normalize_cid(&cid);
+        let current_rep = self.reputation_scores.get(&recipient).unwrap_or(0);
+        let tier = if current_rep >= 60 {
+            "Gold"
+        } else if current_rep >= 20 {
+            "Silver"
+        } else {
+            "Bronze"
+        };
+        let effective_cap = self.get_effective_cap(Some(recipient.clone()), None);
+
         match call_result {
             Ok(_) => {
+                let outcome_log = near_sdk::serde_json::json!({
+                    "event": "settled",
+                    "recipient": recipient.to_string(),
+                    "amount": amount.0.to_string(),
+                    "cid": norm_cid,
+                    "tier": tier,
+                    "cap": effective_cap.to_string(),
+                });
+                env::log_str(&outcome_log.to_string());
                 env::log_str(&format!(
                     "Release payout confirmed for recipient {} on CID {}",
                     recipient, norm_cid
@@ -185,6 +206,15 @@ impl PolicyHelper {
                 true
             }
             Err(_) => {
+                let outcome_log = near_sdk::serde_json::json!({
+                    "event": "rolled_back",
+                    "recipient": recipient.to_string(),
+                    "amount": amount.0.to_string(),
+                    "cid": norm_cid,
+                    "tier": tier,
+                    "cap": effective_cap.to_string(),
+                });
+                env::log_str(&outcome_log.to_string());
                 env::log_str(&format!(
                     "Transfer promise failed for recipient {}. Automatically rolling back CID {} and cooldown.",
                     recipient, norm_cid
@@ -584,20 +614,27 @@ mod tests {
         let (mut contract, _, dao) = setup_contract();
         let recipient: AccountId = "bob.testnet".parse().unwrap();
         let cid = "QmSuccessCid".to_string();
+        let amount = U128(2_000_000_000_000_000_000_000_000);
 
-        let ctx = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
         testing_env!(ctx.build());
-        contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
+        contract.release(recipient.clone(), amount, cid.clone());
 
         // Context for callback: predecessor is current contract
         let ctx_self = get_context("policy.testnet".parse().unwrap(), 0, 1_005_000_000_000);
         testing_env!(ctx_self.build());
 
         let ok_result: Result<(), PromiseError> = Ok(());
-        let res = contract.on_release_done(cid.clone(), recipient.clone(), ok_result);
+        let res = contract.on_release_done(cid.clone(), recipient.clone(), amount, ok_result);
         assert!(res);
         assert!(contract.cid_used(cid));
         assert_eq!(contract.get_reputation(recipient), 5);
+
+        // Verify structured JSON event log was emitted
+        let logs = env::logs();
+        assert!(logs.iter().any(|l| {
+            l.contains("\"event\":\"settled\"") && l.contains("\"recipient\":\"bob.testnet\"") && l.contains("\"tier\":\"Bronze\"")
+        }));
     }
 
     #[test]
@@ -605,10 +642,11 @@ mod tests {
         let (mut contract, _, dao) = setup_contract();
         let recipient: AccountId = "nonexistent.testnet".parse().unwrap();
         let cid = "QmFailedTransferCid".to_string();
+        let amount = U128(2_000_000_000_000_000_000_000_000);
 
-        let ctx = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_000_000_000_000);
+        let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
         testing_env!(ctx.build());
-        contract.release(recipient.clone(), U128(2_000_000_000_000_000_000_000_000), cid.clone());
+        contract.release(recipient.clone(), amount, cid.clone());
         assert!(contract.cid_used(cid.clone()));
 
         // Context for callback: predecessor is current contract
@@ -616,10 +654,16 @@ mod tests {
         testing_env!(ctx_self.build());
 
         let err_result: Result<(), PromiseError> = Err(PromiseError::Failed);
-        let res = contract.on_release_done(cid.clone(), recipient.clone(), err_result);
+        let res = contract.on_release_done(cid.clone(), recipient.clone(), amount, err_result);
         assert!(!res);
         // State must be rolled back: CID unburned, cooldown cleared!
         assert!(!contract.cid_used(cid.clone()));
+
+        // Verify structured JSON rollback event log was emitted
+        let logs = env::logs();
+        assert!(logs.iter().any(|l| {
+            l.contains("\"event\":\"rolled_back\"") && l.contains("\"recipient\":\"nonexistent.testnet\"")
+        }));
 
         // Now the same CID can be tried again because rollback cleared it
         let ctx2 = get_context(dao.clone(), 2_000_000_000_000_000_000_000_000, 1_010_000_000_000);
@@ -646,7 +690,7 @@ mod tests {
         let ctx_self = get_context("policy.testnet".parse().unwrap(), 0, 1_005_000_000_000);
         testing_env!(ctx_self.build());
         let ok_result: Result<(), PromiseError> = Ok(());
-        let res = contract.on_release_done("QmCID_Cap".to_string(), recipient.clone(), ok_result);
+        let res = contract.on_release_done("QmCID_Cap".to_string(), recipient.clone(), U128(2_000_000_000_000_000_000_000_000), ok_result);
         assert!(res);
 
         // Rep should cap at 19 (Bronze ceiling) and not jump to 23 (Silver) without council vote
@@ -763,16 +807,18 @@ mod tests {
     fn test_check_policy_case_variant_cid_fails() {
         let (mut contract, _, dao) = setup_contract();
         let recipient: AccountId = "alice.testnet".parse().unwrap();
+        let other: AccountId = "bob.testnet".parse().unwrap();
         let amount = U128(5_000_000_000_000_000_000_000_000);
         let cid = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi".to_string();
 
         let ctx = get_context(dao.clone(), amount.0, 1_000_000_000_000);
         testing_env!(ctx.build());
-        contract.release(recipient.clone(), amount, cid);
+        contract.release(recipient, amount, cid);
 
-        // check_policy with uppercase variant should panic
+        // check_policy with uppercase variant for a different recipient should panic on CID duplicate,
+        // rather than being masked by alice's unelapsed cooldown
         let upper_cid = "BAFYBEIGDYRZT5SFP7UDM7HU76UH7Y26NF3EFUYLQABF3OCLGTQY55FBZDI".to_string();
-        contract.check_policy(recipient, amount, upper_cid);
+        contract.check_policy(other, amount, upper_cid);
     }
 
     #[test]

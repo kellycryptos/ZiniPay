@@ -306,12 +306,23 @@ async function main() {
   const deliverable = contributorPr || (onChainProposal?.description ? onChainProposal.description.match(/Deliverable:\s*([^\s\|]+)/)?.[1] : undefined);
   const prTitle = deliverable;
 
-  // Read deliberation mode from run output
-  const isSimulatedDeliberation = /\[SIMULATION\]/i.test(content) || /dry-run mode/i.test(content);
-  const deliberationMode = isSimulatedDeliberation ? 'simulated' : 'live';
-  const summary = isSimulatedDeliberation
-    ? 'Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.'
-    : 'Deliberation: live model consensus. Multi-sig human approval completed on Sputnik DAO.';
+  // Read deliberation mode & attestation verification from run output or on-chain description
+  const fullTextToInspect = `${content}\n${onChainProposal?.description || ''}`;
+  const sdkVerifiedMatch = /response signature verified \(SDK 0\.2\.1\)/i.test(fullTextToInspect);
+  const completionIdMatch = fullTextToInspect.match(/(?:Completion ID|id=)[:\s]*([a-zA-Z0-9_\-\.]+)/i);
+  const signatureKindMatch = fullTextToInspect.match(/(?:Signature Kind|kind=)[:\s]*(provider_tee|gateway)/i);
+
+  const completionId = sdkVerifiedMatch && completionIdMatch ? completionIdMatch[1] : undefined;
+  const signatureKind = sdkVerifiedMatch && signatureKindMatch ? signatureKindMatch[1] : (sdkVerifiedMatch ? 'provider_tee' : undefined);
+  const attestationVerified = Boolean(sdkVerifiedMatch && completionId);
+
+  const isSimulatedDeliberation = !attestationVerified && (/\[SIMULATION\]/i.test(content) || /dry-run mode/i.test(content));
+  const deliberationMode = attestationVerified ? 'verified_sdk_0_2_1' : (isSimulatedDeliberation ? 'simulated' : 'live');
+  const summary = attestationVerified
+    ? `Deliberation: gateway and model attestation checked, response signature verified (SDK 0.2.1, kind: ${signatureKind}). Multi-sig human approval completed on Sputnik DAO.`
+    : (isSimulatedDeliberation
+      ? 'Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.'
+      : 'Deliberation: live model consensus. Multi-sig human approval completed on Sputnik DAO.');
 
   // Read vote counts from on-chain proposal or run output
   let votes = undefined;
@@ -340,17 +351,33 @@ async function main() {
     }
   }
 
-  // Query on-chain reputation and effective cap for recipient
+  // Parse reputation score and tier at payout execution time from the run output:
   let reputationScore = undefined;
   let tier = undefined;
   let effectiveCapNear = undefined;
-  if (recipient) {
+  let isCurrentTier = false;
+
+  // Check run output for score/tier at payout execution time:
+  const repMatch = content.match(/On-chain reputation score:\s*(\d+)\s*pts/i);
+  const capMatch = content.match(/(Bronze|Silver|Gold)\s+Tier\s+Cap:\s*([0-9\.]+)\s*NEAR/i);
+
+  if (repMatch) {
+    reputationScore = parseInt(repMatch[1], 10);
+    tier = capMatch ? capMatch[1] : (reputationScore >= 60 ? 'Gold' : reputationScore >= 20 ? 'Silver' : 'Bronze');
+    if (capMatch) {
+      effectiveCapNear = parseFloat(capMatch[2]).toFixed(1);
+    } else {
+      effectiveCapNear = tier === 'Gold' ? '20.0' : tier === 'Silver' ? '15.0' : '10.0';
+    }
+  } else if (recipient) {
+    // If not found in run output, query on-chain at record time and explicitly label as "current"
     try {
       console.log(`Querying on-chain policy contract for ${recipient}...`);
       const score = await getPolicyContractView('zinipay-policy2.testnet', 'get_reputation', { account: recipient });
       if (typeof score === 'number') {
         reputationScore = score;
         tier = score >= 60 ? 'Gold' : score >= 20 ? 'Silver' : 'Bronze';
+        isCurrentTier = true;
       }
       const capYocto = await getPolicyContractView('zinipay-policy2.testnet', 'get_effective_cap', { recipient: recipient });
       if (capYocto) {
@@ -358,13 +385,6 @@ async function main() {
       }
     } catch (err) {
       console.warn(`Could not query policy contract view for ${recipient}:`, err.message);
-    }
-  }
-  if (reputationScore === undefined) {
-    const repMatch = content.match(/On-chain reputation score:\s*(\d+)\s*pts/i);
-    if (repMatch) {
-      reputationScore = parseInt(repMatch[1], 10);
-      tier = reputationScore >= 60 ? 'Gold' : reputationScore >= 20 ? 'Silver' : 'Bronze';
     }
   }
 
@@ -404,6 +424,7 @@ async function main() {
       reputationQualified: true,
       reputationScore: reputationScore,
       tier: tier,
+      ...(isCurrentTier ? { isCurrentTier: true } : {}),
     };
   }
 
@@ -467,8 +488,12 @@ async function main() {
       if (proposer) enriched.proposer = proposer;
       enriched.deliberationMode = deliberationMode;
       enriched.summary = summary;
+      if (completionId) enriched.completionId = completionId;
+      if (signatureKind) enriched.signatureKind = signatureKind;
+      if (attestationVerified) enriched.attestationVerified = true;
       if (reputationScore !== undefined) enriched.reputationScore = reputationScore;
       if (tier) enriched.tier = tier;
+      if (isCurrentTier) enriched.isCurrentTier = true;
       if (effectiveCapNear) enriched.effectiveCapNear = effectiveCapNear;
       if (votes) enriched.votes = votes;
       if (policyGates) enriched.policy = policyGates;
@@ -478,11 +503,17 @@ async function main() {
   }
 
   // Disclosures required for audit integrity
-  const disclosures = [
-    'Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).',
-    'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
-    'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
-  ];
+  const disclosures = attestationVerified
+    ? [
+        `Deliberation cryptographically verified via @nearai/inference-sdk@0.2.1: completion ID: ${completionId}, signatureKind: ${signatureKind}.`,
+        'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
+        'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
+      ]
+    : [
+        'Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).',
+        'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
+        'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
+      ];
 
   // 5. Output verified payload
   const verifiedPayload = {
@@ -490,6 +521,9 @@ async function main() {
     network: 'testnet',
     sourceLog: inputFile,
     viaPolicyContract,
+    ...(completionId ? { completionId } : {}),
+    ...(signatureKind ? { signatureKind } : {}),
+    ...(attestationVerified ? { attestationVerified: true } : {}),
     transactions: resolvedTxs,
     blockedAttacks: attacks,
     disclosures,

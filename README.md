@@ -19,25 +19,28 @@ ZiniPay is a fail-closed execution layer that enables autonomous AI agents to ev
 
 Reviewers and judges can verify the entire codebase and live testnet deployment in under 60 seconds with **zero private keys, zero wallet setup, and no `.env` required**:
 
+> 📋 **Developer Experience & Friction Log**: See [`docs/DEVEX.md`](docs/DEVEX.md) for 13 documented NEAR protocol friction points, exact error logs, and architectural solutions encountered during development.
+
 ```bash
-# 1. Install dependencies (~10s)
+# 1. Install dependencies (~10s, Node.js >= 24.22.1 required by @nearai/inference-sdk)
 npm install
 
-# 2. Run agent unit test suite (fail-closed logic, anti-replay, 1Click quote API) (~8s)
+# 2. Run agent unit test suite (fail-closed logic, anti-replay, TEE attestation verification, 1Click quote API) (~8s)
 npm test --prefix agent
-# Expected: All agent tests completed successfully! (12 passing tests)
+# Expected: All agent tests completed successfully! (14 passing tests)
 
-# 3. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker; verified in CI)
+# 3. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker)
 cd contracts/policy-helper && cargo test && cd ../..
-# Expected: test result: ok. 12 passed; 0 failed (see .github/workflows/build-wasm.yml for CI runs)
+# Expected: test result: ok. 20 passed; 0 failed
 
 # 4. Run keyless on-chain testnet verification suite (~20s)
 npm run verify:testnet
-# Expected: 18 PASSED / 0 UNVERIFIED / 0 FAILED
+# Expected: 19 PASSED / 0 UNVERIFIED / 0 FAILED
 # Verifies:
 #   - Sputnik DAO v2 account active and council multi-sig quorum (>= 2 human signers)
 #   - Agent proposer isolation (Requestor role only, 0 voting keys)
 #   - Proposal #5 status is Approved and targets PolicyHelper::release
+#   - Model review attestation receipt / status recorded
 #   - PolicyHelper smart contract active and WASM code hash verified
 #   - PolicyHelper bound strictly to DAO treasury
 #   - Contributor reputation score is 25 (Silver tier)
@@ -45,6 +48,14 @@ npm run verify:testnet
 #   - Deliverable CID burned on-chain (cid_used: true)
 #   - 4 confirmed testnet transaction receipts (proposal creation, 2 council approvals, promotion)
 #   - 3 real on-chain attack transactions reverted with exact contract panic assertions (replay, over-cap, unauthorized)
+
+# 5. Run independent proposal verifier (cross-references Sputnik DAO proposal vs PolicyHelper payout + model review receipt) (~5s)
+npm run verify:proposal -- 5
+# Expected: Displays Sputnik DAO on-chain proposal record alongside cryptographic review attestation
+# (completion ID and signatureKind from @nearai/inference-sdk@0.2.1).
+# Decodes proposed parameters (recipient, amount, CID), validates 2/2 council quorum,
+# confirms tier cap compliance (15N Silver), and matches on-chain settlement receipt.
+# Note: Test fail-closed rejection on non-release proposals via `npm run verify:proposal -- 0`.
 ```
 
 ---
@@ -102,7 +113,7 @@ On NEAR Protocol, Access Keys are strictly separated into `FullAccess` and `Func
 
 In Sputnik DAO v2, calling `add_proposal` requires attaching the `proposal_bond` configured in the DAO's policy (default 1 NEAR = 10^24 yoctoNEAR) to deter proposal spam:
 - **Dedicated Funded Proposer Account (Standard Production Architecture)**: The agent operates its own dedicated account (e.g., `agentzinipaytestnet.testnet`) holding a Full-Access key, funded with a small operating float (e.g., 2–5 NEAR) strictly to pay proposal bonds. Crucially, the agent holds **zero access keys or signing permissions on the DAO treasury contract itself**, and has 0 council voting rights (`Requestor` role only). Compromising the agent cannot drain treasury funds; it only exposes the agent's minimal bond float (which is refunded upon proposal resolution per DAO policy).
-- **0-Bond Policy for Requestor Role (Alternative Architecture)**: If a DAO explicitly configures its policy with `proposal_bond = "0"` for the `Requestor` role, the agent can use a restricted `FunctionCall` key scoped strictly to `add_proposal`. ZiniPay supports both models.
+- **0-Bond Policy for Requestor Role (Alternative Architecture)**: If a DAO explicitly configures its policy with `proposal_bond = "0"` for the `Requestor` role, the agent can use a restricted `FunctionCall` key scoped strictly to `add_proposal`. Note that zero-bond proposal queues are not mitigated on-chain: proposal spam is possible because filing proposals incurs zero bond for authorized requestors. However, the human multi-sig council retains complete discretion to review deliverables and reject (`VoteReject`) any spam proposals.
 
 ---
 
@@ -173,8 +184,9 @@ In accordance with NEAR HACKATHON Q-005 (disclosure of libraries, templates, and
 - **Smart Contracts (Rust)**:
   - [`near-sdk`](https://crates.io/crates/near-sdk) `v5.1.0` (with `legacy` and `unit-testing` features) for contract state, borsh serialization, cross-contract promises, callbacks, and testing environments.
 - **Agent Layer (TypeScript & Node.js)**:
+  - [`@nearai/inference-sdk`](https://github.com/nearai/inference-sdk) (`0.2.1`) for hardware-enforced TEE gateway & model attestation and cryptographic response verification (`client.verifyResponse`).
   - [`near-api-js`](https://github.com/near/near-api-js) (`^5.0.0`) for NEAR RPC communication, key management, view calls, and Sputnik DAO transaction broadcasting.
-  - [`openai`](https://github.com/openai/openai-node) (`^4.70.0`) configured for the [NEAR AI Cloud](https://cloud.near.ai) OpenAI-compatible inference endpoint (`https://cloud-api.near.ai/v1`).
+  - [`openai`](https://github.com/openai/openai-node) (`^4.70.0`) fallback client configured for OpenAI-compatible endpoints.
   - [`zod`](https://zod.dev) (`^4.6.7`) for strict schema enforcement, prompt injection defense, and fail-closed structured parsing.
   - [`commander`](https://github.com/tj/commander.js) (`^12.1.0`), [`chalk`](https://github.com/chalk/chalk) (`^5.3.0`), [`axios`](https://axios-http.com) (`^1.7.9`), [`lowdb`](https://github.com/typicode/lowdb) (`^7.0.1`), and [`dotenv`](https://github.com/motdotla/dotenv).
 - **Frontend & Dashboard (React & Vite)**:
@@ -184,7 +196,7 @@ In accordance with NEAR HACKATHON Q-005 (disclosure of libraries, templates, and
 - **Protocols & External APIs**:
   - **Sputnik DAO v2** (`sputnikv2.testnet` / `near-daos/sputnik-dao-contract`): standard multi-sig treasury governance protocol.
   - **NEAR Intents 1Click API** (`https://1click.chaindefuser.com/v0/quote`): Defuse cross-chain solver quotes and atomic execution.
-  - **NEAR AI Cloud** (`https://cloud-api.near.ai/v1`): decentralized AI inference for multi-agent deliberation.
+  - **NEAR AI Cloud** (`https://cloud-api.near.ai/v1`): decentralized AI inference with hardware TEE attestation for multi-agent deliberation.
   - **GitHub REST API v3**: deliverable pull request status and recipient directive parsing.
 - **Templates & Boilerplate**: None. All smart contract code, agent logic, UI components, and test scripts were written specifically for ZiniPay.
 - **AI Coding Assistance**: Developed with the assistance of AI coding agents (Antigravity / Claude / Codex) for rapid prototyping, contract hardening, test suite generation, and verification scripts, compliant with hackathon rule Q-005.
@@ -195,8 +207,8 @@ In accordance with NEAR HACKATHON Q-005 (disclosure of libraries, templates, and
 ## Getting Started
 
 ### Prerequisites
-- **Node.js**: >= 18.0.0
-- **npm**: >= 9.0.0
+- **Node.js**: >= 24.22.1 (required for `@nearai/inference-sdk@0.2.1` gateway/model verification; `engines` field set in `package.json`)
+- **npm**: >= 10.0.0
 - **Rust Toolchain**: Optional, required only for recompiling the smart contract (`cargo` with `wasm32-unknown-unknown` target)
 
 ### Installation
@@ -302,14 +314,21 @@ To maintain complete transparency with judges and evaluators regarding the hacka
   - **October 30, 2026**: Deployment of `zinipay-policy2.testnet` (code hash `cb1dcd4d...`), audit run executing Proposal #5 (FunctionCall into `PolicyHelper::release`), 2-of-2 council quorum approval, contributor Silver tier promotion, and 3 blocked on-chain attack transactions (replay CID, over-cap spend, unauthorized caller).
   - **November 1, 2026**:
     - **Keyless On-Chain Verification Suite**: Created zero-credential verification suite (`scripts/verify-testnet.mjs`) checking Sputnik DAO roles, Proposal #5 execution status, PolicyHelper WASM code hash, reputation tier scaling (15N Silver cap), deliverable CID burning, and 3 on-chain blocked attack transaction receipts (18 passing checks).
-    - **CI Automated Contract Testing**: Added automated Rust contract unit tests (`cargo test`) and agent test suites to GitHub Actions workflow (`.github/workflows/build-wasm.yml`).
+    - **Contract & Agent Test Suites**: Maintained comprehensive test suites across the Rust smart contract (20 unit tests) and TypeScript agent layer (14 unit tests) with local test runner support.
     - **Zero-Fabrication Landing Page & Hero Receipt**: Redesigned landing page for Social Money track with matched `#121721` canvas, Fraunces display typography, dynamic physical rubber stamp (`PAID` on 2/2 quorum), and strict schema-backed receipt reading directly from on-chain RPC and run logs with zero hardcoded fallbacks.
     - **Data Pipeline Fail-Safe**: Hardened `scripts/record-verified.mjs` and `LandingHero.tsx` with strict selection (`kind === "payout"`, `status === "Approved"`) and tested automated fallback to `SAMPLE` receipt with stamp suppression when data is missing.
     - **Contract-Level CID Normalization & Case-Variant Anti-Replay Guard**:
       - Implemented `normalize_cid` (`cid.trim().to_ascii_lowercase()`) across all CID operations in `PolicyHelper` Rust contract (`release`, `check_policy`, `record_release`, `unburn_cid`, `cid_used`, and `on_release_done`) and TypeScript agent layer.
-      - Added 3 new Rust unit tests verifying that case-variant deliverable strings (e.g., `KELLYCRYPTOS/ZINIPAY#1` vs `kellycryptos/zinipay#1`) fail closed with `"CID already used — duplicate release attempt blocked"`, expanding the contract test suite to 15 passing tests.
-      - Added on-chain Attack Scenario 4 (Case-Variant CID Replay) to `scripts/e2e-testnet.mjs` and automated parsing to `scripts/record-verified.mjs`.
-    - **Offline-Resilient Intents Test Suite**: Hardened `agent/test/intents-live.test.ts` to gracefully handle external 1Click API rate limiting/outages without crashing CI builds.
+      - Added 8 new Rust unit tests (expanding the contract test suite from 12 to 20 passing unit tests) verifying case-variant deliverable rejection, `check_policy` anti-replay, and ownership transfer governance.
+      - Added on-chain Attack Scenario 4 (Case-Variant CID Replay) to `scripts/e2e-testnet.mjs` (added, not yet run on testnet pending contract redeployment).
+    - **Contract Admin Governance & Outcome Logs**:
+      - Added `transfer_ownership(new_owner: AccountId)` guarded strictly by `assert_owner()`, enabling one-way transfer of admin powers to `zinipay-demo.sputnikv2.testnet`.
+      - Added structured JSON logs emitted by `on_release_done` (`event: "settled"` or `"rolled_back"` with recipient, amount, canonical CID, tier, and cap), verified by 20 unit tests.
+    - **Independent Proposal Verifier**:
+      - Created `scripts/verify-proposal.mjs` (`npm run verify:proposal -- <id>`) allowing judges to independently verify any proposal on Sputnik DAO v2 against `PolicyHelper` state and on-chain settlement receipts with zero private keys.
+    - **Developer Experience Friction Log**:
+      - Authored [`docs/DEVEX.md`](docs/DEVEX.md) documenting 13 real technical hurdles, exact errors, and solutions verified from repository history and terminal logs.
+    - **Offline-Resilient Intents Test Suite**: Hardened `agent/test/intents-live.test.ts` to gracefully handle external 1Click API rate limiting/outages without crashing test runners.
 
 ---
 
@@ -322,6 +341,7 @@ To maintain absolute transparency with judges and auditors, the following archit
 3. **Deliberation Simulation Fallback**: When NEAR AI Cloud returns HTTP 402 (spending limit / payment required on cloud.near.ai), the deliberation engine falls back to local deterministic heuristic deliberation with explicit `simulated: true` flagging.
 4. **Attestation Verification Scope**: NEAR AI Cloud TEE attestation reports are retrieved with client-generated 32-byte nonces. The attestation report is logged and checked for structure, but is not yet independently verified against Intel TDX root CA certificates on-chain.
 5. **Development Run History**: Earlier testnet proposals (#0 through #4) and reset pairs were executed during development. Proposal #5 and the subsequent attack transactions represent the clean, reproducible audit run recorded in `verified.json`.
+6. **Deployed Contract Version**: The contract deployed on `zinipay-policy2.testnet` (code hash `cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2`) predates commit `1637910`. The CID normalization, case-variant anti-replay guard, and `transfer_ownership` method in commits `2c4aa37` and `1637910` are verified by 20 unit tests but have not yet been redeployed to testnet.
 
 ---
 
@@ -333,7 +353,7 @@ To maintain absolute transparency with judges and auditors, the following archit
 | :--- | :--- | :--- |
 | **Sputnik DAO v2** | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | Community treasury contract holding funds and collecting multi-sig votes |
 | **Sputnik DAO Factory** | `sputnikv2.testnet` | Official Sputnik DAO v2 factory contract on NEAR Testnet |
-| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Policy enforcement contract (Code hash: `cb1dcd4d021bc94c7a3a41ca3985e1d0725fb058db75c47e85e5dc6d98b36ce2`) |
+| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Policy enforcement contract (Deployed code hash: `cb1dcd4d...` / base58 `Eft7wVX8...`, built locally from commit `0952e25`) |
 | **Agent Account** | [`agentzinipaytestnet.testnet`](https://testnet.nearblocks.io/address/agentzinipaytestnet.testnet) | Dedicated proposer account (`Requestor` role, 0 voting keys; Full-Access key on funded account with small operating balance to attach 1 NEAR proposal bond) |
 | **Council Member 1** | [`zinipay-c1.testnet`](https://testnet.nearblocks.io/address/zinipay-c1.testnet) | Human council signer (1/2 quorum) |
 | **Council Member 2** | [`zinipay-c2.testnet`](https://testnet.nearblocks.io/address/zinipay-c2.testnet) | Human council signer (2/2 quorum) |

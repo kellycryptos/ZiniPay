@@ -365,7 +365,9 @@ export function ReleaseReceiptCard({
         {/* Contributor Tier & Policy Cap (rendered only if recorded) */}
         {proposal.policy?.tier && (
           <div className="ledger-row">
-            <span className="text-[var(--text-receipt-muted)]">Contributor tier</span>
+            <span className="text-[var(--text-receipt-muted)]">
+              {proposal.policy.isCurrentTier ? 'Current tier' : 'Contributor tier'}
+            </span>
             <div className="flex items-center gap-1.5 font-mono text-xs">
               <span className="font-semibold text-[var(--text-receipt)]">{proposal.policy.tier}</span>
               {typeof proposal.policy.reputationScore === 'number' && (
@@ -373,6 +375,9 @@ export function ReleaseReceiptCard({
               )}
               {proposal.policy.capLimit && (
                 <span className="text-[var(--text-receipt-muted)]">· Cap {proposal.policy.capLimit}</span>
+              )}
+              {proposal.policy.isCurrentTier && (
+                <span className="text-[var(--text-receipt-muted)] text-[10px]">(current)</span>
               )}
             </div>
           </div>

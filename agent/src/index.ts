@@ -9,10 +9,21 @@
  *   - Constrained Proposal Execution on Sputnik DAO v2 (Requestor Role)
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+
+// Load .env from cwd or agent/.env
+const agentEnvPath = path.resolve(process.cwd(), 'agent', '.env');
+if (fs.existsSync(agentEnvPath)) {
+  dotenv.config({ path: agentEnvPath });
+}
+dotenv.config();
+
 import { Command } from 'commander';
 import chalk from 'chalk';
 import axios from 'axios';
+import { KeyPair } from 'near-api-js';
 
 import { SputnikDAO, type ProposalKind } from './dao.js';
 import { PolicyEngine, type PolicyConfig, normalizeDeliverable } from './policy.js';
@@ -78,6 +89,100 @@ function formatNearAmount(yocto: bigint): string {
   return `${whole}.${fracStr} NEAR`;
 }
 
+async function queryAgentKeyType(
+  nodeUrl: string,
+  accountId: string,
+  privateKey?: string
+): Promise<string> {
+  try {
+    let publicKey: string | null = null;
+    if (privateKey && privateKey.startsWith('ed25519:')) {
+      try {
+        const kp = KeyPair.fromString(privateKey as `ed25519:${string}`);
+        publicKey = kp.getPublicKey().toString();
+      } catch {
+        // mock or malformed private key
+      }
+    }
+
+    if (publicKey) {
+      try {
+        const res = await axios.post(
+          nodeUrl,
+          {
+            jsonrpc: '2.0',
+            id: 'agent-key-query',
+            method: 'query',
+            params: {
+              request_type: 'view_access_key',
+              finality: 'final',
+              account_id: accountId,
+              public_key: publicKey,
+            },
+          },
+          { timeout: 6000 }
+        );
+        const perm = res.data?.result?.permission;
+        if (perm === 'FullAccess') {
+          return 'Full-Access Key';
+        }
+        if (perm && typeof perm === 'object' && perm.FunctionCall) {
+          const fc = perm.FunctionCall;
+          const methods =
+            Array.isArray(fc.method_names) && fc.method_names.length > 0
+              ? fc.method_names.join(', ')
+              : 'all';
+          const allowance = fc.allowance
+            ? `${SputnikDAO.formatNear(fc.allowance)} NEAR`
+            : 'unlimited';
+          return `Function-Call Key (receiver ${fc.receiver_id}, methods ${methods}, allowance ${allowance})`;
+        }
+      } catch {
+        // fall through to list query
+      }
+    }
+
+    const listRes = await axios.post(
+      nodeUrl,
+      {
+        jsonrpc: '2.0',
+        id: 'agent-keys-query',
+        method: 'query',
+        params: {
+          request_type: 'view_access_key_list',
+          finality: 'final',
+          account_id: accountId,
+        },
+      },
+      { timeout: 6000 }
+    );
+
+    const keys = listRes.data?.result?.keys;
+    if (Array.isArray(keys) && keys.length > 0) {
+      const match = publicKey ? keys.find((k: any) => k.public_key === publicKey) : keys[0];
+      const perm = match?.access_key?.permission;
+      if (perm === 'FullAccess') {
+        return 'Full-Access Key';
+      }
+      if (perm && typeof perm === 'object' && perm.FunctionCall) {
+        const fc = perm.FunctionCall;
+        const methods =
+          Array.isArray(fc.method_names) && fc.method_names.length > 0
+            ? fc.method_names.join(', ')
+            : 'all';
+        const allowance = fc.allowance
+          ? `${SputnikDAO.formatNear(fc.allowance)} NEAR`
+          : 'unlimited';
+        return `Function-Call Key (receiver ${fc.receiver_id}, methods ${methods}, allowance ${allowance})`;
+      }
+    }
+
+    return 'key type unknown (RPC unavailable)';
+  } catch {
+    return 'key type unknown (RPC unavailable)';
+  }
+}
+
 // ─── Lazy Config Helper ──────────────────────────────────────────────────────
 
 function getConfig(dryRun: boolean = false) {
@@ -105,7 +210,7 @@ function getConfig(dryRun: boolean = false) {
     dbPath: process.env.DB_PATH ?? './zinipay.json',
     openaiBaseUrl: process.env.OPENAI_BASE_URL ?? 'https://cloud-api.near.ai/v1',
     openaiApiKey: getEnv('OPENAI_API_KEY', 'mock-key-for-dry-run'),
-    openaiModel: process.env.OPENAI_MODEL ?? 'meta-llama/Llama-3.3-70B-Instruct',
+    openaiModel: process.env.OPENAI_MODEL ?? 'z-ai/glm-5.3-flash',
     intentsApiUrl: process.env.INTENTS_API_URL ?? 'https://1click.chaindefuser.com',
   };
 }
@@ -353,6 +458,13 @@ async function runPropose(opts: ProposeOpts) {
 
   console.log(`  Inspector Agent:   Score ${deliberation.inspector.score}/100 — "${deliberation.inspector.critique}"`);
   console.log(`  Risk Arbiter:      Risk ${deliberation.riskArbiter.riskLevel} — "${deliberation.riskArbiter.policyNotes}"`);
+  if (deliberation.attestation?.verified && deliberation.attestation.completionId) {
+    console.log(chalk.green(`  Attestation Proof: Gateway & model verified (SDK 0.2.1) | Kind: ${deliberation.attestation.signatureKind ?? 'provider_tee'} | ID: ${deliberation.attestation.completionId}`));
+  } else if (deliberation.simulated) {
+    console.log(chalk.yellow(`  Attestation Proof: [SIMULATION] (local dry-run / no live model review)`));
+  } else {
+    console.log(`  Attestation Proof: Attestation report received (not independently verified)`);
+  }
   console.log(`  Consensus Verdict: ${deliberation.consensusApproved ? chalk.green('APPROVED') : chalk.red('REJECTED')} (Confidence: ${deliberation.overallConfidence}%)`);
 
   if (!deliberation.consensusApproved) {
@@ -468,10 +580,7 @@ async function runPropose(opts: ProposeOpts) {
   }
 
   if (opts.dryRun) {
-    const isZeroBond = cfg.proposalBond === '0';
-    const keyTypeDesc = isZeroBond
-      ? 'Function-Call Key (0-Bond Role)'
-      : 'Full-Access Key (Dedicated Proposer Account)';
+    const keyTypeDesc = await queryAgentKeyType(cfg.nodeUrl, cfg.accountId, cfg.privateKey);
 
     console.log(chalk.yellow('\n  ┌─────────────────────────────────────────────────────────────┐'));
     console.log(chalk.yellow('  │                 THREE-WAY MATCH PASS REPORT                 │'));

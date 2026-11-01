@@ -7,6 +7,7 @@ export type PolicyCheckStatus = {
   reputationQualified: boolean;
   reputationScore: number;
   tier: 'Bronze' | 'Silver' | 'Gold';
+  isCurrentTier?: boolean;
 };
 
 export type SettlementRoute = {

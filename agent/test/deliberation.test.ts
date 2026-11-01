@@ -189,6 +189,104 @@ export async function runDeliberationTests() {
   console.assert(!missingAtt.verified, 'Attestation without intel_quote must fail');
   console.log('✓ Test 6: Tampered attestation fails closed with explicit reason');
 
+  // Test 7: MultiAgentDeliberationEngine with verifyResponse resolving
+  const engineVerified = new MultiAgentDeliberationEngine({
+    baseUrl: 'https://cloud-api.near.ai/v1',
+    apiKey: 'sk-simulated-key-verified',
+    model: 'z-ai/glm-5.3-flash',
+  });
+  (engineVerified as any).client = {
+    chat: {
+      completions: {
+        create: async () => ({
+          id: 'cmpl-verified-12345',
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  approved: true,
+                  score: 95,
+                  critique: 'Verified PR artifact matches requirements',
+                  artifactVerified: true,
+                  riskLevel: 'LOW',
+                  policyNotes: 'Prudent treasury risk, within limits',
+                }),
+              },
+            },
+          ],
+        }),
+      },
+    },
+    verifyResponse: async (id: string) => ({
+      id,
+      completionId: id,
+      signatureKind: 'provider_tee',
+    }),
+  };
+
+  const originalAxiosGet2 = axios.get;
+  (axios as any).get = async (url: string) => {
+    if (url.includes('api.github.com/repos/')) {
+      return {
+        status: 200,
+        data: {
+          merged: true,
+          user: { login: 'alice' },
+          body: 'Implemented bounty feature.\nzinipay-recipient: alice.testnet\nDone.',
+        },
+      };
+    }
+    return { status: 200, data: {} };
+  };
+
+  try {
+    const resVerified = await engineVerified.deliberate({
+      taskDescription: 'Bounty task deliverable',
+      deliverable: 'https://github.com/org/repo/pull/1',
+      amountNear: '1',
+      recipientId: 'alice.testnet',
+      recipientReputation: 25,
+      recipientGithub: 'alice',
+      dryRun: false,
+    });
+
+    console.assert(resVerified.consensusApproved, 'Deliberation must approve when artifact & response verification pass');
+    console.assert(resVerified.attestation?.verified === true, 'Attestation must be marked verified when verifyResponse resolves');
+    console.assert(resVerified.attestation?.signatureKind === 'provider_tee', 'SignatureKind must be recorded from verifyResponse');
+    console.assert(resVerified.attestation?.completionId === 'cmpl-verified-12345', 'Completion ID must be recorded from real response');
+    console.assert(
+      resVerified.attestationSummary.includes('response signature verified (SDK 0.2.1)'),
+      'Attestation summary must state response signature verified (SDK 0.2.1)'
+    );
+    console.assert(
+      resVerified.attestationSummary.includes('kind=provider_tee'),
+      'Attestation summary must include kind=provider_tee'
+    );
+    console.log('✓ Test 7: verifyResponse resolution updates attestation wording to verified (SDK 0.2.1)');
+
+    // Test 8: verifyResponse throwing causes deliberation to fail closed
+    (engineVerified as any).client.verifyResponse = async () => {
+      throw new Error('Invalid TEE hardware signature');
+    };
+
+    const resThrew = await engineVerified.deliberate({
+      taskDescription: 'Bounty task deliverable',
+      deliverable: 'https://github.com/org/repo/pull/1',
+      amountNear: '1',
+      recipientId: 'alice.testnet',
+      recipientReputation: 25,
+      recipientGithub: 'alice',
+      dryRun: false,
+    });
+
+    console.assert(!resThrew.consensusApproved, 'Deliberation must reject when verifyResponse throws');
+    console.assert(!resThrew.inspector.approved, 'Inspector must reject when verifyResponse throws');
+    console.assert(resThrew.inspector.critique.includes('Response signature verification failed'), 'Critique must cite verification failure');
+    console.log('✓ Test 8: verifyResponse failure fails closed and rejects proposal');
+  } finally {
+    axios.get = originalAxiosGet2;
+  }
+
   console.log('All Deliberation tests passed successfully!\n');
 }
 

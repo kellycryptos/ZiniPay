@@ -13,6 +13,7 @@
 
 import { z } from 'zod';
 import OpenAI from 'openai';
+import { InferenceClient, type VerifiedCompletionResult } from '@nearai/inference-sdk';
 import axios from 'axios';
 import crypto from 'crypto';
 import { getTierInfo, type ReputationTier } from './reputation.js';
@@ -24,6 +25,13 @@ export interface AttestationVerificationResult {
   attestationHash?: string;
   reason?: string;
   simulated?: boolean;
+  completionId?: string;
+  signatureKind?: 'provider_tee' | 'gateway';
+  inspectorCompletionId?: string;
+  inspectorSignatureKind?: 'provider_tee' | 'gateway';
+  riskCompletionId?: string;
+  riskSignatureKind?: 'provider_tee' | 'gateway';
+  sdkVersion?: string;
 }
 
 export interface DeliberationRequest {
@@ -41,6 +49,9 @@ export interface InspectorReview {
   score: number;             // 0-100
   critique: string;
   artifactVerified: boolean;
+  completionId?: string;
+  signatureKind?: 'provider_tee' | 'gateway';
+  responseVerified?: boolean;
 }
 
 export interface RiskReview {
@@ -49,6 +60,9 @@ export interface RiskReview {
   reputationTier: ReputationTier;
   recommendedMultiplier: number;
   policyNotes: string;
+  completionId?: string;
+  signatureKind?: 'provider_tee' | 'gateway';
+  responseVerified?: boolean;
 }
 
 export interface ThreeWayMatchResult {
@@ -347,7 +361,7 @@ export async function fetchAndVerifyAttestation(opts: {
 }
 
 export class MultiAgentDeliberationEngine {
-  private client: OpenAI;
+  private client: InferenceClient | OpenAI | any;
   private model: string;
   private apiKey: string;
   private baseUrl: string;
@@ -355,10 +369,18 @@ export class MultiAgentDeliberationEngine {
   constructor(opts: { baseUrl: string; apiKey: string; model: string }) {
     this.apiKey = opts.apiKey;
     this.baseUrl = opts.baseUrl;
-    this.client = new OpenAI({
-      baseURL: opts.baseUrl,
-      apiKey: opts.apiKey || 'dummy-key',
-    });
+    const cleanBase = opts.baseUrl.endsWith('/') ? opts.baseUrl : `${opts.baseUrl}/`;
+    try {
+      this.client = new InferenceClient({
+        apiKey: opts.apiKey || 'dummy-key',
+        baseUrl: cleanBase,
+      });
+    } catch {
+      this.client = new OpenAI({
+        baseURL: opts.baseUrl,
+        apiKey: opts.apiKey || 'dummy-key',
+      });
+    }
     this.model = opts.model;
   }
 
@@ -436,12 +458,30 @@ export class MultiAgentDeliberationEngine {
       dryRun: false,
     });
 
-    if (!attestation.reportReceived) {
+    const responsesVerified = Boolean(
+      inspectorResult.responseVerified && riskResult.responseVerified
+    );
+
+    if (responsesVerified) {
+      attestation.reportReceived = true;
+      attestation.verified = true;
+      attestation.completionId = inspectorResult.completionId || riskResult.completionId;
+      attestation.signatureKind = inspectorResult.signatureKind || riskResult.signatureKind;
+      attestation.inspectorCompletionId = inspectorResult.completionId;
+      attestation.inspectorSignatureKind = inspectorResult.signatureKind;
+      attestation.riskCompletionId = riskResult.completionId;
+      attestation.riskSignatureKind = riskResult.signatureKind;
+      attestation.sdkVersion = '0.2.1';
+    }
+
+    if (!attestation.reportReceived && !responsesVerified) {
       console.error(`[DELIBERATION] Error: Attestation fetch failed: ${attestation.reason}`);
       const failedInspector: InspectorReview = {
         ...inspectorResult,
         approved: false,
         critique: inspectorResult.critique.includes('NO MODEL REVIEW')
+          ? inspectorResult.critique
+          : inspectorResult.critique.includes('Response signature verification failed')
           ? inspectorResult.critique
           : `REJECTED: Attestation verification failed: ${attestation.reason}`,
       };
@@ -450,6 +490,8 @@ export class MultiAgentDeliberationEngine {
         approved: false,
         riskLevel: 'HIGH',
         policyNotes: riskResult.policyNotes.includes('NO MODEL REVIEW')
+          ? riskResult.policyNotes
+          : riskResult.policyNotes.includes('Response signature verification failed')
           ? riskResult.policyNotes
           : `REJECTED: Unverified TEE attestation (${attestation.reason})`,
       };
@@ -523,6 +565,29 @@ Evaluate the deliverable against the task description. Respond with JSON ONLY.
         };
       }
 
+      // After completion call: verify response signature via InferenceClient if verifyResponse is available
+      let signatureKind: 'provider_tee' | 'gateway' | undefined;
+      let responseVerified = false;
+      const completionId = response.id;
+
+      if (typeof (this.client as any).verifyResponse === 'function' && completionId) {
+        try {
+          const verifiedReceipt: VerifiedCompletionResult = await (this.client as any).verifyResponse(completionId);
+          signatureKind = verifiedReceipt.signatureKind;
+          responseVerified = true;
+        } catch (verifyErr: any) {
+          console.error(`[DELIBERATION] Inspector verifyResponse failed (fail closed): ${verifyErr.message}`);
+          return {
+            approved: false,
+            score: 0,
+            critique: `Inspector rejected: Response signature verification failed (${verifyErr.message})`,
+            artifactVerified: false,
+            completionId,
+            responseVerified: false,
+          };
+        }
+      }
+
       // Hard gate: programmatic artifact verification MUST pass
       const effectiveArtifactVerified = artifactCheck.verified && (parsed.data.artifactVerified ?? true);
       const approved = parsed.data.approved && effectiveArtifactVerified;
@@ -532,6 +597,9 @@ Evaluate the deliverable against the task description. Respond with JSON ONLY.
         score: parsed.data.score,
         critique: parsed.data.critique.slice(0, 150),
         artifactVerified: effectiveArtifactVerified,
+        completionId,
+        signatureKind,
+        responseVerified,
       };
     } catch (err: any) {
       if (err.status === 402 || err.message?.includes('402') || err.message?.includes('spending limit')) {
@@ -614,12 +682,39 @@ Assess risk and respond with JSON ONLY.
         };
       }
 
+      // After completion call: verify response signature via InferenceClient if verifyResponse is available
+      let signatureKind: 'provider_tee' | 'gateway' | undefined;
+      let responseVerified = false;
+      const completionId = response.id;
+
+      if (typeof (this.client as any).verifyResponse === 'function' && completionId) {
+        try {
+          const verifiedReceipt: VerifiedCompletionResult = await (this.client as any).verifyResponse(completionId);
+          signatureKind = verifiedReceipt.signatureKind;
+          responseVerified = true;
+        } catch (verifyErr: any) {
+          console.error(`[DELIBERATION] Risk Arbiter verifyResponse failed (fail closed): ${verifyErr.message}`);
+          return {
+            approved: false,
+            riskLevel: 'HIGH',
+            reputationTier: tier,
+            recommendedMultiplier: tierInfo.multiplier,
+            policyNotes: `Risk Arbiter rejected: Response signature verification failed (${verifyErr.message})`,
+            completionId,
+            responseVerified: false,
+          };
+        }
+      }
+
       return {
         approved: parsed.data.approved,
         riskLevel: parsed.data.riskLevel,
         reputationTier: tier,
         recommendedMultiplier: tierInfo.multiplier,
         policyNotes: parsed.data.policyNotes.slice(0, 150),
+        completionId,
+        signatureKind,
+        responseVerified,
       };
     } catch (err: any) {
       if (err.status === 402 || err.message?.includes('402') || err.message?.includes('spending limit')) {
@@ -649,7 +744,7 @@ Assess risk and respond with JSON ONLY.
     simulated: boolean = false,
     attestation?: AttestationVerificationResult,
   ): ThreeWayMatchResult {
-    const attestationOk = attestation ? attestation.reportReceived : true;
+    const attestationOk = attestation ? (attestation.verified || attestation.reportReceived) : true;
     const match1_Scope = inspector.approved && inspector.score >= 70;
     const match2_Proof = inspector.artifactVerified && Boolean(req.deliverable.trim());
     const match3_Policy = risk.approved && risk.riskLevel !== 'HIGH';
@@ -662,9 +757,19 @@ Assess risk and respond with JSON ONLY.
 
     const passFailStr = consensusApproved ? 'PASS' : 'FAIL';
     const simPrefix = simulated ? '[SIMULATION] ' : '';
-    const attestationTag = attestation?.attestationHash
-      ? ` [Attestation report received (not independently verified): ${attestation.attestationHash}]`
-      : '';
+
+    let attestationTag = '';
+    if (simulated) {
+      attestationTag = ' [Attestation report received (not independently verified)]';
+    } else if (attestation?.verified && attestation.completionId) {
+      const sigKind = attestation.signatureKind || 'provider_tee';
+      attestationTag = ` [Gateway and model attestation checked, response signature verified (SDK 0.2.1): kind=${sigKind}, id=${attestation.completionId}]`;
+    } else if (attestation?.attestationHash) {
+      attestationTag = ` [Attestation report received (not independently verified): ${attestation.attestationHash}]`;
+    } else {
+      attestationTag = ' [Attestation report received (not independently verified)]';
+    }
+
     const attestationSummary = `${simPrefix}[Three-Way Match: ${matchCount}/3 ${passFailStr}] [Tier: ${tier}]${attestationTag} ${inspector.critique} | Deliverable: ${req.deliverable}`;
 
     return {

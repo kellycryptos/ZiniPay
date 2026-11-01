@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-01T15:30:15.968Z",
+  "generatedAt": "2026-11-01T16:11:28.371Z",
   "network": "testnet",
   "sourceLog": "e2e-output.txt",
   "viaPolicyContract": true,
@@ -45,9 +45,9 @@
       "proposer": "agentzinipaytestnet.testnet",
       "deliberationMode": "simulated",
       "summary": "Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.",
-      "reputationScore": 25,
-      "tier": "Silver",
-      "effectiveCapNear": "15.0",
+      "reputationScore": 5,
+      "tier": "Bronze",
+      "effectiveCapNear": "10.0",
       "votes": {
         "approve": 2,
         "reject": 0,
@@ -55,13 +55,13 @@
       },
       "policy": {
         "withinCap": true,
-        "capLimit": "15.0 NEAR",
+        "capLimit": "10.0 NEAR",
         "cooldownElapsed": true,
         "cooldownRemainingSecs": 0,
         "cidUnique": true,
         "reputationQualified": true,
-        "reputationScore": 25,
-        "tier": "Silver"
+        "reputationScore": 5,
+        "tier": "Bronze"
       }
     },
     {

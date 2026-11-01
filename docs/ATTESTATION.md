@@ -90,19 +90,51 @@ The response is a JSON object containing cryptographic hardware quotes and ident
 
 ---
 
-## 4. Attestation Status & Relabeling in ZiniPay
+## 4. Hardware Attestation & Response Signature Verification with `@nearai/inference-sdk@0.2.1`
 
-> **Current Implementation Status**:  
-> `Attestation report received (not independently verified)`
+ZiniPay integrates the official [`@nearai/inference-sdk`](https://github.com/nearai/inference-sdk) (`v0.2.1`) to turn unverified inference reports into cryptographically checked execution proofs:
 
-In ZiniPay's multi-agent deliberation engine ([`agent/src/deliberation.ts`](file:///agent/src/deliberation.ts)):
-1. **Fresh Nonce Challenge**: The agent generates a 32-byte cryptographic nonce challenge and requests `GET /v1/attestation/report?nonce={nonce}` from `https://cloud-api.near.ai/v1`.
-2. **Freshness & Header Check**: The engine verifies that `gateway_attestation` is returned, confirms the presence of `intel_quote`, and ensures the echoed `request_nonce` exactly matches the challenge nonce.
-3. **Audit Reference Hash**: It computes `sha256(JSON.stringify(report))` and records the digest in the proposal metadata and description as `[Attestation report received (not independently verified): sha256:...]`.
-4. **Honest Boundary**: Full cryptographic verification of the Intel TDX DCAP hardware quote (validating PCK certificate chains against Intel PCS and ensuring `report_data` binds `signing_address`) is not implemented locally in this monorepo build, as it requires Intel DCAP QVL libraries or the `nearai-cloud-verifier` service. Until full DCAP verification is wired in, all code, UI badges, and documentation explicitly state:  
-   **"Attestation report received (not independently verified)"**.
+### **What the SDK Verifies**
 
-### **Fail-Closed Guarantees**
-1. **No Fake Quotes**: If `OPENAI_API_KEY` is not provided or live network access to `cloud-api.near.ai` is absent, the agent runs strictly in `--dry-run` simulation mode and outputs explicit `[SIMULATION]` tags. It **never** fabricates fake TEE quotes or synthetic ed25519 signatures.
-2. **Tamper Resistance**: If the returned nonce does not match, or if any field of the report is tampered with, deliberation halts immediately and marks `consensusApproved: false`.
-3. **Auditability**: The SHA-256 digest of the received attestation report is embedded directly into the Sputnik DAO proposal description (`[Attestation report received (not independently verified): sha256:<digest>]`), enabling council members and auditors to verify the inference proof against NEAR AI Cloud on-chain.
+According to the official SDK verification guide:
+1. **Gateway Attestation Preflight**: Before sending an inference request, `InferenceClient` verifies the NEAR AI Cloud Gateway's Intel TDX DCAP hardware quote against Intel's Provisioning Certification Service (PCS). In Node.js, it captures the gateway's TLS SPKI fingerprint and pins all subsequent model metadata and inference requests to that attested identity.
+2. **Model Worker Hardware Proof**: For attested models (e.g. `providerType: 'vllm'` such as `z-ai/glm-5.3-flash`), the SDK verifies every returned model attestation report—including the Intel TDX CPU quote and NVIDIA Remote Attestation Service (NRAS) GPU token—before selecting the public key for model-routing.
+3. **Response Body & Signature Verification (`verifyResponse`)**: After receiving a completion, calling `await client.verifyResponse(completion.id)` verifies that:
+   - For `signatureKind: 'provider_tee'`: The model-serving TEE signer signed the exact request and response body bytes.
+   - For `signatureKind: 'gateway'`: The verified Gateway signer signed the exact client-visible request and response body bytes.
+
+### **Fail-Closed Integration in Deliberation**
+
+In [`agent/src/deliberation.ts`](../agent/src/deliberation.ts):
+```typescript
+// Inspector and Risk Arbiter execution:
+const completion = await client.chat.completions.create({ model, messages, ... });
+const verifiedReceipt = await client.verifyResponse(completion.id);
+// If verifyResponse throws: proposal is immediately REJECTED (fail closed).
+```
+
+### **Attestation Wording Rules**
+
+- **When `verifyResponse` passes**: The proposal description and audit trail record:  
+  `[Gateway and model attestation checked, response signature verified (SDK 0.2.1): kind=<signatureKind>, id=<completionId>]`
+- **When `verifyResponse` was not run** (simulation mode, local dry run, or mock): The honest label is preserved:  
+  `[Attestation report received (not independently verified)]`
+- **When `verifyResponse` throws**: Deliberation fails closed, rejects the proposal, and logs the verification error.
+
+---
+
+## 5. Fail-Closed Guarantees & Verification Matrix
+
+| Mode | Key & Credits | Gateway Attestation | Model Attestation | Response Signature (`verifyResponse`) | Attestation Wording |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Live Verified** | Funded NEAR AI key | Checked via SDK | Checked via SDK (`vllm`) | Checked (`provider_tee`) | `"gateway and model attestation checked, response signature verified (SDK 0.2.1)"` |
+| **Simulation / Dry-Run** | Unset or mock key | Simulated | Simulated | Skipped | `"Attestation report received (not independently verified)"` |
+| **Failed Signature** | Any | Mismatch / Thrown | Mismatch / Thrown | Throws `VerificationError` | Proposal REJECTED (Fail Closed) |
+
+### **Reviewer Inspection**
+
+Reviewers can verify both the on-chain proposal and its attached model review receipt at any time:
+```bash
+npm run verify:proposal -- 5
+```
+This queries Sputnik DAO RPC and displays the verified completion ID and `signatureKind` alongside the on-chain multi-sig execution record.

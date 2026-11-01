@@ -752,6 +752,62 @@ async function run() {
         simulated: false,
       });
     }
+
+    // Attack Scenario 5: Cooldown Violation (Rapid repeat release to same recipient within cooldown window)
+    const freshCooldownCid = `${canonicalCid}-cooldown-violation`;
+    console.log(`  Attack Scenario 5: Cooldown violation attempt (Releasing to ${recipientAccountId} with fresh CID ${freshCooldownCid} before cooldown expires)...`);
+    let attack5TxHash = null;
+    let attack5PanicMsg = null;
+    try {
+      await councilAccount.functionCall({
+        contractId: policyContractId,
+        methodName: 'release',
+        args: {
+          recipient: recipientAccountId,
+          amount: payoutAmountYocto,
+          cid: freshCooldownCid,
+        },
+        gas: BigInt('100000000000000'),
+        attachedDeposit: BigInt(payoutAmountYocto),
+      });
+      console.error(`  ❌ SECURITY FAILURE: Policy contract allowed repeat release within cooldown window!`);
+      process.exit(1);
+    } catch (err) {
+      attack5TxHash = err.transaction_outcome?.id;
+      if (attack5TxHash) {
+        const txStatus = await councilNear.connection.provider.txStatus(attack5TxHash, councilAccountId);
+        for (const r of txStatus.receipts_outcome || []) {
+          for (const l of r.outcome?.logs || []) {
+            if (l.includes('Cooldown not elapsed')) {
+              attack5PanicMsg = l;
+              break;
+            }
+          }
+        }
+      }
+      const expectedSubstring = 'Cooldown not elapsed';
+      const actualError = attack5PanicMsg || err.message || '';
+      if (!actualError.includes(expectedSubstring)) {
+        console.error(`  ❌ UNEXPECTED REJECTION REASON for Attack 5 (Cooldown Violation):`);
+        console.error(`     Expected to contain: "${expectedSubstring}"`);
+        console.error(`     Actual error message: "${actualError}"`);
+        process.exit(1);
+      }
+      console.log(`  ✓ Attack 5 BLOCKED on-chain with verified panic: "${actualError}"`);
+      if (attack5TxHash) {
+        console.log(`    Tx Hash: ${attack5TxHash}`);
+        console.log(`    Explorer: ${explorerUrl}/txns/${attack5TxHash}`);
+        recordTx(`Blocked Attack 5: Cooldown Violation (${recipientAccountId})`, attack5TxHash);
+      }
+      logAttackEvent({
+        vector: 'Cooldown Violation',
+        caller: councilAccountId,
+        details: `Owner-signed repeat release to '${recipientAccountId}' within cooldown window`,
+        rejectionReason: actualError,
+        blockedBy: 'PolicyHelper (On-Chain)',
+        simulated: false,
+      });
+    }
   }
 
   // ── Step 9: Final Summary Table ───────────────────────────────────────────
