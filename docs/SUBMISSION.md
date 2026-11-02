@@ -82,13 +82,18 @@ Every phase of the governance lifecycle is verifiable on NEAR Testnet:
 
 | Action | Transaction Hash | Explorer Link | Result |
 | :--- | :--- | :--- | :--- |
-| **Proposal #5 Creation** | `H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b` | [NEARBlocks](https://testnet.nearblocks.io/txns/H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b) | `FunctionCall` proposal into `PolicyHelper::release` created by agent (`agentzinipaytestnet.testnet`) |
-| **Council Signer 1 Approval** | `AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL` | [NEARBlocks](https://testnet.nearblocks.io/txns/AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL) | Council member 1 votes `VoteApprove` (1/2 quorum reached) |
-| **Council Signer 2 Approval & Release** | `4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd` | [NEARBlocks](https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd) | Council member 2 votes `VoteApprove` (2/2 quorum reached); contract executes payout receipt (+0.1 NEAR) |
-| **Contributor Tier Promotion** | `Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB` | [NEARBlocks](https://testnet.nearblocks.io/txns/Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB) | Contributor promoted to Silver tier (25 pts, 1.5x cap) |
-| **Blocked Attack: Replay Deliverable** | `Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ` | [NEARBlocks](https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ) | Panics: `"CID already used — duplicate release attempt blocked"`; deposit refunded |
-| **Blocked Attack: Over-Cap Spend** | `ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB` | [NEARBlocks](https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB) | Panics: `"Amount 16000000000000000000000000 exceeds effective tier cap..."`; deposit refunded |
-| **Blocked Attack: Unauthorized Caller** | `7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D` | [NEARBlocks](https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D) | Panics: `"Only owner or designated DAO can call this"`; deposit refunded |
+| **Proposal #6 Creation** | `HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK` | [NEARBlocks](https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK) | `FunctionCall` proposal into `PolicyHelper::release` created by agent (`agentzinipaytestnet.testnet`) |
+| **Council Signer 1 Approval** | `22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD` | [NEARBlocks](https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD) | Council member 1 votes `VoteApprove` (1/2 quorum reached) |
+| **Council Signer 2 Approval & Release** | `2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d` | [NEARBlocks](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d) | Council member 2 votes `VoteApprove` (2/2 quorum reached); contract executes payout receipt (+0.1 NEAR) |
+| **Contributor Tier Promotion** | `DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf` | [NEARBlocks](https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf) | Contributor promoted to Silver tier (30 pts, 1.5x cap) |
+| **Blocked Attack: Replay Deliverable** | `9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb` | [NEARBlocks](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb) | Panics: `"CID already used — duplicate release attempt blocked"`; deposit refunded |
+| **Blocked Attack: Over-Cap Spend** | `EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ` | [NEARBlocks](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ) | Panics: `"Amount 16000000000000000000000000 exceeds effective tier cap..."`; deposit refunded |
+| **Blocked Attack: Unauthorized Caller** | `2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B` | [NEARBlocks](https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B) | Panics: `"Only owner or designated DAO can call this"`; deposit refunded |
+| **Blocked Attack: Case-Variant Replay** | `EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y` | [NEARBlocks](https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y) | Panics: `"CID already used — duplicate release attempt blocked"` (canonical check) |
+| **Blocked Attack: Cooldown Violation** | `2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD` | [NEARBlocks](https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD) | Panics: `"Cooldown not elapsed. 16 seconds remaining."` |
+| **Ownership Transfer to Sputnik DAO** | `BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX` | [NEARBlocks](https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX) | PolicyHelper ownership transferred to `zinipay-demo.sputnikv2.testnet` |
+| **Blocked Admin: Former Owner Unburn** | `EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14` | [NEARBlocks](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) | Direct admin call by former owner rejected fail-closed on-chain |
+| **DAO Admin Proposal #7 Execution** | `3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw` | [NEARBlocks](https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw) | Quorum reached; admin call executed through Sputnik DAO multi-sig |
 
 ---
 
@@ -99,9 +104,9 @@ Judges and screening LLMs can verify the complete implementation using standard 
 | Check | Command | Expected Output | Zero-Key Capable |
 | :--- | :--- | :--- | :--- |
 | **Agent Unit Tests** | `npm test --prefix agent` | 14 passed (fail-closed logic, anti-replay, 1Click quote) | Yes |
-| **Testnet State Verification** | `npm run verify:testnet` | 17 PASSED / 0 UNVERIFIED / 0 FAILED | Yes |
-| **Independent Proposal Verifier** | `npm run verify:proposal -- 5` | PROPOSAL #5 VERIFIED CLEAN ON-CHAIN: 100% MATCH | Yes |
-| **Non-Release Proposal Rejection** | `npm run verify:proposal -- 0` | Fails closed (`Target Mismatch: Proposal #0 is not a FunctionCall proposal`) | Yes |
-| **Live Agent Pre-Flight** | `npm run agent:propose -- --task "Implement DAO dashboard" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run` | Three-Way Match clears; queries live contract state; outputs draft proposal | Yes |
-| **Replay Attack Rejection** | `npm run agent:propose -- --task "Replay" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run` | Fails immediately: `Deliverable proof already settled on-chain` | Yes |
+| **Testnet State Verification** | `npm run verify:testnet` | 24 PASSED / 0 UNVERIFIED / 0 FAILED | Yes |
+| **Independent Proposal Verifier** | `npm run verify:proposal -- 6` | PROPOSAL #6 VERIFIED CLEAN ON-CHAIN: 100% MATCH | Yes |
+| **Non-Release Proposal Rejection** | `npm run verify:proposal -- 7` | Fails closed (`Target Mismatch: Proposal #7 does not target PolicyHelper release()`) | Yes |
+| **Live Anti-Replay Rejection** | `npm run agent:propose -- --task "Replay" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Fails immediately: `Deliverable proof already settled on-chain` | Yes |
+| **Stolen PR Rejection** | `npm run agent:propose -- --task "Stolen PR" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Consensus REJECTED: `PR author does not match recipient handle` | Yes |
 | **Contract Unit Tests** | `cd contracts/policy-helper && cargo test && cd ../..` | 20 passed; 0 failed | Yes (Linux/macOS) |
