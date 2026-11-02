@@ -211,10 +211,44 @@ async function verifyProposal() {
 
   const tier = (repScore >= 60) ? 'Gold' : (repScore >= 20) ? 'Silver' : 'Bronze';
 
+  const amountNear = Number(BigInt(proposedAmount) / 10n**22n) / 100;
+  let approvalType = 'FullDaoQuorum';
+  let requiredVotes = 2;
+  let approvalDesc = 'Mandatory 2-of-2 human multi-sig quorum';
+
+  if (tier === 'Gold') {
+    if (amountNear <= 2.0) {
+      approvalType = 'AutoApprove';
+      requiredVotes = 0;
+      approvalDesc = 'Micro-auto-clearance (Gold contributor <= 2 NEAR)';
+    } else if (amountNear <= 8.0) {
+      approvalType = 'SingleCouncil';
+      requiredVotes = 1;
+      approvalDesc = 'Single council member approval (Gold contributor <= 8 NEAR)';
+    } else {
+      approvalType = 'FullDaoQuorum';
+      requiredVotes = 2;
+      approvalDesc = 'Full DAO multi-sig quorum (Gold contributor > 8 NEAR)';
+    }
+  } else if (tier === 'Silver') {
+    if (amountNear <= 5.0) {
+      approvalType = 'SingleCouncil';
+      requiredVotes = 1;
+      approvalDesc = 'Fast-track single council approval (Silver contributor <= 5 NEAR)';
+    } else {
+      approvalType = 'FullDaoQuorum';
+      requiredVotes = 2;
+      approvalDesc = 'Full DAO multi-sig quorum (Silver contributor > 5 NEAR)';
+    }
+  }
+
+  const approveCount = Object.values(proposal.votes || {}).filter((v) => v === 'Approve').length;
   console.log(`      Contract Owner:      ${policy?.owner || 'Unknown'}`);
   console.log(`      Designated DAO:      ${policy?.dao_account_id || 'Unknown'}`);
   console.log(`      Recipient Score:     ${repScore !== null ? repScore : '0'} pts (Tier: ${tier})`);
   console.log(`      Effective Tier Cap:  ${capYocto ? formatNear(capYocto) : 'N/A'}`);
+  console.log(`      Approval Tier:       ${approvalType} (${approvalDesc})`);
+  console.log(`      Quorum Required:     ${requiredVotes} council vote(s) (Recorded Votes: ${approveCount} Approve)`);
   console.log(`      CID Burned on Chain: ${cidBurned ? 'true (Protected against replay)' : 'false'}`);
 
   const withinCap = capYocto && (BigInt(proposedAmount) <= BigInt(capYocto));

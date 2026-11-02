@@ -11,7 +11,7 @@
 
 ## 1. For Judges / AI Reviewers (Do X → See Y)
 
-You can verify the entire codebase and testnet deployment in under 5 minutes with **zero private keys, zero wallet setup, and no `.env` required**:
+You can verify the entire codebase, live testnet deployment, and Social Money track features in under 5 minutes with **zero private keys, zero wallet setup, and no `.env` required**:
 
 ```bash
 # Step 1: Install dependencies (~10s)
@@ -23,27 +23,65 @@ npm install
 # Step 2: Run agent unit test suite (~8s)
 npm test --prefix agent
 ```
-**See**: `14 passed`. Verifies schema-level prompt injection defense, GitHub PR metadata parsing, CID canonicalization, and anti-replay guards.
+**See**: `All agent tests completed successfully! (22 passing tests)`. Verifies:
+- Suite 1: Deliberation, schema-level prompt injection defense, and TEE attestation verification.
+- Suite 2: Three-Way Match policy clearance, canonical CID normalization, and anti-replay guards.
+- Suite 3: NEAR Intents 1Click cross-chain routing.
+- Suite 4: Social Money reputation tracking, task completion accounting, and tiered approval resolutions across Gold, Silver, and Bronze tiers.
 
 ```bash
 # Step 3: Run keyless testnet verification suite (~15s)
 npm run verify:testnet
 ```
-**See**: `24 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
+**See**: `25 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
 - Active Sputnik DAO v2 council with 2-of-2 multi-sig quorum (`zinipay-c1.testnet`, `zinipay-c2.testnet`).
 - Agent proposer isolation: `agentzinipaytestnet.testnet` holds `Requestor` role only (0 council seats, 0 voting keys).
 - Active Rust `PolicyHelper` contract bound strictly to DAO treasury.
-- Contributor reputation score (Silver tier: 15 NEAR cap) and deliverable CID burn status (`cid_used: true`).
+- Contributor reputation score (Silver tier: 30 pts) and deliverable CID burn status (`cid_used: true`).
+- Check 4.5: Social Money Tiered Approval Resolution (Silver tier qualifies for 1-vote fast-track for <= 5 NEAR, full quorum for > 5 NEAR).
 - 14 confirmed on-chain transaction receipts (proposal creation, council approvals, promotion, and 5 blocked attack transactions reverted with exact contract panic messages).
 
 ```bash
-# Step 4: Run independent proposal verifier (~5s)
-npm run verify:proposal -- 6
+# Step 4: Verify contributor reputation & tiered approval schedule (~5s)
+npm run verify:reputation -- zinipay-recipient2.testnet
 ```
-**See**: `✓ STATE CHECKS PASSED`. Cross-references Sputnik DAO Proposal #6 on-chain against `PolicyHelper` spend limits and anti-replay registry. *(To test fail-closed rejection on a non-release proposal, run `npm run verify:proposal -- 7`)*.
+**See**: Publicly readable contributor track record:
+- Named Account: `zinipay-recipient2.testnet`
+- On-Chain Score: `30 pts (verified on zinipay-policy2.testnet)`
+- Reputation Tier: `Silver (1.5x spend cap multiplier | 1.1x reward multiplier)`
+- Completed Tasks: `2` verified tasks under policy
+- Total Value Paid: `0.2000 NEAR`
+- Tiered Approval Schedule:
+  - Small Payout (&le; 1 NEAR): `SingleCouncil` (1 council member approval, fast-tracked)
+  - Medium Payout (&le; 5 NEAR): `SingleCouncil` (1 council member approval)
+  - Large Payout (> 5 NEAR to 15 NEAR): `FullDaoQuorum` (2 council members, standard Sputnik DAO multi-sig)
+  - Over-Cap Payout (> 15 NEAR): `REJECTED` (Fail-closed on-chain rejection by PolicyHelper)
+- Confirmed testnet payout receipts with NEARBlocks explorer links.
 
 ```bash
-# Step 5: Test agent deliberation & on-chain anti-replay clearance (~5s, dry run)
+# Step 5: Run Social Money Track demonstration flow (~5s)
+# "Create Request → See Reputation Update → See Tiered Outcome"
+npm run demo:social-money
+```
+**See**: Complete automated walkthrough:
+1. Contributor starting state (Named account: `alice-contributor.testnet`, Bronze tier, 0 pts).
+2. Create request: Deliberate deliverable proof and calculate initial approval requirement (Full DAO quorum).
+3. Payout settlement: Multi-sig quorum reached → atomic release updates score (+25 pts), completed tasks (+1), and total paid (+2.5N), promoting contributor to Silver tier.
+4. Tiered outcomes under updated reputation:
+   - Micro bounty (0.8N): Single council member fast-track.
+   - Medium milestone (4.0N): Single council member approval.
+   - Large grant (12.0N): Full DAO multi-sig quorum.
+   - Over-cap request (18.0N): Fail-closed on-chain rejection (`exceeds Silver tier cap of 15.00 NEAR`).
+5. Malicious claim: Replay deliverable blocked by anti-replay registry; contributor penalized (-5 pts) without treasury drain.
+
+```bash
+# Step 6: Run independent proposal verifier (~5s)
+npm run verify:proposal -- 6
+```
+**See**: `✓ STATE CHECKS PASSED`. Cross-references Sputnik DAO Proposal #6 on-chain against `PolicyHelper` spend limits and anti-replay registry, displaying recipient score (30 pts), Silver tier cap (15 NEAR), and `SingleCouncil` approval tier with 2 recorded votes satisfying the 1-vote quorum. *(To test fail-closed rejection on a non-release proposal, run `npm run verify:proposal -- 7`)*.
+
+```bash
+# Step 7: Test agent deliberation & on-chain anti-replay clearance (~5s, dry run)
 # Note: PR #1 (Proposal #5) and PR #2 (Proposal #6) are permanently burned on-chain.
 # Running PR #2 demonstrates live on-chain anti-replay rejection in real time:
 npm run agent:propose -- \
@@ -57,7 +95,7 @@ npm run agent:propose -- \
 **See**: `✗ THREE-WAY MATCH FAILED: Deliverable proof "kellycryptos/zinipay#2" has already been settled on-chain (zero-double-spend protection)`.
 
 ```bash
-# Step 5b: Test Gate 2 author-mismatch defense on an unauthorized PR (~5s, dry run)
+# Step 7b: Test Gate 2 author-mismatch defense on an unauthorized PR (~5s, dry run)
 npm run agent:propose -- \
   --task "Implement Sputnik DAO Three-Way Gate" \
   --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
@@ -69,10 +107,17 @@ npm run agent:propose -- \
 **See**: `Consensus Verdict: REJECTED (Confidence: 0%)` — `PR author (vsavchyn-dev) does not match recipient handle`.
 
 ```bash
-# Step 6 (Optional): Run smart contract unit tests (~5s, requires Rust toolchain)
+# Step 8: View Public Activity & Reputation Board
+npm run frontend:dev
+# Navigate to http://localhost:5173/board (or click "Public Board" in top nav)
+```
+**See**: Public activity feed, contributor track record cards, confirmed testnet receipts, and the tiered approval policy matrix rendered with live testnet data.
+
+```bash
+# Step 9 (Optional): Run smart contract unit tests (~5s, requires Linux/macOS or MSVC linker)
 cd contracts/policy-helper && cargo test && cd ../..
 ```
-**See**: `test result: ok. 20 passed; 0 failed`. Verifies spend caps, caller authorization, cooldown logic, case-variant anti-replay normalization, and atomic rollback callbacks.
+**See**: `test result: ok. 21 passed; 0 failed`. Verifies spend caps, caller authorization, cooldown logic, case-variant anti-replay normalization, atomic rollback callbacks, and `get_approval_tier` resolution.
 
 ---
 
@@ -114,10 +159,37 @@ ZiniPay solves agent treasury risk through a **Three-Way Release Gate**:
    - Permanently burns deliverable CIDs into an on-chain `UnorderedSet` (`used_cids`). Duplicate attempts fail immediately with: `"CID already used — duplicate release attempt blocked"`.
    - Normalizes CIDs (`normalize_cid`) at contract level to defeat case-variant bypass attempts.
 
-3. **Gate 3: Multi-Sig Human Quorum (Sputnik DAO v2 Governance)**:
+3. **Gate 3: Multi-Sig Human Quorum & Tiered Approval (Sputnik DAO v2 Governance)**:
    - The AI agent operates under a restricted **Requestor** role. It holds zero council seats and zero voting keys.
-   - Proposals require an M-of-N human council multi-sig quorum (2-of-2 on testnet) to vote `VoteApprove`.
+   - Evaluates contributor reputation to determine governance friction:
+     - **Low Friction (Gold / Small Amounts)**: Auto-approve eligibility (under policy cap) or 1-vote council clearance.
+     - **Medium Friction (Silver / Mid Amounts)**: Single council member multi-sig vote required (`SingleCouncil`).
+     - **Full Governance (Bronze / High Amounts)**: Full M-of-N human council multi-sig quorum (2-of-2 on testnet) required (`FullDaoQuorum`).
    - If the downstream NEAR transfer fails, an on-chain callback (`on_release_done`) automatically rolls back CID consumption and resets cooldown timers.
+
+### Social Money Track Extensions
+
+ZiniPay extends standard DAO tooling with four Social Money capabilities designed for decentralized contributor economies:
+
+1. **Reputation Tied to Named Accounts**:
+   - Every contributor's earned track record is indexed against their human-readable NEAR named account (e.g. `zinipay-recipient2.testnet`).
+   - Records completed tasks, total NEAR earned under policy, rejections, and verified settlement receipts.
+   - Scores are queryable directly on-chain via `PolicyHelper::get_contributor_record` and `PolicyHelper::get_approval_tier` as well as via public RPC / indexer.
+
+2. **Tiered Governance Approvals**:
+   - Replaces all-or-nothing multi-sig bottlenecks with a merit-based governance spectrum:
+     - **Gold Tier (Score 60+)**: $\le 2$ NEAR auto-approved under policy; $\le 8$ NEAR requires 1 council vote; $> 8$ NEAR requires full DAO quorum.
+     - **Silver Tier (Score 20–59)**: $\le 5$ NEAR requires 1 council vote; $> 5$ NEAR requires full DAO quorum.
+     - **Bronze Tier (Score 0–19)**: All payouts $\le 10$ NEAR require full DAO quorum.
+   - All tiers remain fail-closed: spend caps, CID anti-replay, and recipient cooldowns are never bypassed.
+
+3. **Public Activity & Reputation Board (`/board`)**:
+   - An open transparency interface displaying active milestone requests, pending claims, settled payouts, and verified contributor track records.
+   - Uses real testnet data with direct explorer links to Sputnik DAO proposals and `PolicyHelper` receipts.
+
+4. **Trezu Treasury Compatibility (Alternative Custody)**:
+   - Built to support both Sputnik DAO v2 and Trezu / NEAR multi-sig treasury instances without contract changes.
+   - Detailed integration patterns and configuration blueprints are documented in [`docs/TREZU_INTEGRATION.md`](docs/TREZU_INTEGRATION.md).
 
 ---
 
@@ -132,22 +204,40 @@ ZiniPay solves agent treasury risk through a **Three-Way Release Gate**:
 [2. Agent Layer] ── Verifies PR merge, author, & recipient directive
        │            Runs Inspector & Risk Arbiter deliberation
        ▼
-[3. Policy Check] ── Calls PolicyHelper.check_policy() view function
-       │            Asserts within tier cap (e.g. <= 15N), cooldown elapsed, CID unburned
+[3. Policy & Tier] ─ Calls PolicyHelper.check_policy() & get_approval_tier()
+       │            Evaluates recipient score, tier cap, cooldown, and unburned CID
+       │            Resolves requirement: AutoApprove (0) | SingleCouncil (1) | FullDaoQuorum (2)
        ▼
 [4. Proposal] ────── Calls Sputnik DAO add_proposal (Requestor role, 0 voting keys)
        │            Payload: FunctionCall -> PolicyHelper::release(recipient, amount, cid)
+       │            Tagged description: "[Tier: SingleCouncil] [PolicyCheck: PASSED] ..."
        ▼
-[5. Human Vote] ──── Council Member 1 signs VoteApprove (1/2)
-       │            Council Member 2 signs VoteApprove (2/2 quorum reached)
+[5. Human Vote] ──── Council votes based on resolved tier requirement:
+       │            • AutoApprove:   0 council votes required (executes under policy cap)
+       │            • SingleCouncil: 1 council member approval required (Fast-track)
+       │            • FullDaoQuorum: 2 council members approval required (Full M-of-N multi-sig)
        ▼
 [6. Settlement] ──── Sputnik DAO calls PolicyHelper::release
-                    ├─ Contract verifies caller == DAO
-                    ├─ Contract verifies amount <= effective tier cap
-                    ├─ Contract burns canonical CID & sets cooldown
-                    ├─ Contract transfers NEAR to recipient
-                    └─ Callback on_release_done verifies transfer or triggers rollback
+       │            ├─ Contract verifies caller == DAO
+       │            ├─ Contract verifies amount <= effective tier cap
+       │            ├─ Contract burns canonical CID & sets cooldown
+       │            ├─ Contract transfers NEAR to recipient
+       │            └─ Callback on_release_done verifies transfer or triggers rollback
+       ▼
+[7. Reputation] ──── Post-Settlement Reputation Indexing & Public Board
+                    ├─ Contributor score updated (+10 pts per successful payout)
+                    ├─ Completed tasks count incremented & total NEAR earned updated
+                    ├─ Settlement receipt logged with explorer links
+                    └─ Public Activity Board (/board) surfaces updated track record
 ```
+
+### Trezu Alternative Custody Architecture
+
+Communities utilizing [Trezu](https://trezu.app) as their multisig custody layer can operate ZiniPay identically:
+- **Zero Contract Changes**: `PolicyHelper` verifies `predecessor_account_id == self.dao_account_id`. The DAO treasury address can point to either a Sputnik DAO v2 contract (`*.sputnikv2.testnet`) or a Trezu multisig contract (`*.near`).
+- **Proposal Flow**: The ZiniPay agent submits multi-sig transactions to the Trezu contract.
+- **Quorum Execution**: Trezu council signers approve in the Trezu web interface. Upon reaching threshold, Trezu calls `PolicyHelper::release`, enforcing spend caps, anti-replay, and cooldowns.
+- Detailed step-by-step instructions are provided in [`docs/TREZU_INTEGRATION.md`](docs/TREZU_INTEGRATION.md).
 
 ### Attack Scenarios and Mitigation Matrix
 
@@ -201,6 +291,62 @@ Every claim in ZiniPay is backed by verifiable on-chain transactions on NEAR Tes
 ---
 
 ## 6. Verification
+
+### Contributor Reputation & Tier Verifier: `npm run verify:reputation`
+
+ZiniPay provides an independent verification tool (`scripts/verify-reputation.mjs`) to audit any contributor's reputation score, completed milestones, total NEAR paid under policy, and the resulting tiered approval schedule directly on-chain.
+
+#### Usage
+```bash
+# Query any named testnet account
+npm run verify:reputation -- <account.testnet>
+
+# Example: Query verified contributor zinipay-recipient2.testnet
+npm run verify:reputation -- zinipay-recipient2.testnet
+```
+
+#### Expected Output
+```text
+╔══════════════════════════════════════════════════════════════════╗
+║  ZiniPay 🪙🤖 — Social Money Contributor Track Record & Tier      ║
+║  Account:  zinipay-recipient2.testnet                            ║
+║  Contract: zinipay-policy2.testnet                               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+[1/3] Querying PolicyHelper On-Chain Reputation State...
+  ✓ Reputation Found on-chain:
+      Score:            30 pts
+      Tier:             Silver (1.5x multiplier)
+      Max Cap / Payout: 15.0000 NEAR
+      Cooldown Period:  1440 mins (24.0 hrs)
+      Registered In:    Contract zinipay-policy2.testnet
+
+[2/3] Querying Public Contributor Track Record...
+  ✓ Track Record Verified:
+      Completed Tasks:  2
+      Total NEAR Paid:  0.2000 NEAR
+      Rejections Count: 0
+      Track Record:     100.0% completion rate (2 of 2)
+      Recent Payouts:   2 confirmed testnet payout receipts
+
+[3/3] Tiered Approval Requirements by Amount:
+  • Amount <= 5 NEAR:   SingleCouncil (1 council vote needed)
+  • Amount > 5 NEAR:    FullDaoQuorum (2 council votes needed)
+  • Amount > 15 NEAR:   FailClosedRejection (exceeds 15.0000 NEAR tier cap)
+
+✓ REPUTATION VERIFIED ON NEAR TESTNET
+```
+
+### Automated Social Money Flow Demo: `npm run demo:social-money`
+
+Run an end-to-end automated simulation demonstrating the entire Social Money lifecycle:
+1. **Create Request**: Agent evaluates deliverable & queries on-chain tier cap.
+2. **Reputation Update**: Payout settles, adding +10 pts and updating completed tasks.
+3. **Tiered Outcome**: Subsequent larger payout automatically unlocks the upgraded tier (SingleCouncil fast-track), while replay attempts trigger instant penalty & rollback.
+
+```bash
+npm run demo:social-money
+```
 
 ### Public Proposal Verifier: `npm run verify:proposal`
 
@@ -330,7 +476,7 @@ Because Sputnik DAO v2 requires attaching a `proposal_bond` (1 NEAR) to prevent 
 | :--- | :--- |
 | **AI Agents** | Fully autonomous evaluation agent service (`agent/`) that inspects GitHub PRs, parses recipient identity bindings, runs multi-agent deliberation (Inspector & Risk Arbiter), simulates on-chain policy view calls, and drafts Sputnik DAO proposals. |
 | **AI Security & Defense** | Fail-closed execution architecture designed to defend community treasuries against agent prompt injection, runaway spending, deliverable spoofing, deliverable replay, and case-variant bypass using smart contract invariants and mathematical spend caps. |
-| **Social / Governance (Sputnik DAO & Trezu)** | Modernizes decentralized treasury management on Sputnik DAO v2 by automating routine bounty verification while preserving full human council multi-sig sovereignty over disbursements. |
+| **Social Money & Governance (Sputnik DAO & Trezu)** | Implements contributor reputation tied to human-readable named accounts (`*.testnet`), dynamic tiered approval friction (AutoApprove, SingleCouncil, FullDaoQuorum), a transparent public activity board (`/board`), and alternative treasury custody via Trezu without rebuilding the multisig. |
 
 ---
 

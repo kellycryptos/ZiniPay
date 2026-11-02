@@ -18,7 +18,9 @@
     "test": "npm --workspace=@zinipay/agent test",
     "test:e2e": "node scripts/e2e-testnet.mjs",
     "verify:proposal": "node scripts/verify-proposal.mjs",
-    "verify:testnet": "node scripts/verify-testnet.mjs"
+    "verify:reputation": "node scripts/verify-reputation.mjs",
+    "verify:testnet": "node scripts/verify-testnet.mjs",
+    "demo:social-money": "node scripts/demo-social-money.mjs"
   },
   "devDependencies": {
     "playwright": "^1.64.1"

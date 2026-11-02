@@ -11,9 +11,10 @@ import { LandingFooter } from './LandingFooter';
 
 interface LandingPageProps {
   onNavigateToApp: () => void;
+  onNavigateToBoard?: () => void;
 }
 
-export function LandingPage({ onNavigateToApp }: LandingPageProps) {
+export function LandingPage({ onNavigateToApp, onNavigateToBoard }: LandingPageProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 selection:bg-[var(--color-passed)] selection:text-black">
       {/* Landing Top Navigation */}
@@ -38,6 +39,17 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
 
           {/* Nav Actions */}
           <div className="flex items-center gap-4">
+            {onNavigateToBoard && (
+              <button
+                type="button"
+                onClick={onNavigateToBoard}
+                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Public Board</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]"></span>
+              </button>
+            )}
+
             <a
               href="https://github.com/zinipay/zinipay/tree/main/docs"
               target="_blank"
@@ -72,7 +84,7 @@ export function LandingPage({ onNavigateToApp }: LandingPageProps) {
       {/* Main Landing Sections in Alternating Rhythm (Dark -> Paper -> Dark -> Paper) */}
       <main className="flex-1 flex flex-col">
         {/* 1. Hero (Dark Desk) */}
-        <LandingHero onNavigateToApp={onNavigateToApp} />
+        <LandingHero onNavigateToApp={onNavigateToApp} onNavigateToBoard={onNavigateToBoard} />
 
         {/* 2. Three-Way Release Gate (Paper Desk) */}
         <LandingReleaseGate />

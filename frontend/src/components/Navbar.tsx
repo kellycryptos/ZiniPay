@@ -13,6 +13,9 @@ interface NavbarProps {
   connectedAccount: string | null;
   onOpenWalletModal: () => void;
   onNavigateToLanding: () => void;
+  currentPath?: string;
+  onNavigateToDashboard?: () => void;
+  onNavigateToBoard?: () => void;
 }
 
 export function Navbar({
@@ -27,6 +30,9 @@ export function Navbar({
   connectedAccount,
   onOpenWalletModal,
   onNavigateToLanding,
+  currentPath = '/app',
+  onNavigateToDashboard,
+  onNavigateToBoard,
 }: NavbarProps) {
   const [connectionOpen, setConnectionOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -81,6 +87,39 @@ export function Navbar({
             ZiniPay
           </span>
         </div>
+
+        {/* Navigation Switcher: Dashboard vs Public Board */}
+        {(onNavigateToDashboard || onNavigateToBoard) && (
+          <nav className="flex items-center gap-1 ml-2 sm:ml-4 pl-2 sm:pl-4 border-l border-[var(--border-subtle)]">
+            {onNavigateToDashboard && (
+              <button
+                type="button"
+                onClick={onNavigateToDashboard}
+                className={`px-2.5 py-1 rounded text-xs font-sans font-medium transition-colors cursor-pointer ${
+                  currentPath === '/app'
+                    ? 'bg-white/[0.08] text-white border border-white/[0.08]'
+                    : 'text-[var(--text-secondary)] hover:text-white'
+                }`}
+              >
+                Dashboard
+              </button>
+            )}
+            {onNavigateToBoard && (
+              <button
+                type="button"
+                onClick={onNavigateToBoard}
+                className={`px-2.5 py-1 rounded text-xs font-sans font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                  currentPath === '/board'
+                    ? 'bg-white/[0.08] text-white border border-white/[0.08]'
+                    : 'text-[var(--text-secondary)] hover:text-white'
+                }`}
+              >
+                <span>Public Board</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]"></span>
+              </button>
+            )}
+          </nav>
+        )}
       </div>
 
       {/* Right: Connection Settings Popover & Account Menu */}
@@ -160,6 +199,14 @@ export function Navbar({
                     Mainnet
                   </button>
                 </div>
+              </div>
+
+              {/* Custody Layer */}
+              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px]">
+                <span className="text-[var(--text-muted)]">Custody layer</span>
+                <span className="text-white font-mono bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">
+                  Sputnik DAO / Trezu
+                </span>
               </div>
             </div>
           )}

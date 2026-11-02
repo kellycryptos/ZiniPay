@@ -28,7 +28,7 @@ import { KeyPair } from 'near-api-js';
 import { SputnikDAO, type ProposalKind } from './dao.js';
 import { PolicyEngine, type PolicyConfig, normalizeDeliverable } from './policy.js';
 import { MultiAgentDeliberationEngine } from './deliberation.js';
-import { ReputationLedger, getTierInfo } from './reputation.js';
+import { ReputationLedger, getTierInfo, getApprovalRequirement } from './reputation.js';
 import { NearIntents } from './intents.js';
 import { logAttackEvent } from './attackLogger.js';
 
@@ -276,16 +276,83 @@ program
     const maxNear = Number(policyConfig.maxSpendPerDay) / 1e24;
     const spentNear = Number(summary.totalYocto) / 1e24;
 
-    console.log(chalk.bold.cyan('\n─── ZiniPay Treasury & Reputation Status ───'));
+    console.log(chalk.bold.cyan('\n─── ZiniPay Treasury & Social Money Track ───'));
     console.log(`Daily Spend: ${spentNear.toFixed(4)} / ${maxNear.toFixed(4)} NEAR (${summary.count} proposals)`);
     console.log(`Base Per-Proposal Limit: ${Number(policyConfig.maxSpendPerProposal) / 1e24} NEAR`);
     
-    const board = reputation.getLeaderboard(5);
+    const board = reputation.getLeaderboard(10);
     if (board.length > 0) {
-      console.log(chalk.cyan('\nTop Contributors & Reputation Tiers:'));
+      console.log(chalk.cyan('\nPublic Contributor Track Record & Reputation Leaderboard:'));
       board.forEach((e, i) => {
         const tier = getTierInfo(e.score);
-        console.log(`  ${i + 1}. ${e.accountId} — Tier: ${chalk.yellow(tier.tier)} | Score: ${e.score.toFixed(1)} | Cap: ${tier.maxPerProposalMultiplier}x | Bonus: ${tier.multiplier}x`);
+        console.log(
+          `  ${i + 1}. ${chalk.bold(e.accountId)} — Tier: ${chalk.yellow(tier.tier)} | Score: ${e.score.toFixed(1)} pts | Tasks: ${e.completedTasks ?? 0} | Paid: ${(e.totalPaidNear ?? 0).toFixed(2)} NEAR | Cap: ${tier.maxPerProposalMultiplier}x`
+        );
+      });
+    }
+    console.log('');
+  });
+
+// ── reputation command ────────────────────────────────────────────────────────
+program
+  .command('reputation [account]')
+  .alias('rep')
+  .description('View publicly readable contributor track record, reputation score, and tiered approval requirements')
+  .action(async (account) => {
+    const targetAccount = account || 'zinipay-recipient2.testnet';
+    const cfg = getConfig(true);
+    const dbPath = process.env.DB_PATH ?? './zinipay.json';
+    const repDbPath = dbPath.endsWith('.json') ? dbPath.replace(/\.json$/, '-reputation.json') : `${dbPath}-reputation.json`;
+    const reputation = new ReputationLedger(repDbPath);
+    await reputation.init();
+
+    let onChainScore: number | null = null;
+    let onChainCap: string | number | null = null;
+    if (cfg.policyContractId) {
+      onChainScore = await queryContractView<number>(
+        cfg.nodeUrl,
+        cfg.policyContractId,
+        'get_reputation',
+        { account: targetAccount }
+      );
+      onChainCap = await queryContractView<string | number>(
+        cfg.nodeUrl,
+        cfg.policyContractId,
+        'get_effective_cap',
+        { recipient: targetAccount }
+      );
+    }
+
+    const record = reputation.getPublicTrackRecord(targetAccount);
+    const effectiveScore = onChainScore !== null ? onChainScore : record.score;
+    const tierInfo = getTierInfo(effectiveScore);
+
+    console.log(chalk.bold.cyan(`\n─── Contributor Social Money Track Record: ${targetAccount} ───\n`));
+    console.log(`  Named Account:       ${chalk.bold(targetAccount)}`);
+    console.log(`  Reputation Score:    ${chalk.green(`${effectiveScore} pts`)} ${onChainScore !== null ? `[On-Chain: ${cfg.policyContractId}]` : '[Indexed Ledger]'}`);
+    console.log(`  Reputation Tier:     ${chalk.yellow(tierInfo.tier)} (${tierInfo.maxPerProposalMultiplier}x spend cap | ${tierInfo.multiplier}x reward multiplier)`);
+    console.log(`  Completed Tasks:     ${record.completedTasks}`);
+    console.log(`  Total Paid:          ${record.totalPaidNear.toFixed(4)} NEAR`);
+    console.log(`  Proposals Approved:  ${record.approvedProposals} / ${record.totalProposals > 0 ? record.totalProposals : record.approvedProposals} (${record.successRatePercent}%)`);
+    if (onChainCap) {
+      console.log(`  Effective Spend Cap: ${formatNearAmount(parseYocto(onChainCap))}`);
+    }
+
+    console.log(chalk.cyan(`\n  Tiered Approval Schedule for ${targetAccount}:`));
+    const smallReq = getApprovalRequirement(effectiveScore, 0.5);
+    const medReq = getApprovalRequirement(effectiveScore, 3.0);
+    const largeReq = getApprovalRequirement(effectiveScore, 10.0);
+    console.log(`    • Small Payout  (0.5 NEAR): ${chalk.green(smallReq.approvalType)} → ${smallReq.description} [Req: ${smallReq.requiredVotes} vote(s)]`);
+    console.log(`    • Medium Payout (3.0 NEAR): ${chalk.yellow(medReq.approvalType)} → ${medReq.description} [Req: ${medReq.requiredVotes} vote(s)]`);
+    console.log(`    • Large Payout (10.0 NEAR): ${chalk.magenta(largeReq.approvalType)} → ${largeReq.description} [Req: ${largeReq.requiredVotes} vote(s)]`);
+    console.log(`    • Over-Cap     (25.0 NEAR): ${chalk.red('REJECTED')} → Exceeds effective cap (${tierInfo.maxPerProposalMultiplier * 10} NEAR max, fail-closed)`);
+
+    if (record.recentEvents.length > 0) {
+      console.log(chalk.cyan(`\n  Recent Reputation Activity:`));
+      record.recentEvents.slice(0, 5).forEach((ev) => {
+        const sign = ev.delta >= 0 ? `+${ev.delta}` : `${ev.delta}`;
+        const color = ev.delta >= 0 ? chalk.green : chalk.red;
+        console.log(`    ${new Date(ev.createdAt).toISOString().slice(0, 19)}: ${color(sign.padEnd(5))} ${ev.reason}`);
       });
     }
     console.log('');
@@ -435,6 +502,11 @@ async function runPropose(opts: ProposeOpts) {
 
   console.log(chalk.green(`  ✓ Match A: Deliverable proof attached`));
   console.log(chalk.green(`  ✓ Match B: Stayed under ${tierInfo.tier} tier cap (${formatNearAmount(effectiveCapYocto)} max)`));
+  console.log(
+    chalk.green(
+      `  ✓ Match B2: Tiered Approval Resolution → ${policyResult.approvalRequirement.approvalType} (${policyResult.approvalRequirement.description})`
+    )
+  );
   if (cfg.policyContractId && onChainCidUsed === false) {
     console.log(chalk.green(`  ✓ Match C: Zero-replay confirmed on-chain (cid_used: false on ${cfg.policyContractId})`));
   } else if (!cfg.policyContractId) {
@@ -545,6 +617,7 @@ async function runPropose(opts: ProposeOpts) {
   const description = [
     deliberation.attestationSummary,
     intentInfo ? `Cross-chain: ${intentInfo}` : '',
+    `Tier: ${tierInfo.tier} | Approval: ${policyResult.approvalRequirement.approvalType} (${policyResult.approvalRequirement.requiredVotes} vote${policyResult.approvalRequirement.requiredVotes === 1 ? '' : 's'})`,
     `Confidence: ${deliberation.overallConfidence}%`,
   ].filter(Boolean).join(' | ');
 
@@ -593,6 +666,12 @@ async function runPropose(opts: ProposeOpts) {
         `  Contributor Tier:  ${tierInfo.tier} (${tierInfo.maxPerProposalMultiplier}x cap | ${tierInfo.multiplier}x reward bonus)`
       )
     );
+    console.log(
+      chalk.gray(
+        `  Approval Tier:     ${policyResult.approvalRequirement.approvalType} (${policyResult.approvalRequirement.description})`
+      )
+    );
+    console.log(chalk.gray(`  Required Quorum:   ${policyResult.approvalRequirement.requiredVotes} human council signature(s)`));
     console.log(chalk.gray(`  Deliberation:      Inspector ${deliberation.inspector.score}/100 · Risk ${deliberation.riskArbiter.riskLevel}`));
     console.log(chalk.gray(`  Proposal Payload:`));
     console.log(JSON.stringify({ description, kind: proposalKind }, null, 2));
@@ -612,6 +691,7 @@ async function runPropose(opts: ProposeOpts) {
   await reputation.recordProposalSubmitted(opts.recipient);
 
   console.log(chalk.bold.green(`\n  ✓ Proposal #${proposalId} submitted to ${cfg.daoContractId}`));
+  console.log(chalk.cyan(`  Approval Requirement: ${policyResult.approvalRequirement.approvalType} (${policyResult.approvalRequirement.requiredVotes} human council signature(s))`));
   console.log(`\n  View Proposal on NEAR Explorer:`);
   console.log(chalk.underline(
     `  https://${cfg.network === 'testnet' ? 'testnet.' : ''}nearblocks.io/accounts/${cfg.daoContractId}`,

@@ -1,0 +1,113 @@
+{
+  "entries": {
+    "zinipay-recipient2.testnet": {
+      "accountId": "zinipay-recipient2.testnet",
+      "score": 30,
+      "tier": "Silver",
+      "totalProposals": 2,
+      "approvedProposals": 2,
+      "completedTasks": 2,
+      "totalPaidNear": 0.2,
+      "rejectionsCount": 11,
+      "lastActivity": 1793633333886,
+      "payouts": [
+        {
+          "txHash": "HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK",
+          "amountNear": 0.1,
+          "deliverableCid": "kellycryptos/zinipay#1",
+          "task": "PolicyHelper contract deployment and release verification",
+          "timestamp": 1793540000000
+        },
+        {
+          "txHash": "2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d",
+          "amountNear": 0.1,
+          "deliverableCid": "kellycryptos/zinipay#2",
+          "task": "Case-variant anti-replay security fix and multi-sig settlement",
+          "timestamp": 1793630000000
+        }
+      ]
+    },
+    "kellycryptos.testnet": {
+      "accountId": "kellycryptos.testnet",
+      "score": 0,
+      "tier": "Bronze",
+      "totalProposals": 0,
+      "approvedProposals": 0,
+      "lastActivity": 1793355822761
+    }
+  },
+  "events": [
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (kellycryptos) does not match recipient handle (zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793355776584
+    },
+    {
+      "accountId": "kellycryptos.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR zinipay-recipient binding (\"zinipay-recipient2.testnet\") does not match recipient account (\"kellycryptos.testnet\")",
+      "createdAt": 1793355822761
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793357285644
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793358513319
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793358664515
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (kellycryptos) does not match recipient handle (zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793548387191
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (kellycryptos) does not match recipient handle (zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793548950241
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793549154995
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793551792126
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: GitHub PR verification failed: timeout of 8000ms exceeded",
+      "createdAt": 1793632555842
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
+      "createdAt": 1793632714022
+    },
+    {
+      "accountId": "zinipay-recipient2.testnet",
+      "delta": -5,
+      "reason": "rejected: [SIMULATION] Artifact unverified: Deliverable must be a valid GitHub PR URL or resolvable IPFS CID",
+      "createdAt": 1793633333886
+    }
+  ]
+}

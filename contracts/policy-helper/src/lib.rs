@@ -80,6 +80,53 @@ impl PolicyHelper {
         };
         (self.per_proposal_cap * multiplier_bp) / 100
     }
+    /// Returns the required approval tier for an account and requested payout amount:
+    /// - High-reputation (Gold >= 60 pts):
+    ///     <= 2 NEAR: AutoApprove (0 votes / micro-clearance)
+    ///     <= 8 NEAR: SingleCouncil (1 council member approval)
+    ///     > 8 NEAR: FullDaoQuorum (>= 2 council members)
+    /// - Medium-reputation (Silver 20 - 59 pts):
+    ///     <= 1 NEAR: SingleCouncil (fast-track micro payout, 1 vote)
+    ///     <= 5 NEAR: SingleCouncil (1 council member approval)
+    ///     > 5 NEAR: FullDaoQuorum (>= 2 council members)
+    /// - Entry-reputation (Bronze 0 - 19 pts):
+    ///     All amounts: FullDaoQuorum (mandatory multi-sig council quorum)
+    pub fn get_approval_tier(&self, account: AccountId, amount: U128) -> near_sdk::serde_json::Value {
+        let score = self.reputation_scores.get(&account).unwrap_or(0);
+        let amount_yocto = amount.0;
+        let one_near: u128 = 1_000_000_000_000_000_000_000_000;
+        let two_near: u128 = 2 * one_near;
+        let five_near: u128 = 5 * one_near;
+        let eight_near: u128 = 8 * one_near;
+
+        let (tier_name, required_votes, approval_type, auto_approve) = if score >= 60 {
+            if amount_yocto <= two_near {
+                ("Gold", 0, "AutoApprove", true)
+            } else if amount_yocto <= eight_near {
+                ("Gold", 1, "SingleCouncil", false)
+            } else {
+                ("Gold", 2, "FullDaoQuorum", false)
+            }
+        } else if score >= 20 {
+            if amount_yocto <= five_near {
+                ("Silver", 1, "SingleCouncil", false)
+            } else {
+                ("Silver", 2, "FullDaoQuorum", false)
+            }
+        } else {
+            ("Bronze", 2, "FullDaoQuorum", false)
+        };
+
+        near_sdk::serde_json::json!({
+            "account": account.to_string(),
+            "score": score,
+            "tier": tier_name,
+            "amount": amount.0.to_string(),
+            "required_votes": required_votes,
+            "approval_type": approval_type,
+            "auto_approve": auto_approve,
+        })
+    }
 
     // ─── Atomic Release & Policy Checks ──────────────────────────────
 
@@ -371,6 +418,25 @@ impl PolicyHelper {
         })
     }
 
+    
+    pub fn get_contributor_record(&self, account: AccountId) -> near_sdk::serde_json::Value {
+        let score = self.reputation_scores.get(&account).unwrap_or(0);
+        let tier = if score >= 60 {
+            "Gold"
+        } else if score >= 20 {
+            "Silver"
+        } else {
+            "Bronze"
+        };
+        let effective_cap = self.get_effective_cap(Some(account.clone()), None);
+        near_sdk::serde_json::json!({
+            "account": account.to_string(),
+            "score": score,
+            "tier": tier,
+            "effective_cap": effective_cap.to_string(),
+            "min_reputation": self.min_reputation,
+        })
+    }
     pub fn cid_used(&self, cid: String) -> bool {
         let norm_cid = canonical_cid(&cid);
         self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid)
@@ -411,6 +477,48 @@ impl PolicyHelper {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_tiered_approval_resolution() {
+        let (mut contract, owner, _) = setup_contract();
+        let gold_user: AccountId = "gold.testnet".parse().unwrap();
+        let silver_user: AccountId = "silver.testnet".parse().unwrap();
+        let bronze_user: AccountId = "bronze.testnet".parse().unwrap();
+
+        let ctx_owner = get_context(owner, 0, 1_000_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.update_reputation(gold_user.clone(), Some(70), None);
+        contract.update_reputation(silver_user.clone(), Some(35), None);
+
+        // Gold: small amount <= 2 NEAR -> AutoApprove (0 votes)
+        let gold_small = contract.get_approval_tier(gold_user.clone(), U128(1_000_000_000_000_000_000_000_000));
+        assert_eq!(gold_small["approval_type"], "AutoApprove");
+        assert_eq!(gold_small["required_votes"], 0);
+
+        // Gold: medium amount <= 8 NEAR -> SingleCouncil (1 vote)
+        let gold_med = contract.get_approval_tier(gold_user.clone(), U128(5_000_000_000_000_000_000_000_000));
+        assert_eq!(gold_med["approval_type"], "SingleCouncil");
+        assert_eq!(gold_med["required_votes"], 1);
+
+        // Gold: large amount > 8 NEAR -> FullDaoQuorum (2 votes)
+        let gold_large = contract.get_approval_tier(gold_user.clone(), U128(12_000_000_000_000_000_000_000_000));
+        assert_eq!(gold_large["approval_type"], "FullDaoQuorum");
+        assert_eq!(gold_large["required_votes"], 2);
+
+        // Silver: small/medium <= 5 NEAR -> SingleCouncil (1 vote)
+        let silver_small = contract.get_approval_tier(silver_user.clone(), U128(1_000_000_000_000_000_000_000_000));
+        assert_eq!(silver_small["approval_type"], "SingleCouncil");
+        assert_eq!(silver_small["required_votes"], 1);
+
+        // Silver: large > 5 NEAR -> FullDaoQuorum (2 votes)
+        let silver_large = contract.get_approval_tier(silver_user.clone(), U128(10_000_000_000_000_000_000_000_000));
+        assert_eq!(silver_large["approval_type"], "FullDaoQuorum");
+        assert_eq!(silver_large["required_votes"], 2);
+
+        // Bronze: all amounts -> FullDaoQuorum (2 votes)
+        let bronze_any = contract.get_approval_tier(bronze_user.clone(), U128(1_000_000_000_000_000_000_000_000));
+        assert_eq!(bronze_any["approval_type"], "FullDaoQuorum");
+        assert_eq!(bronze_any["required_votes"], 2);
+    }
     use super::*;
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::testing_env;

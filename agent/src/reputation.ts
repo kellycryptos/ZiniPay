@@ -1,10 +1,12 @@
 /**
  * reputation.ts — Contributor reputation & tier-gated privileges (lowdb / JSON state)
  *
- * Implements Reputation Tiers:
- *   - Bronze (0 - 19 pts): Base 1.0x cap multiplier, mandatory human approval.
- *   - Silver (20 - 59 pts): 1.1x reward multiplier, 1.5x spend cap.
- *   - Gold (60+ pts): 1.25x reward multiplier, 2.0x spend cap, eligible for micro-auto-clearing.
+ * Implements Social Money Reputation & Tiered Approvals:
+ *   - Bronze (0 - 19 pts): Base 1.0x cap (10N), mandatory 2-of-2 human multi-sig quorum.
+ *   - Silver (20 - 59 pts): 1.1x reward multiplier, 1.5x spend cap (15N), single council approval for <= 5N.
+ *   - Gold (60+ pts): 1.25x reward multiplier, 2.0x spend cap (20N), micro auto-clear for <= 2N, single council for <= 8N.
+ *
+ * All scores and track records are publicly readable.
  */
 
 import { Low } from 'lowdb';
@@ -12,11 +14,23 @@ import { JSONFile } from 'lowdb/node';
 
 export type ReputationTier = 'Bronze' | 'Silver' | 'Gold';
 
+export type ApprovalType = 'AutoApprove' | 'SingleCouncil' | 'FullDaoQuorum';
+
 export interface TierInfo {
   tier: ReputationTier;
   multiplier: number;
   autoClearEligible: boolean;
   maxPerProposalMultiplier: number;
+}
+
+export interface ApprovalRequirementInfo {
+  tier: ReputationTier;
+  score: number;
+  amountNear: number;
+  approvalType: ApprovalType;
+  requiredVotes: number;
+  description: string;
+  autoApprove: boolean;
 }
 
 export function getTierInfo(score: number): TierInfo {
@@ -44,20 +58,147 @@ export function getTierInfo(score: number): TierInfo {
   };
 }
 
+/**
+ * Computes tiered approval requirement based on contributor reputation score and payout amount:
+ * - High-reputation (Gold >= 60 pts):
+ *     <= 2 NEAR: AutoApprove (0 votes / instant release)
+ *     <= 8 NEAR: SingleCouncil (1 council member approval)
+ *     > 8 NEAR: FullDaoQuorum (>= 2 council members)
+ * - Medium-reputation (Silver 20 - 59 pts):
+ *     <= 1 NEAR: SingleCouncil (fast-track micro payout, 1 vote)
+ *     <= 5 NEAR: SingleCouncil (1 council member approval)
+ *     > 5 NEAR: FullDaoQuorum (>= 2 council members)
+ * - Entry-reputation (Bronze 0 - 19 pts):
+ *     All amounts: FullDaoQuorum (mandatory multi-sig council quorum)
+ */
+export function getApprovalRequirement(score: number, amountNear: number): ApprovalRequirementInfo {
+  const tierInfo = getTierInfo(score);
+
+  if (tierInfo.tier === 'Gold') {
+    if (amountNear <= 2.0) {
+      return {
+        tier: 'Gold',
+        score,
+        amountNear,
+        approvalType: 'AutoApprove',
+        requiredVotes: 0,
+        description: 'Auto-Approved (Micro-clearance: Gold contributor <= 2 NEAR)',
+        autoApprove: true,
+      };
+    } else if (amountNear <= 8.0) {
+      return {
+        tier: 'Gold',
+        score,
+        amountNear,
+        approvalType: 'SingleCouncil',
+        requiredVotes: 1,
+        description: 'Single Council Approval (Fast-track: Gold contributor <= 8 NEAR)',
+        autoApprove: false,
+      };
+    } else {
+      return {
+        tier: 'Gold',
+        score,
+        amountNear,
+        approvalType: 'FullDaoQuorum',
+        requiredVotes: 2,
+        description: 'Full DAO Quorum (Multi-sig: Gold contributor > 8 NEAR up to 20 NEAR cap)',
+        autoApprove: false,
+      };
+    }
+  }
+
+  if (tierInfo.tier === 'Silver') {
+    if (amountNear <= 1.0) {
+      return {
+        tier: 'Silver',
+        score,
+        amountNear,
+        approvalType: 'SingleCouncil',
+        requiredVotes: 1,
+        description: 'Single Council Approval (Fast-track micro: Silver contributor <= 1 NEAR)',
+        autoApprove: false,
+      };
+    } else if (amountNear <= 5.0) {
+      return {
+        tier: 'Silver',
+        score,
+        amountNear,
+        approvalType: 'SingleCouncil',
+        requiredVotes: 1,
+        description: 'Single Council Approval (Medium bounty: Silver contributor <= 5 NEAR)',
+        autoApprove: false,
+      };
+    } else {
+      return {
+        tier: 'Silver',
+        score,
+        amountNear,
+        approvalType: 'FullDaoQuorum',
+        requiredVotes: 2,
+        description: 'Full DAO Quorum (Multi-sig: Silver contributor > 5 NEAR up to 15 NEAR cap)',
+        autoApprove: false,
+      };
+    }
+  }
+
+  return {
+    tier: 'Bronze',
+    score,
+    amountNear,
+    approvalType: 'FullDaoQuorum',
+    requiredVotes: 2,
+    description: 'Full DAO Quorum (Mandatory 2-of-N multi-sig: Bronze contributor up to 10 NEAR cap)',
+    autoApprove: false,
+  };
+}
+
+export interface ContributorPayout {
+  txHash?: string;
+  amountNear: number;
+  deliverableCid?: string;
+  task?: string;
+  timestamp: number;
+}
+
 export interface ReputationEntry {
   accountId: string;
   score: number;
   tier: ReputationTier;
   totalProposals: number;
   approvedProposals: number;
+  completedTasks: number;
+  totalPaidNear: number;
+  rejectionsCount: number;
   lastActivity: number;
+  payouts?: ContributorPayout[];
 }
 
-interface ReputationEvent {
+export interface ReputationEvent {
   accountId: string;
   delta: number;
   reason: string;
   createdAt: number;
+}
+
+export interface ContributorTrackRecord {
+  accountId: string;
+  score: number;
+  tier: ReputationTier;
+  completedTasks: number;
+  totalPaidNear: number;
+  totalProposals: number;
+  approvedProposals: number;
+  rejectionsCount: number;
+  successRatePercent: number;
+  tierInfo: TierInfo;
+  sampleApprovalSchedule: {
+    micro: ApprovalRequirementInfo;
+    medium: ApprovalRequirementInfo;
+    large: ApprovalRequirementInfo;
+  };
+  recentEvents: ReputationEvent[];
+  payouts: ContributorPayout[];
 }
 
 interface DbSchema {
@@ -79,6 +220,10 @@ export class ReputationLedger {
     const adapter = new JSONFile<DbSchema>(this.dbPath);
     this.db = new Low(adapter, DEFAULT_DB);
     await this.db.read();
+    if (!this.db.data) {
+      this.db.data = { entries: {}, events: [] };
+      await this.db.write();
+    }
   }
 
   private get data(): DbSchema {
@@ -92,7 +237,11 @@ export class ReputationLedger {
       tier: 'Bronze',
       totalProposals: 0,
       approvedProposals: 0,
+      completedTasks: 0,
+      totalPaidNear: 0,
+      rejectionsCount: 0,
       lastActivity: Date.now(),
+      payouts: [],
     };
   }
 
@@ -101,13 +250,19 @@ export class ReputationLedger {
   }
 
   getEntry(accountId: string): ReputationEntry {
-    const entry = this.data.entries[accountId] ?? this.defaultEntry(accountId);
-    entry.tier = getTierInfo(entry.score).tier;
-    return entry;
+    const raw = this.data.entries[accountId] ?? this.defaultEntry(accountId);
+    return {
+      ...raw,
+      completedTasks: raw.completedTasks ?? raw.approvedProposals ?? 0,
+      totalPaidNear: raw.totalPaidNear ?? 0,
+      rejectionsCount: raw.rejectionsCount ?? 0,
+      payouts: raw.payouts ?? [],
+      tier: getTierInfo(raw.score).tier,
+    };
   }
 
   async recordProposalSubmitted(accountId: string) {
-    const entry = this.data.entries[accountId] ?? this.defaultEntry(accountId);
+    const entry = this.getEntry(accountId);
     entry.totalProposals += 1;
     entry.lastActivity = Date.now();
     entry.tier = getTierInfo(entry.score).tier;
@@ -115,27 +270,68 @@ export class ReputationLedger {
     await this.db.write();
   }
 
-  async recordProposalApproved(accountId: string, validatorConfidence: number) {
+  async recordProposalApproved(
+    accountId: string,
+    validatorConfidence: number,
+    amountNear = 0,
+    deliverableCid?: string,
+    task?: string,
+    txHash?: string
+  ) {
     const bonus = validatorConfidence > 80 ? (validatorConfidence - 80) * 0.2 : 0;
     const delta = 10 + bonus;
-    const entry = this.data.entries[accountId] ?? this.defaultEntry(accountId);
+    const entry = this.getEntry(accountId);
     entry.score += delta;
     entry.approvedProposals += 1;
+    entry.completedTasks += 1;
+    if (amountNear > 0) {
+      entry.totalPaidNear = Number((entry.totalPaidNear + amountNear).toFixed(4));
+    }
     entry.lastActivity = Date.now();
     entry.tier = getTierInfo(entry.score).tier;
+    if (!entry.payouts) entry.payouts = [];
+    if (amountNear > 0 || deliverableCid) {
+      entry.payouts.push({
+        txHash,
+        amountNear,
+        deliverableCid,
+        task,
+        timestamp: Date.now(),
+      });
+    }
     this.data.entries[accountId] = entry;
     this.data.events.push({
       accountId,
       delta,
-      reason: `approved (confidence ${validatorConfidence})`,
+      reason: `approved (confidence ${validatorConfidence}${amountNear > 0 ? `, ${amountNear} NEAR paid` : ''})`,
       createdAt: Date.now(),
     });
     await this.db.write();
   }
 
+  async recordPayoutSettled(opts: {
+    accountId: string;
+    amountNear: number;
+    deliverableCid?: string;
+    txHash?: string;
+    task?: string;
+    validatorConfidence?: number;
+  }) {
+    const confidence = opts.validatorConfidence ?? 90;
+    await this.recordProposalApproved(
+      opts.accountId,
+      confidence,
+      opts.amountNear,
+      opts.deliverableCid,
+      opts.task,
+      opts.txHash
+    );
+  }
+
   async recordProposalRejected(accountId: string, reason: string) {
-    const entry = this.data.entries[accountId] ?? this.defaultEntry(accountId);
+    const entry = this.getEntry(accountId);
     entry.score = Math.max(0, entry.score - 5);
+    entry.rejectionsCount += 1;
     entry.lastActivity = Date.now();
     entry.tier = getTierInfo(entry.score).tier;
     this.data.entries[accountId] = entry;
@@ -148,16 +344,58 @@ export class ReputationLedger {
     await this.db.write();
   }
 
+  async setReputation(accountId: string, score: number, completedTasks?: number, totalPaidNear?: number) {
+    const entry = this.getEntry(accountId);
+    entry.score = score;
+    entry.tier = getTierInfo(score).tier;
+    if (typeof completedTasks === 'number') entry.completedTasks = completedTasks;
+    if (typeof totalPaidNear === 'number') entry.totalPaidNear = totalPaidNear;
+    entry.lastActivity = Date.now();
+    this.data.entries[accountId] = entry;
+    await this.db.write();
+  }
+
   getHistory(accountId: string) {
     return this.data.events
       .filter((e) => e.accountId === accountId)
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  getPublicTrackRecord(accountId: string): ContributorTrackRecord {
+    const entry = this.getEntry(accountId);
+    const tierInfo = getTierInfo(entry.score);
+    const totalActivity = entry.totalProposals > 0 ? entry.totalProposals : entry.approvedProposals;
+    const successRatePercent = totalActivity > 0 ? Math.round((entry.approvedProposals / totalActivity) * 100) : 100;
+
+    return {
+      accountId,
+      score: entry.score,
+      tier: tierInfo.tier,
+      completedTasks: entry.completedTasks,
+      totalPaidNear: entry.totalPaidNear,
+      totalProposals: entry.totalProposals,
+      approvedProposals: entry.approvedProposals,
+      rejectionsCount: entry.rejectionsCount,
+      successRatePercent,
+      tierInfo,
+      sampleApprovalSchedule: {
+        micro: getApprovalRequirement(entry.score, 0.5),
+        medium: getApprovalRequirement(entry.score, 3.0),
+        large: getApprovalRequirement(entry.score, 10.0),
+      },
+      recentEvents: this.getHistory(accountId).slice(0, 10),
+      payouts: (entry.payouts || []).slice(-10),
+    };
+  }
+
+  getAllTrackRecords(): ContributorTrackRecord[] {
+    return Object.keys(this.data.entries).map((account) => this.getPublicTrackRecord(account));
+  }
+
   getLeaderboard(limit = 10): ReputationEntry[] {
     return Object.values(this.data.entries)
-      .map((e) => ({ ...e, tier: getTierInfo(e.score).tier }))
-      .sort((a, b) => b.score - a.score)
+      .map((e) => this.getEntry(e.accountId))
+      .sort((a, b) => b.score - a.score || b.completedTasks - a.completedTasks)
       .slice(0, limit);
   }
 }

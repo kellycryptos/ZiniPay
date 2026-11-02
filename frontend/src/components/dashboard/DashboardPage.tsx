@@ -31,6 +31,7 @@ interface DashboardPageProps {
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
   isDemoMode: boolean;
+  onNavigateToBoard?: () => void;
 }
 
 export function DashboardPage({
@@ -54,6 +55,7 @@ export function DashboardPage({
   onShowToast,
   onRefresh,
   isDemoMode,
+  onNavigateToBoard,
 }: DashboardPageProps) {
   // Navigation tabs: 'pending' | 'paid' | 'all' | 'new_payout' | 'security'
   const [tab, setTab] = useState<'pending' | 'paid' | 'all' | 'new_payout' | 'security'>(() => {
@@ -203,6 +205,17 @@ export function DashboardPage({
                 >
                   <span>Security log</span>
                 </button>
+
+                {onNavigateToBoard && (
+                  <button
+                    type="button"
+                    onClick={onNavigateToBoard}
+                    className="pb-2.5 font-medium border-b-2 border-transparent text-[#00EC97] hover:text-white transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>Public board</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]"></span>
+                  </button>
+                )}
               </nav>
             </div>
           </div>

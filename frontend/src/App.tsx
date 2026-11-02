@@ -9,6 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardPage } from './components/dashboard/DashboardPage';
+import { PublicBoard } from './components/PublicBoard';
 import { Navbar } from './components/Navbar';
 import { ProofModal } from './components/ProofModal';
 import { DeliberationModal } from './components/DeliberationModal';
@@ -289,8 +290,53 @@ export default function App() {
         }}
       />
 
-      {/* Route Switcher */}
-      {isAppRoute ? (
+      {/* Route Switcher: "/" -> Landing, "/app" -> Dashboard, "/board" -> PublicBoard */}
+      {currentPath === '/board' ? (
+        <div className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
+          {/* Public Board Navbar */}
+          <Navbar
+            network={network}
+            onNetworkChange={(net) => {
+              setNetwork(net);
+              showToast(`Switched network to NEAR ${net.toUpperCase()}`);
+            }}
+            daoContract={daoContract}
+            onDaoContractChange={(dao) => {
+              setDaoContract(dao);
+              loadLiveDaoData(dao, network);
+            }}
+            policyContractId={policyContractId}
+            onPolicyContractChange={(pol) => setPolicyContractId(pol)}
+            activeRole={activeRole}
+            onRoleChange={(r) => {
+              setActiveRole(r);
+              showToast(`Switched active view to: ${r}`);
+            }}
+            connectedAccount={connectedAccount}
+            onOpenWalletModal={() => setIsWalletModalOpen(true)}
+            onNavigateToLanding={() => navigate('/')}
+            currentPath="/board"
+            onNavigateToDashboard={() => navigate('/app')}
+            onNavigateToBoard={() => navigate('/board')}
+          />
+
+          <main className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
+            <PublicBoard
+              proposals={proposals}
+              network={network}
+              daoContract={daoContract}
+              policyContractId={policyContractId}
+              onRefresh={() => {
+                loadLiveDaoData(daoContract, network);
+                showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
+              }}
+              isLoading={isLoadingOnChain}
+              onInspectProposal={(prop) => setSelectedProofProposal(prop)}
+              onNavigateToDashboard={() => navigate('/app')}
+            />
+          </main>
+        </div>
+      ) : isAppRoute ? (
         <div className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
           {/* Dashboard Navbar */}
           <Navbar
@@ -314,6 +360,9 @@ export default function App() {
             connectedAccount={connectedAccount}
             onOpenWalletModal={() => setIsWalletModalOpen(true)}
             onNavigateToLanding={() => navigate('/')}
+            currentPath="/app"
+            onNavigateToDashboard={() => navigate('/app')}
+            onNavigateToBoard={() => navigate('/board')}
           />
 
           {/* Dashboard Page */}
@@ -361,12 +410,16 @@ export default function App() {
                 showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
               }}
               isDemoMode={isDemoMode}
+              onNavigateToBoard={() => navigate('/board')}
             />
           </main>
         </div>
       ) : (
         /* Landing Page at "/" */
-        <LandingPage onNavigateToApp={() => navigate('/app')} />
+        <LandingPage
+          onNavigateToApp={() => navigate('/app')}
+          onNavigateToBoard={() => navigate('/board')}
+        />
       )}
     </div>
   );

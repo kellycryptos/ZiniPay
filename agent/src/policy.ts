@@ -18,7 +18,7 @@
 
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
-import { getTierInfo, type ReputationTier } from './reputation.js';
+import { getTierInfo, getApprovalRequirement, type ReputationTier, type ApprovalRequirementInfo } from './reputation.js';
 
 export interface PolicyConfig {
   maxSpendPerProposal: bigint;   // Base yoctoNEAR cap
@@ -35,7 +35,13 @@ export interface PolicyCheckInput {
 }
 
 export type PolicyResult =
-  | { ok: true; tier: ReputationTier; effectiveCapYocto: bigint; normalizedDeliverable: string }
+  | {
+      ok: true;
+      tier: ReputationTier;
+      effectiveCapYocto: bigint;
+      normalizedDeliverable: string;
+      approvalRequirement: ApprovalRequirementInfo;
+    }
   | { ok: false; reason: string };
 
 interface ProposalRecord {
@@ -211,7 +217,16 @@ export class PolicyEngine {
       };
     }
 
-    return { ok: true, tier: tierInfo.tier, effectiveCapYocto, normalizedDeliverable: normalized };
+    const amountNear = Number(input.amountYocto) / 1e24;
+    const approvalRequirement = getApprovalRequirement(input.recipientReputation, amountNear);
+
+    return {
+      ok: true,
+      tier: tierInfo.tier,
+      effectiveCapYocto,
+      normalizedDeliverable: normalized,
+      approvalRequirement,
+    };
   }
 
   async recordProposal(opts: {

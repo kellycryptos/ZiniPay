@@ -11,12 +11,14 @@ import {
   CheckCircle2,
   ExternalLink,
   BookOpen,
+  Coins,
 } from 'lucide-react';
 import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
 import { Proposal } from '../../lib/types';
 
 interface LandingHeroProps {
   onNavigateToApp: () => void;
+  onNavigateToBoard?: () => void;
 }
 
 const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
@@ -60,7 +62,7 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
   },
 };
 
-export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
+export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroProps) {
   const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
   const [isRealRun, setIsRealRun] = useState<boolean>(false);
   const [isApprovedRun, setIsApprovedRun] = useState<boolean>(false);
@@ -221,6 +223,17 @@ export function LandingHero({ onNavigateToApp }: LandingHeroProps) {
               <span>Open Dashboard</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
+
+            {onNavigateToBoard && (
+              <button
+                type="button"
+                onClick={onNavigateToBoard}
+                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-1.5 text-[#00EC97] hover:text-white border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
+              >
+                <Coins size={14} />
+                <span>Public Board</span>
+              </button>
+            )}
 
             <a
               href="https://github.com/zinipay/zinipay"

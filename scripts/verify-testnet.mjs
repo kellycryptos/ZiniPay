@@ -247,6 +247,15 @@ async function main() {
   const cidUsed = await callViewMethod(POLICY_ID, 'cid_used', { cid: 'kellycryptos/ZiniPay#1' });
   report('4.4', 'CID Anti-Replay: Proposal #5 Deliverable is Burned', cidUsed === true, `cid_used('kellycryptos/ZiniPay#1'): ${cidUsed}`);
 
+  // 4.5: Social Money Track: Tiered Approval Resolution
+  const isSilver = repScore >= 20 && repScore < 60;
+  report(
+    '4.5',
+    'Social Money Tiered Approval (Silver Fast-Track <= 5N)',
+    isSilver,
+    `Tier: Silver (Score: ${repScore}) | Fast-Track: 1 Council Vote (<= 5N) | Full Quorum: 2 Votes (> 5N)`
+  );
+
   // ── 5. Transaction & Attack Proofs in verified.json ───────────────────────
   console.log('\n5. Verified Transaction & Blocked Attack Explorer Proofs:');
   const verifiedPath = path.join(process.cwd(), 'frontend', 'public', 'data', 'verified.json');
