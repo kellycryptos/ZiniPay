@@ -3,264 +3,47 @@
 > Constrained agent layer for community treasuries. Agents propose payouts, contracts enforce policy, humans approve.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://near.org)
+[![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg)](https://www.typescriptlang.org)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-DEA584.svg)](https://www.rust-lang.org)
 
 ---
 
-## What It Is
+## 1. For Judges / AI Reviewers (Do X → See Y)
 
-ZiniPay is a fail-closed execution layer that enables autonomous AI agents to evaluate contributor deliverables and draft treasury payout proposals without granting them direct custody or unilateral signing authority. By enforcing verifiable deliverable proofs, hard on-chain spend limits, and mandatory human multi-sig approvals, ZiniPay eliminates agent runaway spending, prompt injection exploits, and deliverable replay attacks while automating routine bounty evaluation for decentralized treasuries.
-
----
-
-## For Judges: Quick Verification (Do X, See Y)
-
-Reviewers and judges can verify the entire codebase and live testnet deployment in under 60 seconds with **zero private keys, zero wallet setup, and no `.env` required**:
-
-> 📋 **Developer Experience & Friction Log**: See [`docs/DEVEX.md`](docs/DEVEX.md) for 13 documented NEAR protocol friction points, exact error logs, and architectural solutions encountered during development.
+You can verify the entire codebase and testnet deployment in under 5 minutes with **zero private keys, zero wallet setup, and no `.env` required**:
 
 ```bash
-# 1. Install dependencies (~10s, Node.js >= 20.0.0; Node >= 24.22.1 enables live @nearai/inference-sdk attestation checks)
+# Step 1: Install dependencies (~10s)
 npm install
+```
+**See**: Clean dependency installation across all workspace packages (`agent`, `frontend`).
 
-# 2. Run agent unit test suite (fail-closed logic, anti-replay, TEE attestation verification, 1Click quote API) (~8s)
+```bash
+# Step 2: Run agent unit test suite (~8s)
 npm test --prefix agent
-# Expected: All agent tests completed successfully! (14 passing tests)
+```
+**See**: `14 passed`. Verifies schema-level prompt injection defense, GitHub PR metadata parsing, CID canonicalization, and anti-replay guards.
 
-# 3. Run keyless on-chain testnet verification suite (~15s)
+```bash
+# Step 3: Run keyless testnet verification suite (~15s)
 npm run verify:testnet
-# Expected: 17 PASSED / 0 UNVERIFIED / 0 FAILED (Check 2.3 prints INFO for simulated attestation on Proposal #5)
-# Verifies:
-#   - Sputnik DAO v2 account active and council multi-sig quorum (>= 2 human signers)
-#   - Agent proposer isolation (Requestor role only, 0 voting keys)
-#   - Proposal #5 status is Approved and targets PolicyHelper::release
-#   - Model review attestation receipt / status recorded
-#   - PolicyHelper smart contract active and WASM code hash verified
-#   - PolicyHelper bound strictly to DAO treasury
-#   - Contributor reputation score is 25 (Silver tier)
-#   - Silver tier spend cap scaled to 15 NEAR (1.5x base)
-#   - Deliverable CID burned on-chain (cid_used: true)
-#   - 4 confirmed testnet transaction receipts (proposal creation, 2 council approvals, promotion)
-#   - 3 real on-chain attack transactions reverted with exact contract panic assertions (replay, over-cap, unauthorized)
+```
+**See**: `24 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
+- Active Sputnik DAO v2 council with 2-of-2 multi-sig quorum (`zinipay-c1.testnet`, `zinipay-c2.testnet`).
+- Agent proposer isolation: `agentzinipaytestnet.testnet` holds `Requestor` role only (0 council seats, 0 voting keys).
+- Active Rust `PolicyHelper` contract bound strictly to DAO treasury.
+- Contributor reputation score (Silver tier: 15 NEAR cap) and deliverable CID burn status (`cid_used: true`).
+- 14 confirmed on-chain transaction receipts (proposal creation, council approvals, promotion, and 5 blocked attack transactions reverted with exact contract panic messages).
 
-# 4. Run independent proposal verifier (cross-references Sputnik DAO proposal vs PolicyHelper payout) (~5s)
+```bash
+# Step 4: Run independent proposal verifier (~5s)
 npm run verify:proposal -- 5
-# Expected: PROPOSAL #5 VERIFIED CLEAN ON-CHAIN: 100% MATCH (Honest simulated model review status displayed)
-# Note: Test fail-closed rejection on non-release proposals via `npm run verify:proposal -- 0`.
-
-# 5. Run agent three-way match & deliberation check (~5s, zero keys required)
-npm run agent:propose -- --task "Implement DAO dashboard" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run
-# Expected: Three-way match clears, queries live testnet policy contract for tier & cap,
-# outputs draft FunctionCall proposal with 1 NEAR bond for Sputnik DAO.
-# Test attack rejection: rerun with pull/1 to see replay attack blocked, or amount "25" for over-cap rejection.
-
-# 6. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker)
-cd contracts/policy-helper && cargo test && cd ../..
-# Expected: test result: ok. 20 passed; 0 failed
 ```
-
----
-
-## How It Works
-
-ZiniPay operates via a **Three-Way Release Gate** that separates evaluation, policy enforcement, and final fund disbursement across three distinct boundaries:
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        THREE-WAY RELEASE GATE                          │
-└────────────────────────────────────────────────────────────────────────┘
-
-  [1. Gate 1: Deliverable Proof]
-         │  • GitHub PR: Merged status, author match, commit verification
-         │  • Recipient binding: "zinipay-recipient: <account.testnet>"
-         │  • IPFS CID: Canonical hash calculation & duplicate check
-         ▼
-  [2. Gate 2: On-Chain Policy Constraints]
-         │  • PolicyHelper contract view: check_policy()
-         │  • Contributor tier limits (Bronze: 10N, Silver: 15N, Gold: 20N)
-         │  • Cooldown timers (e.g., 24 hours between payouts)
-         │  • Anti-replay registry: duplicate CIDs rejected on-chain
-         ▼
-  [3. Gate 3: Human Council Quorum]
-         │  • Agent submits add_proposal (Requestor role only, 0 voting keys)
-         │  • Sputnik DAO v2 collects council multi-sig signatures
-         │  • M-of-N threshold reached (e.g. 2-of-2 or 2-of-3 human votes)
-         ▼
-  [Settlement: Payout Executed]
-```
-
-### Gate 1: Deliverable Proof
-Before any on-chain action is initiated, the agent evaluates the technical deliverable off-chain:
-- **GitHub PR Verification**: Validates that the pull request is merged into the target repository, confirms the commit author matches the claimed contributor handle, and strictly parses the pull request description for explicit recipient identity binding (`zinipay-recipient: <account.testnet>`).
-- **IPFS CID Canonicalization**: Strips transport prefixes (`ipfs://`, gateways) down to bare base32/base58 hashes and verifies deliverable uniqueness against local and on-chain registries.
-- **Multi-Agent Deliberation**: The deliberation engine (Inspector and Risk Arbiter) evaluates deliverable completeness, execution quality, and treasury exposure against structured criteria.
-
-### Gate 2: On-Chain Policy Constraints
-The `PolicyHelper` smart contract enforces programmatic guardrails directly in contract execution:
-- **Caller Restriction**: The contract's `release` method only accepts execution calls initiated by the designated DAO treasury.
-- **Dynamic Tier Caps**: Enforces payout limits based on contributor reputation scores (Bronze [0-19 pts]: 1.0x / 10 NEAR; Silver [20-59 pts]: 1.5x / 15 NEAR; Gold [60+ pts]: 2.0x / 20 NEAR).
-- **Anti-Replay Registry**: Records every settled CID in an on-chain `UnorderedSet`. Duplicate attempts fail immediately with `CID already used — duplicate release attempt blocked`.
-- **Pre-Flight Simulation**: The agent executes `check_policy` via view call before submitting proposals, preventing invalid payouts from wasting gas or locking DAO proposal bonds.
-- **Atomic Rollback**: If the outgoing payout transfer fails, the contract's `on_release_done` callback rolls back CID consumption and resets cooldown timers.
-
-### Gate 3: Human Quorum
-The agent operates under a restricted **Requestor** role:
-- The agent holds zero council seats and cannot sign or approve proposals.
-- Validated requests are submitted to a Sputnik DAO v2 treasury contract as proposals.
-- Funds are only disbursed after a human council multi-sig quorum (e.g., 2-of-2 or 2-of-3 human council members) votes `VoteApprove`. Council members review deliberation reports, deliverable links, and attestation digests directly in the ZiniPay dashboard or Sputnik DAO interfaces.
-
-#### Why a Function-Call Key Cannot Attach the Proposal Bond
-On NEAR Protocol, Access Keys are strictly separated into `FullAccess` and `FunctionCall` permissions. A `FunctionCall` key is restricted to calling specific methods on a designated receiver contract and is **strictly prohibited by NEAR protocol rules from attaching a non-zero deposit** (`CannotAttachDeposit`).
-
-In Sputnik DAO v2, calling `add_proposal` requires attaching the `proposal_bond` configured in the DAO's policy (default 1 NEAR = 10^24 yoctoNEAR) to deter proposal spam:
-- **Dedicated Funded Proposer Account (Standard Production Architecture)**: The agent operates its own dedicated account (e.g., `agentzinipaytestnet.testnet`) holding a Full-Access key, funded with a small operating float (e.g., 2–5 NEAR) strictly to pay proposal bonds. Crucially, the agent holds **zero access keys or signing permissions on the DAO treasury contract itself**, and has 0 council voting rights (`Requestor` role only). Compromising the agent cannot drain treasury funds; it only exposes the agent's minimal bond float (which is refunded upon proposal resolution per DAO policy).
-- **0-Bond Policy for Requestor Role (Alternative Architecture)**: If a DAO explicitly configures its policy with `proposal_bond = "0"` for the `Requestor` role, the agent can use a restricted `FunctionCall` key scoped strictly to `add_proposal`. Note that zero-bond proposal queues are not mitigated on-chain: proposal spam is possible because filing proposals incurs zero bond for authorized requestors. However, the human multi-sig council retains complete discretion to review deliverables and reject (`VoteReject`) any spam proposals.
-
----
-
-## Key Features
-
-- **Fail-Closed Agent Boundaries**: Autonomous agents hold `Requestor` permissions only, with zero ability to vote, self-approve, or bypass multi-sig threshold requirements.
-- **Deliverable Identity Binding**: Prevents deliverable theft by enforcing commit authorship checks and explicit `zinipay-recipient: <account.testnet>` directives in deliverable descriptions.
-- **Stateful Anti-Replay Engine**: Verifies CIDs and PR identifiers against historical records both in the agent state machine and directly in smart contract storage.
-- **Reputation Tiering & Cooldowns**: Enforces contributor cooldown intervals (e.g., 24h) and spend caps scaled by verified milestone completions.
-- **Pre-Flight Proposal Checks**: Queries contract view functions prior to broadcasting transactions, preventing malformed or out-of-policy proposals from locking treasury bonds.
-- **Automated Rollback Callbacks**: On-chain transfer failures trigger automatic rollback of consumed CIDs and reset cooldown timers (unit tested).
-- **Cross-Chain Routing (NEAR Intents)**: Integrates with the NEAR Intents 1Click API for real-time cross-chain quotes and solver routing when payouts require external assets (e.g., USDC).
-
----
-
-## Architecture
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                          SYSTEM ARCHITECTURE                           │
-└────────────────────────────────────────────────────────────────────────┘
-
-  [ Contributor ] ── Submits PR / CID with "zinipay-recipient: <id>"
-         │
-         ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  ZiniPay Agent Layer (Node.js / TypeScript)                │
-  │  • Deliverable Verifier (GitHub REST / IPFS)                │
-  │  • Multi-Agent Deliberation (Inspector & Risk Arbiter)       │
-  │  • Pre-Flight Policy Gate (Calls PolicyHelper.check_policy) │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-                                 │ Calls add_proposal (Requestor Role)
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Sputnik DAO v2 Treasury (*.sputnikv2.testnet)              │
-  │  • Stores proposals & holds treasury funds                   │
-  │  • Requires M-of-N human council multi-sig quorum           │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-                                 │ Council members execute VoteApprove
-                                 ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │  PolicyHelper Smart Contract (Rust / NEAR SDK)              │
-  │  • Asserts caller == DAO                                     │
-  │  • Verifies recipient tier spend cap & cooldown              │
-  │  • Enforces atomic CID single-use check                      │
-  │  • Disburses funds via Promise::transfer                    │
-  │  • on_release_done callback handles rollback if transfer fails│
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-                                 ▼
-  [ Contributor Account ] ◀── Receives Payout (NEAR or via NEAR Intents)
-```
-
-### Core Components
-1. **Agent Service (`agent/`)**: TypeScript CLI and daemon. Evaluates deliverables, runs deliberation scoring, validates recipient identity, and submits proposals to the DAO.
-2. **PolicyHelper Contract (`contracts/policy-helper/`)**: Rust contract enforcing tier multipliers, cooldowns, CID anti-replay, and atomic rollback callbacks.
-3. **Sputnik DAO v2**: Decentralized treasury multisig contract holding community funds, managing policy bonds, and executing council votes.
-4. **Dashboard (`frontend/`)**: React 18 / Vite / Tailwind web interface providing real-time visibility into active proposals, council votes, verified receipts, and blocked attack attempts.
-
----
-
-## Built With
-
-In accordance with NEAR HACKATHON Q-005 (disclosure of libraries, templates, and AI coding tools):
-
-- **Smart Contracts (Rust)**:
-  - [`near-sdk`](https://crates.io/crates/near-sdk) `v5.1.0` (with `legacy` and `unit-testing` features) for contract state, borsh serialization, cross-contract promises, callbacks, and testing environments.
-- **Agent Layer (TypeScript & Node.js)**:
-  - [`@nearai/inference-sdk`](https://github.com/nearai/inference-sdk) (`0.2.1`) for hardware-enforced TEE gateway & model attestation and cryptographic response verification (`client.verifyResponse`).
-  - [`near-api-js`](https://github.com/near/near-api-js) (`^5.0.0`) for NEAR RPC communication, key management, view calls, and Sputnik DAO transaction broadcasting.
-  - [`openai`](https://github.com/openai/openai-node) (`^4.70.0`) fallback client configured for OpenAI-compatible endpoints.
-  - [`zod`](https://zod.dev) (`^4.6.7`) for strict schema enforcement, prompt injection defense, and fail-closed structured parsing.
-  - [`commander`](https://github.com/tj/commander.js) (`^12.1.0`), [`chalk`](https://github.com/chalk/chalk) (`^5.3.0`), [`axios`](https://axios-http.com) (`^1.7.9`), [`lowdb`](https://github.com/typicode/lowdb) (`^7.0.1`), and [`dotenv`](https://github.com/motdotla/dotenv).
-- **Frontend & Dashboard (React & Vite)**:
-  - [`react`](https://react.dev) `18.3` and [`react-dom`](https://react.dev) `18.3` with [`vite`](https://vitejs.dev) `^6.0.7` and TypeScript `5.7`.
-  - [`@near-wallet-selector`](https://github.com/near/wallet-selector) `^10.1.4` (Core, Modal UI, Here Wallet, Meteor Wallet, MyNearWallet) for wallet connectivity.
-  - [`tailwindcss`](https://tailwindcss.com) `^3.4.17` and [`lucide-react`](https://lucide.dev) for UI styling and icons.
-- **Protocols & External APIs**:
-  - **Sputnik DAO v2** (`sputnikv2.testnet` / `near-daos/sputnik-dao-contract`): standard multi-sig treasury governance protocol.
-  - **NEAR Intents 1Click API** (`https://1click.chaindefuser.com/v0/quote`): Defuse cross-chain solver quotes and atomic execution.
-  - **NEAR AI Cloud** (`https://cloud-api.near.ai/v1`): decentralized AI inference with hardware TEE attestation for multi-agent deliberation.
-  - **GitHub REST API v3**: deliverable pull request status and recipient directive parsing.
-- **Templates & Boilerplate**: None. All smart contract code, agent logic, UI components, and test scripts were written specifically for ZiniPay.
-- **AI Coding Assistance**: Developed with the assistance of AI coding agents (Antigravity / Claude / Codex) for rapid prototyping, contract hardening, test suite generation, and verification scripts, compliant with hackathon rule Q-005.
-- **License**: Released under the open-source [MIT License](LICENSE).
-
----
-
-## Getting Started
-
-### Prerequisites
-- **Node.js**: >= 20.0.0 (Node >= 24.22.1 enables live `@nearai/inference-sdk@0.2.1` hardware quote and model verification; `engines` field set in `agent/package.json`)
-- **npm**: >= 10.0.0
-- **Rust Toolchain**: Optional, required only for recompiling the smart contract (`cargo` with `wasm32-unknown-unknown` target)
-
-### Installation
-Clone the repository and install dependencies:
+**See**: `✓ STATE CHECKS PASSED`. Cross-references Sputnik DAO Proposal #5 on-chain against `PolicyHelper` spend limits and anti-replay registry. *(To test fail-closed rejection on a non-release proposal, run `npm run verify:proposal -- 0`)*.
 
 ```bash
-git clone https://github.com/kellycryptos/ZiniPay.git
-cd ZiniPay
-npm install
-```
-
-### Environment Configuration
-Create an environment file for the agent:
-
-```bash
-cp agent/.env.example agent/.env
-```
-
-Configure your credentials in `agent/.env`:
-
-```ini
-# Network
-NEAR_NETWORK=testnet
-
-# Agent Account (Requestor role only, holds no council voting keys)
-NEAR_ACCOUNT_ID=your-agent.testnet
-NEAR_PRIVATE_KEY=ed25519:...
-
-# Treasury Governance
-DAO_CONTRACT_ID=zinipay-demo.sputnikv2.testnet
-POLICY_CONTRACT_ID=zinipay-policy2.testnet
-PROPOSAL_BOND=1000000000000000000000000
-
-# Policy Defaults
-MAX_SPEND_PER_PROPOSAL=10000000000000000000000000
-COOLDOWN_HOURS=24
-```
-
-### How to Try It
-
-- **DAO Treasury Contract**: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
-- **PolicyHelper Contract**: [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet)
-- **Deployed Contract Code Hash**: Base58: `4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt` (SHA-256: `35124c43f4447813230a19582b3c07fc31038bbb4a0baae062dc388ff78598cf`)
-- **Redeployment Tx**: [`691yY28pzyo2G9sVCZkH1ZQQnhPfK6Te3dj9qX3ZG5Bj`](https://testnet.nearblocks.io/txns/691yY28pzyo2G9sVCZkH1ZQQnhPfK6Te3dj9qX3ZG5Bj) (canonical CID anti-replay normalization & self-auth; state preserved)
-
-#### 1. Run a Simulated Proposal (Dry Run)
-Verify the complete evaluation pipeline locally without spending testnet tokens or broadcasting transactions:
-
-```bash
+# Step 5: Test agent deliberation & pre-flight policy check locally (~5s, dry run)
 npm run agent:propose -- \
   --task "Implement Sputnik DAO Three-Way Gate" \
   --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" \
@@ -269,179 +52,355 @@ npm run agent:propose -- \
   --github-handle kellycryptos \
   --dry-run
 ```
-
-The agent will fetch the pull request, verify the merged state and `zinipay-recipient` binding, run the deliberation engine, perform local policy validation, and print the proposal receipt.
-
-#### 2. Run End-to-End Testnet Verification
-To execute the complete on-chain flow with live accounts:
+**See**: Agent verifies pull request metadata and explicit `zinipay-recipient` binding, queries live testnet `PolicyHelper` view method for tier limits, and constructs a valid Sputnik DAO `FunctionCall` proposal with zero token expenditure.
 
 ```bash
-npm run test:e2e
+# Step 6 (Optional): Run smart contract unit tests (~5s, requires Rust toolchain)
+cd contracts/policy-helper && cargo test && cd ../..
+```
+**See**: `test result: ok. 20 passed; 0 failed`. Verifies spend caps, caller authorization, cooldown logic, case-variant anti-replay normalization, and atomic rollback callbacks.
+
+---
+
+## 2. Problem
+
+If decentralized treasuries give autonomous AI agents direct wallet signing keys to pay out bounties, prompt injections or software bugs can immediately drain the treasury with no rollback. 
+
+Conversely, if human councils must manually inspect every pull request and milestone deliverable, bounty payouts bottleneck and fail to scale.
+
+Current community treasuries face four critical failure modes when adopting autonomous agents:
+1. **Unbounded Drain**: Compromised agents with direct transfer keys can liquidate treasury balances in a single transaction.
+2. **Replay Attacks**: Contributors can submit identical deliverables or pull requests multiple times to collect repeated payouts.
+3. **Deliverable Theft**: Attackers can claim existing merged pull requests authored by other contributors to siphon funds.
+4. **Prompt Injection & Hallucinated Milestones**: Malicious pull request content can manipulate agent prompts into approving incomplete or nonexistent deliverables.
+
+---
+
+## 3. Solution (What ZiniPay Actually Does)
+
+ZiniPay is a fail-closed execution layer that enables autonomous AI agents to evaluate contributor deliverables and draft treasury payout proposals without granting them direct custody or unilateral signing authority.
+
+ZiniPay solves agent treasury risk through a **Three-Way Release Gate**:
+
+1. **Gate 1: Deliverable Verification (Off-Chain)**:
+   - Validates that the GitHub pull request is merged into the designated target repository.
+   - Verifies the commit author matches the contributor's claimed identity.
+   - Strictly parses the PR body for an explicit recipient identity binding directive (`zinipay-recipient: <account.testnet>`) to eliminate deliverable theft.
+   - Strips transport prefixes from IPFS CIDs down to canonical base32/base58 hashes.
+   - Deliberates using dual agent personas (Inspector and Risk Arbiter) with strict Zod structured outputs.
+
+2. **Gate 2: Programmatic Policy Enforcement (On-Chain Rust Smart Contract)**:
+   - Payout proposals cannot execute raw NEAR transfers; they must invoke `PolicyHelper::release` on `zinipay-policy2.testnet`.
+   - Asserts caller identity: `PolicyHelper` executes disbursements **only** when called by the designated Sputnik DAO contract (`zinipay-demo.sputnikv2.testnet`).
+   - Enforces reputation-scaled per-proposal spend caps:
+     - **Bronze Tier (0–19 pts)**: 1.0x multiplier (10 NEAR cap)
+     - **Silver Tier (20–59 pts)**: 1.5x multiplier (15 NEAR cap)
+     - **Gold Tier (60+ pts)**: 2.0x multiplier (20 NEAR cap)
+   - Enforces per-recipient cooldown timers (e.g. 24 hours between payouts).
+   - Permanently burns deliverable CIDs into an on-chain `UnorderedSet` (`used_cids`). Duplicate attempts fail immediately with: `"CID already used — duplicate release attempt blocked"`.
+   - Normalizes CIDs (`normalize_cid`) at contract level to defeat case-variant bypass attempts.
+
+3. **Gate 3: Multi-Sig Human Quorum (Sputnik DAO v2 Governance)**:
+   - The AI agent operates under a restricted **Requestor** role. It holds zero council seats and zero voting keys.
+   - Proposals require an M-of-N human council multi-sig quorum (2-of-2 on testnet) to vote `VoteApprove`.
+   - If the downstream NEAR transfer fails, an on-chain callback (`on_release_done`) automatically rolls back CID consumption and resets cooldown timers.
+
+---
+
+## 4. How It Works (Flow + Diagram)
+
+### Execution Sequence
+
+```
+[1. Contributor] ── Submits PR/CID with "zinipay-recipient: <account.testnet>"
+       │
+       ▼
+[2. Agent Layer] ── Verifies PR merge, author, & recipient directive
+       │            Runs Inspector & Risk Arbiter deliberation
+       ▼
+[3. Policy Check] ── Calls PolicyHelper.check_policy() view function
+       │            Asserts within tier cap (e.g. <= 15N), cooldown elapsed, CID unburned
+       ▼
+[4. Proposal] ────── Calls Sputnik DAO add_proposal (Requestor role, 0 voting keys)
+       │            Payload: FunctionCall -> PolicyHelper::release(recipient, amount, cid)
+       ▼
+[5. Human Vote] ──── Council Member 1 signs VoteApprove (1/2)
+       │            Council Member 2 signs VoteApprove (2/2 quorum reached)
+       ▼
+[6. Settlement] ──── Sputnik DAO calls PolicyHelper::release
+                    ├─ Contract verifies caller == DAO
+                    ├─ Contract verifies amount <= effective tier cap
+                    ├─ Contract burns canonical CID & sets cooldown
+                    ├─ Contract transfers NEAR to recipient
+                    └─ Callback on_release_done verifies transfer or triggers rollback
 ```
 
-The automated script executes the full verification lifecycle:
-1. Validates agent, council, and recipient balances on NEAR Testnet.
-2. Evaluates an unrelated merged PR from another author to verify the agent blocks deliverable spoofing.
-3. Evaluates contributor PR `#1` and verifies recipient identity binding in the PR description (`zinipay-recipient:`).
-4. Submits proposal `#5` to `zinipay-demo.sputnikv2.testnet` via FunctionCall into `PolicyHelper::release`.
-5. Council Member 1 signs `VoteApprove` (status: `InProgress`).
-6. Council Member 2 signs `VoteApprove` (status: `Approved`, reaches quorum).
-7. Verifies on-chain disbursement receipt and recipient balance increase (+0.1 NEAR) executed via `zinipay-policy2.testnet`.
-8. Updates reputation score (promoting contributor to Silver tier).
-9. Executes real on-chain attack transactions against `zinipay-policy2.testnet` (replay CID, over-cap spend, unauthorized caller), asserting exact contract rejection logs and verifying 100% deposit refunds.
+### Attack Scenarios and Mitigation Matrix
 
-#### 3. Start the Dashboard
-Launch the web interface to view proposals, audit logs, and governance status:
+| Attack Vector | Attacker Action | Layer of Defense | Exact System Response |
+| :--- | :--- | :--- | :--- |
+| **Deliverable Theft** | Submitting another contributor's merged PR | Gate 1 (Agent Deliberation) | Fails PR author and `zinipay-recipient` binding checks; proposal aborted before creation. |
+| **CID Replay** | Re-submitting an already-settled PR / CID | Gate 2 (`PolicyHelper` Contract) | Transaction reverts with contract panic: `"CID already used — duplicate release attempt blocked"`. |
+| **Case-Variant Replay** | Submitting `KELLYCRYPTOS/ZINIPAY#2` to bypass string check | Gate 2 (`PolicyHelper` Contract) | `normalize_cid` forces lowercase ascii; reverts with `"CID already used"`. |
+| **Over-Cap Payout** | Requesting payout exceeding contributor tier limit | Gate 2 (`PolicyHelper` Contract) | Reverts with: `"Amount ... exceeds effective tier cap ... for recipient ..."`. |
+| **Unauthorized Direct Call** | Malicious actor calls `PolicyHelper::release` directly | Gate 2 (`PolicyHelper` Contract) | Reverts with: `"Only owner or designated DAO can call this"`. |
+| **Prompt Injection** | Embedding injection commands in deliverable description | Gate 1 (Zod Schema Validation) | Parser strips unescaped payloads and enforces strict typed outputs; ignores instruction hijacking. |
+| **Agent Key Compromise** | Rogue agent attempts to self-approve payout | Gate 3 (Sputnik DAO Policy) | Impossible on-chain: agent holds `Requestor` role only; has zero voting permissions. |
+| **Transfer Failure** | Payout promise fails due to recipient account issue | Gate 2 (Contract Callback) | `on_release_done` detects failure, removes CID from `used_cids`, resets cooldown. |
 
+---
+
+## 5. Live Proof (Testnet Transactions)
+
+Every claim in ZiniPay is backed by verifiable on-chain transactions on NEAR Testnet:
+
+### Core Governance & Payout Lifecycle Proofs
+
+| Lifecycle Stage | Transaction Hash | Explorer Link | Result |
+| :--- | :--- | :--- | :--- |
+| **Proposal #6 Creation** | `HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK` | [NEARBlocks](https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK) | Agent submits `FunctionCall` proposal targeting `PolicyHelper::release` |
+| **Council 1 Approval** | `22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD` | [NEARBlocks](https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD) | Council 1 (`zinipay-c1.testnet`) votes `VoteApprove` (1/2) |
+| **Council 2 Approval & Execution** | `2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d` | [NEARBlocks](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d) | Council 2 (`zinipay-c2.testnet`) votes `VoteApprove`; 2/2 quorum reached; +0.1 NEAR disbursed |
+| **Council Reputation Promotion** | `DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf` | [NEARBlocks](https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf) | Recipient promoted to Silver Tier (25 pts; 1.5x cap = 15 NEAR) |
+| **Proposal #5 Historical Audit** | `H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b` | [NEARBlocks](https://testnet.nearblocks.io/txns/H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b) | Baseline audit proposal targeting `PolicyHelper::release` (Approved) |
+
+### Blocked Attack Transactions (Reverted On-Chain)
+
+| Attack Test | Transaction Hash | Explorer Link | On-Chain Reversion Assertions |
+| :--- | :--- | :--- | :--- |
+| **Blocked Replay CID** | `9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb` | [NEARBlocks](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb) | Reverted: `"CID already used — duplicate release attempt blocked"` |
+| **Blocked Over-Cap Spend** | `EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ` | [NEARBlocks](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ) | Reverted: `"Amount 16000000000000000000000000 exceeds effective tier cap 15000000000000000000000000"` |
+| **Blocked Unauthorized Caller** | `2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B` | [NEARBlocks](https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B) | Reverted: `"Only owner or designated DAO can call this"` |
+| **Blocked Case-Variant Replay** | `EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y` | [NEARBlocks](https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y) | Reverted: `"CID already used — duplicate release attempt blocked"` |
+| **Blocked Cooldown Violation** | `2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD` | [NEARBlocks](https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD) | Reverted: `"Cooldown not elapsed. 16 seconds remaining."` |
+
+### DAO-Controlled Administrative Governance Proofs
+
+| Governance Action | Transaction Hash | Explorer Link | Result |
+| :--- | :--- | :--- | :--- |
+| **Ownership Transfer to DAO** | `BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX` | [NEARBlocks](https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX) | PolicyHelper ownership transferred to `zinipay-demo.sputnikv2.testnet` |
+| **Blocked Former Owner Action** | `EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14` | [NEARBlocks](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) | Direct admin call by former owner rejected on-chain |
+| **DAO Admin Proposal #7 Creation** | `73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix` | [NEARBlocks](https://testnet.nearblocks.io/txns/73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix) | Sputnik DAO proposal to execute `update_reputation` |
+| **Council 1 Approval (#7)** | `Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8` | [NEARBlocks](https://testnet.nearblocks.io/txns/Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8) | Council 1 votes `VoteApprove` |
+| **Council 2 Approval & Exec (#7)** | `3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw` | [NEARBlocks](https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw) | Quorum reached; admin call executed through Sputnik DAO multi-sig |
+
+---
+
+## 6. Verification
+
+### Public Proposal Verifier: `npm run verify:proposal`
+
+ZiniPay includes an independent, keyless proposal verification tool (`scripts/verify-proposal.mjs`) that allows judges to inspect and audit any Sputnik DAO proposal against `PolicyHelper` on-chain state without configuring credentials.
+
+#### Usage
 ```bash
-npm run frontend:dev
+npm run verify:proposal -- <proposal_id>
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-- Use `http://localhost:5173?demo=1` to explore the dashboard with simulated proposals and metrics.
-- Connect a testnet wallet (e.g. Meteor, HERE, MyNearWallet) to view and vote on live Sputnik DAO proposals.
+#### Example: Verifying Proposal #5
+```bash
+npm run verify:proposal -- 5
+```
+
+#### What the Verifier Does
+1. **Queries Sputnik DAO v2**: Fetches the on-chain proposal by ID from `zinipay-demo.sputnikv2.testnet` via public RPC.
+2. **Validates Target**: Confirms the proposal's `receiver_id` is strictly `zinipay-policy2.testnet` and the method is `release`.
+3. **Decodes Payout Parameters**: Decodes the Base64 args payload into recipient (`zinipay-recipient2.testnet`), amount (`0.10 NEAR`), and deliverable identifier (`kellycryptos/ZiniPay#1`).
+4. **Queries `PolicyHelper` State**: Calls view methods on `zinipay-policy2.testnet` to verify contract owner, designated DAO, recipient reputation score, effective tier cap, and CID anti-replay burn status.
+5. **Audits Invariants**: Checks whether the proposed payout complied with effective tier caps and anti-replay constraints.
+
+#### Expected Output
+```text
+╔══════════════════════════════════════════════════════════════════╗
+║  ZiniPay 🪙🤖 — Proposal Independent Verifier                     ║
+║  DAO: zinipay-demo.sputnikv2.testnet                             ║
+║  Proposal ID: #5                                                 ║
+╚══════════════════════════════════════════════════════════════════╝
+
+[1/5] Fetching Proposal #5 from Sputnik DAO (zinipay-demo.sputnikv2.testnet)...
+  ✓ Proposal Found:
+      Status:       Approved
+      Proposer:     agentzinipaytestnet.testnet
+      Votes:        {"zinipay-c1.testnet":"Approve","zinipay-c2.testnet":"Approve"}
+      Quorum:       2 Approve / 0 Reject
+      Model Review: Simulated run (attestation report received, not independently verified)
+
+[2/5] Inspecting Proposal Execution Target...
+  ✓ Target Verified: zinipay-policy2.testnet::release()
+
+[3/5] Decoded Proposed Payout Parameters:
+      Recipient:    zinipay-recipient2.testnet
+      Amount:       0.1000 NEAR (100000000000000000000000 yoctoNEAR)
+      Deposit:      0.1000 NEAR
+      CID / PR:     kellycryptos/ZiniPay#1
+
+[4/5] Querying PolicyHelper On-Chain Governance State...
+      Contract Owner:      zinipay-demo.sputnikv2.testnet
+      Designated DAO:      zinipay-demo.sputnikv2.testnet
+      Recipient Score:     30 pts (Tier: Silver)
+      Effective Tier Cap:  15.0000 NEAR
+      CID Burned on Chain: true (Protected against replay)
+      Spend Cap Gate:      PASSED (<= cap)
+
+[5/5] Locating On-Chain Settlement Receipt Outcome...
+  ℹ settlement receipt not found, state checks only (Proposal #5 not recorded in verified.json)
+
+════════════════════════════════════════════════════════════════════
+                    GOVERNANCE STATE CHECK RESULT                   
+════════════════════════════════════════════════════════════════════
+  Proposal Status:      Approved
+  Target Receiver:      zinipay-policy2.testnet::release()
+  Proposed Recipient:   zinipay-recipient2.testnet
+  Proposed Amount:      0.1000 NEAR
+  Effective Tier Cap:   15.0000 NEAR (COMPLIANT)
+  Anti-Replay Registry: ✓ CID BURNED
+════════════════════════════════════════════════════════════════════
+
+✓ STATE CHECKS PASSED (Settlement receipt not recorded in verified.json — state checks only)
+```
 
 ---
 
-## Development Timeline & Hackathon Window Disclosure
+## 7. NEAR Integration Details
 
-To maintain complete transparency with judges and evaluators regarding the hackathon window and commit history (per NEAR HACKATHON rule Q-001):
+ZiniPay relies directly on two foundational NEAR Protocol architectural primitives: the custom **`PolicyHelper` Rust smart contract** and the **Sputnik DAO v2 Requestor role**.
 
-- **Hackathon Window (HACKATHON.md Q-001)**: The NEAR HACKATHON was officially announced on **October 19, 2026** (see [announcement post](https://x.com/nearprotocol/status/2112257967818997891)). Rule Q-001 confirms: *"Code before 2026-11-01? Yes, from the announcement on 2026-10-19... The window runs from then to 2026-11-14."*
-- **Repository Inception (October 22, 2026)**: This repository's very first commit was on **October 22, 2026** (`dbc9f41`). As a result, **100% of the code, contracts, and commits in this repository were built entirely inside the official hackathon development window**.
-- **Dated Development Timeline (from Git Log)**:
-  - **October 22, 2026**: Initial repository setup, base monorepo architecture, initial Rust `PolicyHelper` smart contract source (`ebc3a98`), Three-Way Gate UI, Vercel config, Sputnik DAO v2 integration, and NEAR Wallet Selector.
-  - **October 24, 2026**: Policy contract authorization checks & unit tests (`45996e2`), fail-closed deliberation with Zod validation, deliverable canonicalization, NEAR Intents 1Click API integration, and initial testnet scripts.
-  - **October 25, 2026**: Policy contract atomic transfer callbacks & rollback (`1e0a1a8`), reputation tier alignment and cap ceiling tests (`63f4c9b`, `9e1357f`), PR author & recipient identity binding verification, and early attack scenarios.
-  - **October 27, 2026**: Contributor deliverable PR #1 specification and merge, GitHub Actions WASM build workflow, /app Paper on Dark Desk redesign, and baseline testnet execution (Proposal #0).
-  - **October 29, 2026**: Landing page design system, scroll-triggered tagline reveal, FASTNEAR RPC fallback, and product documentation refactor.
-  - **October 30, 2026**: Deployment of `zinipay-policy2.testnet` (code hash `cb1dcd4d...`), audit run executing Proposal #5 (FunctionCall into `PolicyHelper::release`), 2-of-2 council quorum approval, contributor Silver tier promotion, and 3 blocked on-chain attack transactions (replay CID, over-cap spend, unauthorized caller).
-  - **November 1, 2026**:
-    - **Keyless On-Chain Verification Suite**: Created zero-credential verification suite (`scripts/verify-testnet.mjs`) checking Sputnik DAO roles, Proposal #5 execution status, PolicyHelper WASM code hash, reputation tier scaling (15N Silver cap), deliverable CID burning, and 3 on-chain blocked attack transaction receipts (18 passing checks).
-    - **Contract & Agent Test Suites**: Maintained comprehensive test suites across the Rust smart contract (20 unit tests) and TypeScript agent layer (14 unit tests) with local test runner support.
-    - **Zero-Fabrication Landing Page & Hero Receipt**: Redesigned landing page for Social Money track with matched `#121721` canvas, Fraunces display typography, dynamic physical rubber stamp (`PAID` on 2/2 quorum), and strict schema-backed receipt reading directly from on-chain RPC and run logs with zero hardcoded fallbacks.
-    - **Data Pipeline Fail-Safe**: Hardened `scripts/record-verified.mjs` and `LandingHero.tsx` with strict selection (`kind === "payout"`, `status === "Approved"`) and tested automated fallback to `SAMPLE` receipt with stamp suppression when data is missing.
-    - **Contract-Level CID Normalization & Case-Variant Anti-Replay Guard**:
-      - Implemented `normalize_cid` (`cid.trim().to_ascii_lowercase()`) across all CID operations in `PolicyHelper` Rust contract (`release`, `check_policy`, `record_release`, `unburn_cid`, `cid_used`, and `on_release_done`) and TypeScript agent layer.
-      - Added 8 new Rust unit tests (expanding the contract test suite from 12 to 20 passing unit tests) verifying case-variant deliverable rejection, `check_policy` anti-replay, and ownership transfer governance.
-      - Added on-chain Attack Scenario 4 (Case-Variant CID Replay) to `scripts/e2e-testnet.mjs` (added, not yet run on testnet pending contract redeployment).
-    - **Contract Admin Governance & Outcome Logs**:
-      - Added `transfer_ownership(new_owner: AccountId)` guarded strictly by `assert_owner()`, enabling one-way transfer of admin powers to `zinipay-demo.sputnikv2.testnet`.
-      - Added structured JSON logs emitted by `on_release_done` (`event: "settled"` or `"rolled_back"` with recipient, amount, canonical CID, tier, and cap), verified by 20 unit tests.
-    - **Independent Proposal Verifier**:
-      - Created `scripts/verify-proposal.mjs` (`npm run verify:proposal -- <id>`) allowing judges to independently verify any proposal on Sputnik DAO v2 against `PolicyHelper` state and on-chain settlement receipts with zero private keys.
-    - **Developer Experience Friction Log**:
-      - Authored [`docs/DEVEX.md`](docs/DEVEX.md) documenting 13 real technical hurdles, exact errors, and solutions verified from repository history and terminal logs.
-    - **Offline-Resilient Intents Test Suite**: Hardened `agent/test/intents-live.test.ts` to gracefully handle external 1Click API rate limiting/outages without crashing test runners.
+### 1. `PolicyHelper` Smart Contract (`contracts/policy-helper/src/lib.rs`)
+- Built with `near-sdk = "5.1.0"`.
+- **Predecessor Assertion**: Enforces that only the designated DAO treasury account can trigger payouts:
+  ```rust
+  assert_eq!(
+      env::predecessor_account_id(),
+      self.dao_account_id,
+      "Only owner or designated DAO can call this"
+  );
+  ```
+- **Stateful Anti-Replay Registry**: Stores consumed deliverables in an on-chain `UnorderedSet`. CIDs are normalized to prevent case-variant evasion:
+  ```rust
+  let canonical_cid = normalize_cid(&cid);
+  assert!(
+      !self.used_cids.contains(&canonical_cid),
+      "CID already used — duplicate release attempt blocked"
+  );
+  self.used_cids.insert(&canonical_cid);
+  ```
+- **Dynamic Tier Multipliers**: Calculates spend limits based on on-chain reputation:
+  - Bronze [0–19 pts]: $1.0\times$ base cap (10 NEAR)
+  - Silver [20–59 pts]: $1.5\times$ base cap (15 NEAR)
+  - Gold [60+ pts]: $2.0\times$ base cap (20 NEAR)
+- **Atomic Rollback Callback**: Uses NEAR cross-contract promises (`Promise::then`) with an asynchronous callback (`on_release_done`). If the transfer fails, the contract removes the CID from storage and resets the recipient cooldown timer.
+
+### 2. Sputnik DAO v2 Requestor Role
+Configured in `zinipay-demo.sputnikv2.testnet` using standard Sputnik DAO v2 policy mechanics:
+- **Zero Council Seats**: The agent account (`agentzinipaytestnet.testnet`) is omitted from the `council` role.
+- **Restricted Permissions**: The agent is granted the `Requestor` role with `*:AddProposal` permission only.
+- **Zero Voting Rights**: The agent cannot call `act_proposal` with `VoteApprove` or `VoteReject`.
+
+### Why a Function-Call Key Cannot Attach Proposal Bonds
+On NEAR Protocol, Access Keys are split into `FullAccess` and `FunctionCall` permissions. A `FunctionCall` key is strictly restricted to calling specific contract methods and **cannot attach a non-zero deposit** (`CannotAttachDeposit`).
+
+Because Sputnik DAO v2 requires attaching a `proposal_bond` (1 NEAR) to prevent proposal queue spam:
+- The agent runs on a dedicated funded account (`agentzinipaytestnet.testnet`) with a small operating balance (2–5 NEAR) used strictly to attach proposal bonds.
+- The agent holds **zero signing keys or permissions on the DAO treasury contract itself**. Even if the agent's private key is compromised, the attacker can only spend the agent's small bond float; treasury funds remain 100% protected behind the 2-of-2 human council multi-sig.
+
+### What Breaks Without NEAR?
+1. **Without NEAR Cross-Contract Callbacks (`Promise::then`)**: Atomic state rollbacks on failed transfers would require complex, manual off-chain reconciliation.
+2. **Without NEAR's Native Role-Based Access Control (Sputnik DAO v2)**: Creating a constrained, proposal-only agent with zero voting power would require writing a custom multi-sig contract from scratch.
+3. **Without NEAR's Fast 1-Second Finality and Sub-Cent Fees**: Multi-agent proposal deliberation and multi-stage governance calls would be too slow and expensive for practical bounty evaluation.
 
 ---
 
-## Known Limitations & Audit Disclosures
+## 8. Tracks It Fits
 
-To maintain absolute transparency with judges and auditors, the following architectural boundaries and operational disclosures are documented:
-
-1. **Owner-Controlled Reset Powers**: The policy contract includes administrative helper methods (`unburn_cid`, `reset_cooldown`, `update_reputation`) currently callable by the contract owner (`zinipay-c1.testnet`). In this testnet testing environment, these allowed reproducible e2e test execution without waiting 24 hours between runs. In production, these methods will be migrated to DAO-only execution, requiring a full Sputnik DAO council multi-sig vote to execute.
-2. **Agent-Side Daily Ceilings**: Daily volume spend ceilings are currently enforced in the agent daemon memory and pre-flight deliberation layer. The on-chain `PolicyHelper` contract enforces hard per-proposal tier caps (Bronze: 10N, Silver: 15N, Gold: 20N) and per-recipient cooldown timers.
-3. **Deliberation Simulation Fallback**: When NEAR AI Cloud returns HTTP 402 (spending limit / payment required on cloud.near.ai), the deliberation engine falls back to local deterministic heuristic deliberation with explicit `simulated: true` flagging.
-4. **Attestation Verification Scope**: The `@nearai/inference-sdk@0.2.1` is designed to verify the NEAR AI Cloud Gateway Intel TDX DCAP hardware quote and model worker TEE quote before signing responses. Proposal #5 currently on record in `verified.json` was generated in simulation mode prior to funding credit; its attestation is explicitly labeled `Simulated run (attestation report received, not independently verified)`. No claim of verified Intel TDX hardware quotes is made for Proposal #5 until a live funded run is executed on testnet.
-5. **Development Run History**: Earlier testnet proposals (#0 through #4) and reset pairs were executed during development. Proposal #5 and the subsequent attack transactions represent the clean, reproducible audit run recorded in `verified.json`.
-6. **Deployed Contract Version**: The contract deployed on `zinipay-policy2.testnet` was upgraded in tx [`97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) to code hash `ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc` (SHA-256: `c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f`). This live deployment includes canonical CID anti-replay normalization (`canonical_cid`), case-variant defense, and `transfer_ownership`, verified by 20 contract unit tests with historical on-chain state preserved.
+| Track | Alignment & Direct Repository Implementation |
+| :--- | :--- |
+| **AI Agents** | Fully autonomous evaluation agent service (`agent/`) that inspects GitHub PRs, parses recipient identity bindings, runs multi-agent deliberation (Inspector & Risk Arbiter), simulates on-chain policy view calls, and drafts Sputnik DAO proposals. |
+| **AI Security & Defense** | Fail-closed execution architecture designed to defend community treasuries against agent prompt injection, runaway spending, deliverable spoofing, deliverable replay, and case-variant bypass using smart contract invariants and mathematical spend caps. |
+| **Social / Governance (Sputnik DAO & Trezu)** | Modernizes decentralized treasury management on Sputnik DAO v2 by automating routine bounty verification while preserving full human council multi-sig sovereignty over disbursements. |
 
 ---
 
-## Contracts
+## 9. Setup / Try It
 
 ### Testnet Deployments
 
-| Component | Testnet Account / Contract Address | Description |
+| Entity | Address | Description |
 | :--- | :--- | :--- |
-| **Sputnik DAO v2** | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | Community treasury contract holding funds and collecting multi-sig votes |
-| **Sputnik DAO Factory** | `sputnikv2.testnet` | Official Sputnik DAO v2 factory contract on NEAR Testnet |
-| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Policy enforcement contract (Deployed code hash: `ETPYoyjVFW...` / hex `c7ea86d5...`, upgraded in tx [`97d8UoqSro...`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) with state preserved) |
-| **Agent Account** | [`agentzinipaytestnet.testnet`](https://testnet.nearblocks.io/address/agentzinipaytestnet.testnet) | Dedicated proposer account (`Requestor` role, 0 voting keys; Full-Access key on funded account with small operating balance to attach 1 NEAR proposal bond) |
-| **Council Member 1** | [`zinipay-c1.testnet`](https://testnet.nearblocks.io/address/zinipay-c1.testnet) | Human council signer (1/2 quorum) |
-| **Council Member 2** | [`zinipay-c2.testnet`](https://testnet.nearblocks.io/address/zinipay-c2.testnet) | Human council signer (2/2 quorum) |
-| **Verified Recipient** | [`zinipay-recipient2.testnet`](https://testnet.nearblocks.io/address/zinipay-recipient2.testnet) | Contributor payout recipient |
+| **Sputnik DAO v2 Treasury** | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | Treasury contract holding funds and collecting council multi-sig votes |
+| **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Rust policy contract (Code hash: `4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt`) |
+| **Agent Account** | [`agentzinipaytestnet.testnet`](https://testnet.nearblocks.io/address/agentzinipaytestnet.testnet) | Proposer account (`Requestor` role, 0 voting keys) |
+| **Council Signer 1** | [`zinipay-c1.testnet`](https://testnet.nearblocks.io/address/zinipay-c1.testnet) | Human council member (1/2 quorum) |
+| **Council Signer 2** | [`zinipay-c2.testnet`](https://testnet.nearblocks.io/address/zinipay-c2.testnet) | Human council member (2/2 quorum) |
+| **Recipient Account** | [`zinipay-recipient2.testnet`](https://testnet.nearblocks.io/address/zinipay-recipient2.testnet) | Verified contributor payout recipient |
 
-### Mainnet Deployments
-*Mainnet deployment is scheduled following formal smart contract audits.*
+### Prerequisites
+- **Node.js**: `>= 20.0.0` (Node `>= 24.22.1` enables live `@nearai/inference-sdk` hardware quote verification)
+- **npm**: `>= 10.0.0`
+- **Rust Toolchain**: Optional, only required to recompile contracts (`cargo` with `wasm32-unknown-unknown`)
 
-## Live Proof: Real End-to-End Testnet Transactions
+### Local Setup Instructions
 
-Every phase of the ZiniPay lifecycle is verified on NEAR Testnet across real smart contracts, public RPC endpoints, and block explorer receipts:
+```bash
+# 1. Clone repository
+git clone https://github.com/kellycryptos/ZiniPay.git
+cd ZiniPay
 
+# 2. Install workspace dependencies
+npm install
+
+# 3. Run agent in dry-run mode (zero keys required)
+npm run agent:propose -- \
+  --task "Implement Sputnik DAO Three-Way Gate" \
+  --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" \
+  --recipient "zinipay-recipient2.testnet" \
+  --amount 0.1 \
+  --github-handle kellycryptos \
+  --dry-run
+
+# 4. Launch the dashboard locally
+npm run frontend:dev
 ```
-[1. Contributor Submits PR] ──► [2. Agent Deliberation & Policy Pre-Flight] ──► [3. Proposal #5 Created on DAO]
-                                                                                        │
-[6. CID Burned & Reputation Promoted] ◄── [5. PolicyHelper::release Disbursed] ◄── [4. 2-of-2 Human Council Quorum]
-```
+Open `http://localhost:5173` in your browser. Add `?demo=1` to explore the dashboard in demo mode with sample proposals, or connect a NEAR testnet wallet (e.g. Meteor, HERE, MyNearWallet) to interact with live proposals.
 
-### Confirmed Lifecycle & Blocked Attack Explorer Proofs
+### Pre-Hackathon Code, Libraries, and Templates Used
+In accordance with NEAR HACKATHON rule Q-005:
 
-| Action | Transaction Hash | Explorer Link | Result |
-| :--- | :--- | :--- | :--- |
-| **Proposal #5 Creation** | `H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b` | [NEARBlocks](https://testnet.nearblocks.io/txns/H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b) | FunctionCall proposal into `PolicyHelper::release` created by agent |
-| **Council 1 Approval** | `AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL` | [NEARBlocks](https://testnet.nearblocks.io/txns/AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL) | Vote 1/2 recorded (`VoteApprove`) |
-| **Council 2 Approval & Release** | `4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd` | [NEARBlocks](https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd) | Quorum reached; `PolicyHelper` executes +0.1 NEAR payout receipt |
-| **Council Promotion** | `Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB` | [NEARBlocks](https://testnet.nearblocks.io/txns/Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB) | Contributor promoted to Silver tier (25 pts, 1.5x cap) |
-| **Blocked Attack: Replay CID** | `Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ` | [NEARBlocks](https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ) | Panics: `"CID already used — duplicate release attempt blocked"`; deposit refunded |
-| **Blocked Attack: Over-Cap** | `ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB` | [NEARBlocks](https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB) | Panics: `"Amount 16000000000000000000000000 exceeds effective tier cap..."`; deposit refunded |
-| **Blocked Attack: Unauthorized** | `7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D` | [NEARBlocks](https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D) | Panics: `"Only owner or designated DAO can call this"`; deposit refunded |
+- **Smart Contracts (Rust)**:
+  - `near-sdk` `v5.1.0` (with `legacy` and `unit-testing` features) for contract state, Borsh serialization, cross-contract promises, and callbacks.
+- **Agent Service (TypeScript & Node.js)**:
+  - `@nearai/inference-sdk` (`0.2.1`) for hardware TEE gateway & model attestation verification.
+  - `near-api-js` (`^5.0.0`) for NEAR RPC interaction, key management, view calls, and transaction broadcasting.
+  - `openai` (`^4.70.0`) fallback client configured for OpenAI-compatible inference endpoints.
+  - `zod` (`^4.6.7`) for strict schema validation, structured output parsing, and prompt injection defense.
+  - `commander` (`^12.1.0`), `chalk` (`^5.3.0`), `axios` (`^1.7.9`), `lowdb` (`^7.0.1`), and `dotenv`.
+- **Frontend & Dashboard (React & Vite)**:
+  - `react` `18.3` and `react-dom` `18.3` with `vite` `^6.0.7` and TypeScript `5.7`.
+  - `@near-wallet-selector` `^10.1.4` (Core, Modal UI, Here Wallet, Meteor Wallet, MyNearWallet) for wallet connectivity.
+  - `tailwindcss` `^3.4.17` and `lucide-react` for UI styling and icons.
+- **Protocols & External Services**:
+  - **Sputnik DAO v2** (`sputnikv2.testnet` / `near-daos/sputnik-dao-contract`): Standard multi-sig treasury contract on NEAR.
+  - **NEAR Intents 1Click API** (`https://1click.chaindefuser.com/v0/quote`): Cross-chain solver quotes and swap routing.
+  - **NEAR AI Cloud** (`https://cloud-api.near.ai/v1`): Inference endpoint for dual-agent deliberation.
+  - **GitHub REST API v3**: Deliverable pull request inspection and author verification.
+- **Templates & Boilerplate**: None. All smart contract code, agent logic, UI components, and verification scripts were written specifically for ZiniPay.
+- **AI Coding Assistance**: Developed with the assistance of AI coding agents (Antigravity / Claude / Codex) for prototyping, contract hardening, test suite generation, and verification scripts.
 
 ---
 
-## Development
+## 10. Developer Experience (DevEx) Note
 
-### Repository Structure
+A complete, transparent log of 13 real NEAR protocol hurdles, exact error logs, and implemented architectural fixes is documented in [`docs/DEVEX.md`](docs/DEVEX.md).
 
-```
-zinipay/
-├── agent/                  # TypeScript Agent Layer
-│   ├── src/
-│   │   ├── deliberation.ts # Multi-agent evaluation & PR verification
-│   │   ├── policy.ts       # Deliverable normalization & spend cap checks
-│   │   ├── dao.ts          # Sputnik DAO v2 integration & pre-flight views
-│   │   ├── intents.ts      # NEAR Intents 1Click cross-chain API
-│   │   └── index.ts        # CLI entry point
-│   └── test/               # Deliberation, policy & anti-replay unit tests
-├── contracts/
-│   └── policy-helper/      # Rust smart contract
-│       ├── src/lib.rs      # Policy enforcement, tier logic & callbacks
-│       └── Cargo.toml
-├── frontend/               # React 18 / Vite / Tailwind Dashboard
-│   ├── src/
-│   │   ├── components/     # UI panels, proposal lists & landing sections
-│   │   └── context/        # Wallet selector & contract interaction state
-├── scripts/                # Testnet deployment & verification scripts
-└── package.json            # Monorepo workspaces configuration
-```
-
-### Running Tests
-
-#### Agent Unit Tests
-Tests deliverable normalization, anti-replay constraints, recipient binding validation, and NEAR Intents integration:
-
-```bash
-npm test --prefix agent
-```
-
-#### Smart Contract Unit Tests
-Tests spend caps, tier boundaries, duplicate CID rejection, and caller authorization (requires Rust toolchain on Linux/WSL/macOS):
-
-```bash
-cd contracts/policy-helper
-cargo test
-```
-
-#### Frontend Production Build
-Validates TypeScript compilation and bundles static assets:
-
-```bash
-npm run frontend:build
-```
+Key friction points analyzed include:
+- **NEAR SDK v5 API Migrations**: Adapting `u128` balance arithmetic to `NearToken` and `BorshStorageKey`.
+- **Sputnik DAO v2 Factory Naming**: Identifying `sputnikv2.testnet` on testnet instead of legacy `sputnikdao2.testnet`.
+- **`CannotAttachDeposit` Protocol Restriction**: Solving the NEAR protocol limitation preventing Function-Call keys from attaching non-zero deposits.
+- **Cross-Contract Panic Message Extraction**: Overcoming buried error strings in nested promise receipts via recursive parsing of `receipts_outcome[].outcome.logs`.
+- **Public RPC Failover Architecture**: Mitigating testnet RPC rate limits using multi-RPC fallbacks (FastNEAR and Archival RPC).
+- **Deliverable CID Case-Variant Replay Vulnerability**: Hardening smart contract storage with `normalize_cid` to prevent casing evasion.
 
 ---
 
-## License
+## 11. License
 
 This project is licensed under the [MIT License](LICENSE).

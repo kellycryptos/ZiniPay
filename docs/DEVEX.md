@@ -14,7 +14,7 @@
 | 2 | **Sputnik DAO v2 Factory Naming** | Testnet factory is `sputnikv2.testnet` (not `sputnikdao2` or `sputnik-dao`) | Commit `26a2ac3`, `scripts/create-dao.mjs` | Fixed factory contract ID in automated DAO deployment scripts |
 | 3 | **Function-Call Keys Cannot Attach Deposits** | NEAR protocol rule: FC keys are strictly deposit=0 | Commit `b9dae32`, `scripts/setup-testnet.mjs` (`CannotAttachDeposit`) | Agent proposer uses funded account with small operating balance dedicated to bonds |
 | 4 | **DAO Creation Deposit & Base64 Payload** | `sputnikv2.testnet::create` requires Base64 JSON and >= 6 NEAR storage deposit | `scripts/create-dao.mjs` lines 44-55 | Automated base64 serialization and attached 6 NEAR deposit in `create-dao.mjs` |
-| 5 | **Windows PowerShell JSON Quoting & CLI Incompatibilities** | PowerShell strips quotes from inline JSON arguments (`--args '{"id": 5}'`); `near-cli` fragile on Windows | `scripts/e2e-testnet.mjs` (commit `5760d2d`), `scripts/create-dao.mjs` | Avoided shell quoting pitfalls by standardizing on programmatic `near-api-js` scripts with typed JSON payloads |
+| 5 | **Windows PowerShell JSON Quoting & CLI Incompatibilities** | PowerShell strips quotes from inline JSON arguments and handles string escaping inconsistently across Windows hosts | `scripts/e2e-testnet.mjs`, `scripts/create-dao.mjs` | Eliminated shell-quoting failure modes by standardizing on programmatic Node.js scripts with `near-api-js` passing typed payloads directly |
 | 6 | **Single-Council Agent Self-Approval Hazard** | Initial DAO had only the agent account in council | Commit `e9a6b92`, `scripts/create-dao.mjs` | Enforced 2-of-2 human council multi-sig (`zinipay-c1`, `zinipay-c2`) with agent as Requestor |
 | 7 | **Contract Initialization Arguments Deserialization** | Deploy script passed wrong argument names (`owner_id`, `dao_contract`) | `scripts/setup-testnet.mjs` / `contracts/policy-helper/src/lib.rs` line 92 | Corrected init argument names to `owner` and `dao_account_id` matching Rust struct |
 | 8 | **NEAR Testnet Public RPC Instability** | `rpc.testnet.near.org` intermittent 503 / 408 / rate limits | Commit `0952e25`, `scripts/verify-testnet.mjs` | Implemented multi-RPC client prioritizing FastNEAR (`test.rpc.fastnear.com`) and Archival RPC |
@@ -22,7 +22,7 @@
 | 10 | **NEAR AI Cloud HTTP 402 (Spending Limit)** | `cloud-api.near.ai/v1` requires payment setup / credits | Commit `8e8ef52`, `agent/src/deliberation.ts` line 98 | Implemented fail-closed deliberation fallback with explicit `[SIMULATION]` transparency |
 | 11 | **Orphan Testnet Account (`zinipay-council2`)** | Testnet account created without saving private key before process exit | `scripts/setup-testnet.mjs` terminal log | Created fresh account `zinipay-c2.testnet` with verified local keypair persistence |
 | 12 | **Windows MSVC Linker Requirement for `cargo test`** | `cargo test` for `x86_64-pc-windows-msvc` requires `link.exe` (VS C++ Build Tools) | Terminal log `cargo test` (`linker link.exe not found`) | Documented Linux/WSL requirement and automated `cargo test` via GitHub Actions Ubuntu CI |
-| 13 | **Deliverable CID Case-Variant Replay Hole** | Smart contract `used_cids` stored raw strings; case variants bypassed anti-replay | Commit `1637910`, `contracts/policy-helper/src/lib.rs` | Deployed to testnet in tx `97d8UoqSro...` (canonical `canonical_cid` in contract; 20 unit tests) |
+| 13 | **Deliverable CID Case-Variant Replay Hole** | Smart contract `used_cids` stored raw strings; case variants bypassed anti-replay | Commit `838f37e`, `contracts/policy-helper/src/lib.rs` | Deployed to testnet in tx `8YwrsbT3dfhjwATcbRutcb5AnksetfUTLAuJvefeNFHe` (code hash `4aAns5Jey...`; canonical `canonical_cid` in contract; 20 unit tests) |
 
 ---
 
@@ -189,8 +189,8 @@
 ---
 
 ### 13. Deliverable CID Case-Variant Replay Attack Hole
-- **Date**: November 1, 2026
-- **Status**: Deployed to testnet (tx `97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`)
+- **Date**: November 1–2, 2026
+- **Status**: Deployed to testnet (tx [`8YwrsbT3dfhjwATcbRutcb5AnksetfUTLAuJvefeNFHe`](https://testnet.nearblocks.io/txns/8YwrsbT3dfhjwATcbRutcb5AnksetfUTLAuJvefeNFHe))
 - **What I Discovered**: Evaluated security of deliverable anti-replay checking across agent and smart contract boundaries.
 - **Surprise**: While the off-chain agent normalized pull request strings to lowercase, smart contract `used_cids` stored raw string keys. An attacker could potentially submit uppercase or mixed-case variants (e.g. `KELLYCRYPTOS/ZINIPAY#1` vs `kellycryptos/zinipay#1`) to bypass `used_cids.contains(&cid)` and attempt duplicate release.
-- **The Fix**: Implemented canonical `canonical_cid(&self, cid: &str) -> String` inside `contracts/policy-helper/src/lib.rs` that trims whitespace and lowercases all deliverable CIDs before checking or inserting into `used_cids`. Deployed and verified on testnet in tx `97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`, with code hash `ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc`.
+- **The Fix**: Implemented canonical `canonical_cid(&self, cid: &str) -> String` inside `contracts/policy-helper/src/lib.rs` that trims whitespace and lowercases all deliverable CIDs before checking or inserting into `used_cids`. Deployed and verified on testnet in tx `8YwrsbT3dfhjwATcbRutcb5AnksetfUTLAuJvefeNFHe` (code hash `4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt`), canonicalized historical CIDs in tx `E4dvMPhCjWufQEYShvxEhNQ1NtEgvpNX583ohG6mdELC`, and transferred ownership to Sputnik DAO in tx `BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX`.

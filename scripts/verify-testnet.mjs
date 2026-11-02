@@ -172,31 +172,33 @@ async function main() {
     `agent in voting roles: ${agentInVotingRole} | proposal creation (*:AddProposal): ${hasProposerPermission}`
   );
 
-  // ── 2. Proposal #5 Execution ───────────────────────────────────────────────
-  console.log('\n2. Proposal #5 Verification:');
-  const prop5 = await callViewMethod(DAO_ID, 'get_proposal', { id: 5 });
-  const isApproved = prop5?.status === 'Approved';
-  report('2.1', 'Proposal #5 Status is Approved', isApproved, `Status: ${prop5?.status || 'Not Found'}`);
+  // ── 2. Proposal Verification ────────────────────────────────────────────────
+  console.log('\n2. Proposal Verification:');
 
-  const hasPolicyCall = prop5?.kind?.FunctionCall?.receiver_id === POLICY_ID;
-  report('2.2', 'Proposal #5 Target is PolicyHelper', hasPolicyCall, `Receiver: ${prop5?.kind?.FunctionCall?.receiver_id || 'N/A'}`);
-
-  // 2.3: Check for verified model review completion ID and signatureKind
-  const desc = prop5?.description || '';
   const verifiedPathForProp = path.join(process.cwd(), 'frontend', 'public', 'data', 'verified.json');
+  let vData = null;
   let recordedCompletionId = null;
   let recordedSignatureKind = null;
   let hasSdkAttestation = false;
-
   if (fs.existsSync(verifiedPathForProp)) {
     try {
-      const vData = JSON.parse(fs.readFileSync(verifiedPathForProp, 'utf8'));
+      vData = JSON.parse(fs.readFileSync(verifiedPathForProp, 'utf8'));
       const payoutTx = vData.transactions?.find(t => t.kind === 'payout');
       recordedCompletionId = payoutTx?.completionId || vData.completionId || null;
       recordedSignatureKind = payoutTx?.signatureKind || vData.signatureKind || null;
       hasSdkAttestation = !!(payoutTx?.attestationVerified || vData.attestationVerified);
     } catch {}
   }
+  const targetPropId = vData?.transactions?.find(t => t.kind === 'payout')?.proposalId || 6;
+  const propRecord = await callViewMethod(DAO_ID, 'get_proposal', { id: targetPropId });
+  const isApproved = propRecord?.status === 'Approved';
+  report('2.1', `Proposal #${targetPropId} Status is Approved`, isApproved, `Status: ${propRecord?.status || 'Not Found'}`);
+
+  const hasPolicyCall = propRecord?.kind?.FunctionCall?.receiver_id === POLICY_ID;
+  report('2.2', `Proposal #${targetPropId} Target is PolicyHelper`, hasPolicyCall, `Receiver: ${propRecord?.kind?.FunctionCall?.receiver_id || 'N/A'}`);
+
+  // 2.3: Check for verified model review completion ID and signatureKind
+  const desc = propRecord?.description || '';
 
   const descSdkMatch = desc.match(/response signature verified \(SDK 0\.2\.1\):\s*kind=([^,\s]+),\s*id=([^\]\s]+)/i);
   if (descSdkMatch) {
@@ -235,7 +237,7 @@ async function main() {
   report('4.1', `PolicyHelper Bound to DAO (${DAO_ID})`, daoBound, `Authorized Caller: ${policyCfg?.dao_account_id || 'N/A'}`);
 
   const repScore = await callViewMethod(POLICY_ID, 'get_reputation', { account: 'zinipay-recipient2.testnet' });
-  report('4.2', 'Recipient Reputation Score', repScore === 25, `Score: ${repScore} (Silver Tier >= 20)`);
+  report('4.2', 'Recipient Reputation Score (Silver Tier >= 20)', repScore >= 20, `Score: ${repScore} pts (Silver Tier >= 20)`);
 
   const effectiveCap = await callViewMethod(POLICY_ID, 'get_effective_cap', { recipient: 'zinipay-recipient2.testnet' });
   const capYocto = parseYocto(effectiveCap);

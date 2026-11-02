@@ -111,6 +111,53 @@
       "explorerUrl": "https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD",
       "viaPolicyContract": true,
       "timestamp": "2026-11-02T14:48:35.580Z"
+    },
+    {
+      "index": 10,
+      "label": "Contract Ownership Transferred to Sputnik DAO",
+      "txHash": "BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:52:13.000Z",
+      "kind": "ownership_transfer",
+      "newOwner": "zinipay-demo.sputnikv2.testnet"
+    },
+    {
+      "index": 11,
+      "label": "Blocked Admin: Former Owner Unburn Rejected",
+      "txHash": "EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:53:32.000Z",
+      "kind": "blocked_attack"
+    },
+    {
+      "index": 12,
+      "label": "DAO Proposal #7 Creation (Admin: update_reputation)",
+      "txHash": "73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:54:25.000Z",
+      "kind": "admin_proposal_creation",
+      "proposalId": 7
+    },
+    {
+      "index": 13,
+      "label": "Council 1 VoteApprove (Admin Proposal #7)",
+      "txHash": "Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:54:40.000Z"
+    },
+    {
+      "index": 14,
+      "label": "Council 2 VoteApprove & Execution (Admin Proposal #7)",
+      "txHash": "3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:55:12.000Z",
+      "kind": "admin_execution",
+      "proposalId": 7
     }
   ],
   "blockedAttacks": [
@@ -123,7 +170,7 @@
     {
       "vector": "Replay Deliverable CID",
       "status": "BLOCKED",
-      "rejectionReason": "CID already used ΓÇö duplicate release attempt blocked",
+      "rejectionReason": "CID already used — duplicate release attempt blocked",
       "txHash": "9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
       "explorerUrl": "https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
       "blockedBy": "PolicyHelper (On-Chain)"
@@ -147,15 +194,31 @@
     {
       "vector": "Case-Variant CID Replay",
       "status": "BLOCKED",
-      "rejectionReason": "CID already used ΓÇö duplicate release attempt blocked",
+      "rejectionReason": "CID already used — duplicate release attempt blocked",
       "txHash": "EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
       "explorerUrl": "https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
       "blockedBy": "PolicyHelper (On-Chain)"
+    },
+    {
+      "vector": "Cooldown Violation",
+      "status": "BLOCKED",
+      "rejectionReason": "Cooldown not elapsed. 16 seconds remaining.",
+      "txHash": "2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD",
+      "blockedBy": "PolicyHelper (On-Chain)"
+    },
+    {
+      "vector": "Former Owner Admin Rejection",
+      "status": "BLOCKED",
+      "rejectionReason": "Only owner or designated DAO can call this",
+      "txHash": "EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14",
+      "blockedBy": "PolicyHelper (On-Chain / Post-DAO Transfer)"
     }
   ],
   "disclosures": [
     "Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).",
-    "Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.",
-    "Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes."
+    "Proposals #0 to #5 and earlier development runs were performed on testnet before this final clean verification run.",
+    "PolicyHelper contract ownership was transferred on-chain to Sputnik DAO (zinipay-demo.sputnikv2.testnet) in transaction BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX on November 2, 2026. All administrative and recovery actions (unburn_cid, reset_cooldown, update_reputation) now strictly require a council-voted Sputnik DAO FunctionCall proposal."
   ]
 }
