@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-01T16:11:28.371Z",
+  "generatedAt": "2026-11-02T14:50:07.925Z",
   "network": "testnet",
   "sourceLog": "e2e-output.txt",
   "viaPolicyContract": true,
   "transactions": [
     {
       "index": 1,
-      "label": "Proposal #5 Creation",
-      "txHash": "H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/H86k4iESXPQAQJ4ugixJ4rWh7dcVtPw1UeBE5iJD3B1b",
+      "label": "Proposal #6 Creation",
+      "txHash": "HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:28:48.119Z",
+      "timestamp": "2026-11-02T14:47:44.568Z",
       "kind": "proposal_creation",
-      "proposalId": 5,
+      "proposalId": 6,
       "recipient": "zinipay-recipient2.testnet",
       "amountNear": "0.10",
       "amountYocto": "100000000000000000000000",
-      "deliverable": "kellycryptos/ZiniPay#1",
-      "prTitle": "kellycryptos/ZiniPay#1"
+      "deliverable": "kellycryptos/ZiniPay#2",
+      "prTitle": "kellycryptos/ZiniPay#2"
     },
     {
       "index": 2,
-      "label": "Council 1 VoteApprove (Proposal #5)",
-      "txHash": "AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/AdeAxJt6LH1YD17r5k3vVL65Pd7EApJt7gyjALSWPAfL",
+      "label": "Council 1 VoteApprove (Proposal #6)",
+      "txHash": "22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:29:00.168Z"
+      "timestamp": "2026-11-02T14:47:47.635Z"
     },
     {
       "index": 3,
-      "label": "Council 2 VoteApprove (Proposal #5)",
-      "txHash": "4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
+      "label": "Council 2 VoteApprove (Proposal #6)",
+      "txHash": "2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:29:12.190Z",
+      "timestamp": "2026-11-02T14:47:50.588Z",
       "kind": "payout",
-      "proposalId": 5,
+      "proposalId": 6,
       "recipient": "zinipay-recipient2.testnet",
       "amountNear": "0.10",
       "amountYocto": "100000000000000000000000",
       "status": "Approved",
-      "prTitle": "kellycryptos/ZiniPay#1",
-      "deliverable": "kellycryptos/ZiniPay#1",
+      "prTitle": "kellycryptos/ZiniPay#2",
+      "deliverable": "kellycryptos/ZiniPay#2",
       "proposer": "agentzinipaytestnet.testnet",
       "deliberationMode": "simulated",
       "summary": "Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.",
-      "reputationScore": 5,
+      "reputationScore": 25,
       "tier": "Bronze",
-      "effectiveCapNear": "10.0",
+      "effectiveCapNear": "15.0",
       "votes": {
         "approve": 2,
         "reject": 0,
@@ -55,77 +55,101 @@
       },
       "policy": {
         "withinCap": true,
-        "capLimit": "10.0 NEAR",
+        "capLimit": "15.0 NEAR",
         "cooldownElapsed": true,
         "cooldownRemainingSecs": 0,
         "cidUnique": true,
         "reputationQualified": true,
-        "reputationScore": 5,
+        "reputationScore": 25,
         "tier": "Bronze"
       }
     },
     {
       "index": 4,
       "label": "Council Promotion to Silver Tier (25 pts)",
-      "txHash": "Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB",
+      "txHash": "DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:29:24.217Z"
+      "timestamp": "2026-11-02T14:48:00.959Z"
     },
     {
       "index": 5,
-      "label": "Blocked Attack 1: Replay CID (kellycryptos/ZiniPay#1)",
-      "txHash": "Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
+      "label": "Blocked Attack 1: Replay CID (kellycryptos/ZiniPay#2)",
+      "txHash": "9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:29:36.238Z"
+      "timestamp": "2026-11-02T14:48:07.593Z"
     },
     {
       "index": 6,
       "label": "Blocked Attack 2: Over-Cap Spend (16 NEAR)",
-      "txHash": "ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
+      "txHash": "EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:29:48.270Z"
+      "timestamp": "2026-11-02T14:48:13.665Z"
     },
     {
       "index": 7,
       "label": "Blocked Attack 3: Unauthorized Caller (agentzinipaytestnet.testnet)",
-      "txHash": "7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
+      "txHash": "2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B",
       "viaPolicyContract": true,
-      "timestamp": "2026-11-01T15:30:00.296Z"
+      "timestamp": "2026-11-02T14:48:18.496Z"
+    },
+    {
+      "index": 8,
+      "label": "Blocked Attack 4: Case-Variant CID Replay (KELLYCRYPTOS/ZINIPAY#2)",
+      "txHash": "EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:48:23.263Z"
+    },
+    {
+      "index": 9,
+      "label": "Blocked Attack 5: Cooldown Violation (zinipay-recipient2.testnet)",
+      "txHash": "2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD",
+      "viaPolicyContract": true,
+      "timestamp": "2026-11-02T14:48:35.580Z"
     }
   ],
   "blockedAttacks": [
     {
       "vector": "Stolen Deliverable / Author Mismatch",
       "status": "BLOCKED",
-      "rejectionReason": "PR author does not match recipient handle (kellycryptos, zinipay-recipient2.testnet)",
+      "rejectionReason": "PR author (vsavchyn-dev) does not match recipient handle (kellycryptos, zinipay-recipient2.testnet, zinipay-recipient2)",
       "blockedBy": "DeliberationEngine (Artifact Verification & Recipient Binding)"
     },
     {
       "vector": "Replay Deliverable CID",
       "status": "BLOCKED",
-      "rejectionReason": "CID already used — duplicate release attempt blocked",
-      "txHash": "Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ",
+      "rejectionReason": "CID already used ΓÇö duplicate release attempt blocked",
+      "txHash": "9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb",
       "blockedBy": "PolicyHelper (On-Chain)"
     },
     {
       "vector": "Over-Cap Treasury Spend",
       "status": "BLOCKED",
       "rejectionReason": "Amount 16000000000000000000000000 exceeds effective tier cap 15000000000000000000000000 for recipient zinipay-recipient2.testnet",
-      "txHash": "ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB",
+      "txHash": "EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ",
       "blockedBy": "PolicyHelper (On-Chain)"
     },
     {
       "vector": "Unauthorized Release Caller",
       "status": "BLOCKED",
       "rejectionReason": "Only owner or designated DAO can call this",
-      "txHash": "7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
-      "explorerUrl": "https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D",
+      "txHash": "2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B",
+      "blockedBy": "PolicyHelper (On-Chain)"
+    },
+    {
+      "vector": "Case-Variant CID Replay",
+      "status": "BLOCKED",
+      "rejectionReason": "CID already used ΓÇö duplicate release attempt blocked",
+      "txHash": "EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y",
       "blockedBy": "PolicyHelper (On-Chain)"
     }
   ],

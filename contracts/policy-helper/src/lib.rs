@@ -127,7 +127,7 @@ impl PolicyHelper {
 
         // 4. CID uniqueness (Anti-Replay / zero-double-spend)
         let norm_cid = canonical_cid(&cid);
-        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) || self.used_cids.contains(&cid) {
+        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
@@ -251,7 +251,7 @@ impl PolicyHelper {
         }
 
         let norm_cid = canonical_cid(&cid);
-        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) || self.used_cids.contains(&cid) {
+        if self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid) {
             let msg = "CID already used — duplicate release attempt blocked";
             env::log_str(msg);
             env::panic_str(msg);
@@ -277,7 +277,7 @@ impl PolicyHelper {
         self.assert_owner_or_dao();
         let norm_cid = canonical_cid(&cid);
         require!(
-            !self.used_cids.contains(&norm_cid) || self.used_cids.contains(&cid),
+            !self.used_cids.contains(&norm_cid) && !self.used_cids.contains(&cid),
             "CID already used — duplicate release attempt blocked"
         );
         self.last_release
@@ -394,14 +394,14 @@ impl PolicyHelper {
 
     fn assert_owner(&self) {
         require!(
-            env::predecessor_account_id() == self.owner,
+            env::predecessor_account_id() == self.owner || env::predecessor_account_id() == env::current_account_id(),
             "Only owner can call this"
         );
     }
 
     fn assert_owner_or_dao(&self) {
         let caller = env::predecessor_account_id();
-        if caller != self.owner && caller != self.dao_account_id {
+        if caller != self.owner && caller != self.dao_account_id && caller != env::current_account_id() {
             let msg = "Only owner or designated DAO can call this";
             env::log_str(msg);
             env::panic_str(msg);
@@ -640,7 +640,7 @@ mod tests {
         assert_eq!(contract.get_reputation(recipient), 5);
 
         // Verify structured JSON event log was emitted
-        let logs = env::logs();
+        let logs = near_sdk::test_utils::get_logs();
         assert!(logs.iter().any(|l| {
             l.contains("\"event\":\"settled\"") && l.contains("\"recipient\":\"bob.testnet\"") && l.contains("\"tier\":\"Bronze\"")
         }));
@@ -669,7 +669,7 @@ mod tests {
         assert!(!contract.cid_used(cid.clone()));
 
         // Verify structured JSON rollback event log was emitted
-        let logs = env::logs();
+        let logs = near_sdk::test_utils::get_logs();
         assert!(logs.iter().any(|l| {
             l.contains("\"event\":\"rolled_back\"") && l.contains("\"recipient\":\"nonexistent.testnet\"")
         }));

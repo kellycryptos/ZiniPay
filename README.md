@@ -51,10 +51,10 @@ npm run verify:proposal -- 5
 # Note: Test fail-closed rejection on non-release proposals via `npm run verify:proposal -- 0`.
 
 # 5. Run agent three-way match & deliberation check (~5s, zero keys required)
-npm run agent:propose -- --task "Implement DAO dashboard" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run
+npm run agent:propose -- --task "Implement DAO dashboard" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --amount "1" --dry-run
 # Expected: Three-way match clears, queries live testnet policy contract for tier & cap,
 # outputs draft FunctionCall proposal with 1 NEAR bond for Sputnik DAO.
-# Test attack rejection: rerun with amount "25" to see immediate over-cap policy rejection.
+# Test attack rejection: rerun with pull/1 to see replay attack blocked, or amount "25" for over-cap rejection.
 
 # 6. Run smart contract unit test suite (~5s, requires Linux/macOS or MSVC linker)
 cd contracts/policy-helper && cargo test && cd ../..
@@ -254,8 +254,8 @@ COOLDOWN_HOURS=24
 
 - **DAO Treasury Contract**: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
 - **PolicyHelper Contract**: [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet)
-- **Deployed Contract Code Hash**: Base58: `ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc` (SHA-256: `c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f`)
-- **Redeployment Tx**: [`97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ`](https://testnet.nearblocks.io/txns/97d8UoqSro16AU89XND1dkSDYjsGFWDmiSSoBaZxdGrZ) (canonical CID anti-replay normalization; state preserved)
+- **Deployed Contract Code Hash**: Base58: `4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt` (SHA-256: `35124c43f4447813230a19582b3c07fc31038bbb4a0baae062dc388ff78598cf`)
+- **Redeployment Tx**: [`691yY28pzyo2G9sVCZkH1ZQQnhPfK6Te3dj9qX3ZG5Bj`](https://testnet.nearblocks.io/txns/691yY28pzyo2G9sVCZkH1ZQQnhPfK6Te3dj9qX3ZG5Bj) (canonical CID anti-replay normalization & self-auth; state preserved)
 
 #### 1. Run a Simulated Proposal (Dry Run)
 Verify the complete evaluation pipeline locally without spending testnet tokens or broadcasting transactions:
@@ -263,7 +263,7 @@ Verify the complete evaluation pipeline locally without spending testnet tokens 
 ```bash
 npm run agent:propose -- \
   --task "Implement Sputnik DAO Three-Way Gate" \
-  --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" \
+  --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" \
   --recipient "zinipay-recipient2.testnet" \
   --amount 0.1 \
   --github-handle kellycryptos \
@@ -366,7 +366,17 @@ To maintain absolute transparency with judges and auditors, the following archit
 ### Mainnet Deployments
 *Mainnet deployment is scheduled following formal smart contract audits.*
 
-### Verified On-Chain Transactions (Testnet Proof)
+## Live Proof: Real End-to-End Testnet Transactions
+
+Every phase of the ZiniPay lifecycle is verified on NEAR Testnet across real smart contracts, public RPC endpoints, and block explorer receipts:
+
+```
+[1. Contributor Submits PR] ──► [2. Agent Deliberation & Policy Pre-Flight] ──► [3. Proposal #5 Created on DAO]
+                                                                                        │
+[6. CID Burned & Reputation Promoted] ◄── [5. PolicyHelper::release Disbursed] ◄── [4. 2-of-2 Human Council Quorum]
+```
+
+### Confirmed Lifecycle & Blocked Attack Explorer Proofs
 
 | Action | Transaction Hash | Explorer Link | Result |
 | :--- | :--- | :--- | :--- |

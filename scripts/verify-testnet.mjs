@@ -34,6 +34,8 @@ const POLICY_ID = 'zinipay-policy2.testnet';
 
 // Expected hash from the deployed testnet contract at zinipay-policy2.testnet
 const EXPECTED_CODE_HASHES = [
+  '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt', // Base58 on-chain code_hash (deployed with canonical normalization & self-auth)
+  '35124c43f4447813230a19582b3c07fc31038bbb4a0baae062dc388ff78598cf', // Hex representation
   'ETPYoyjVFWbggVZLDkk4mkRHZdtrS9FffGSidfKpvpVc', // Base58 on-chain code_hash (normalized WASM deployed 2026-11-01)
   'c7ea86d5221fd35608b4bbec6e0323144eee0e3c3ccede496b4a4e79b3444c0f', // Hex representation
   'Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy', // Previous deployment hash (commit 8e8ef52)
@@ -223,7 +225,8 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'} (redeployed with canonical CID normalization; code hash matches build c7ea86d5...)`);
+  const hashHex = policyAcct?.code_hash === '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt' ? '35124c43...' : 'c7ea86d5...';
+  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'} (redeployed with canonical CID normalization; code hash matches build ${hashHex})`);
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');

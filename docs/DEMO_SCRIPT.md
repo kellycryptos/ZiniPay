@@ -38,11 +38,11 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
 
 - **Screen**: Terminal split-screen (VS Code / CLI)
 
-- **Step A: Legitimate Contributor Deliverable (PR #1)**
+- **Step A: Legitimate Contributor Deliverable (PR #2)**
   ```bash
   npm run agent:propose -- \
     --task "Implement Sputnik DAO Three-Way Gate" \
-    --deliverable "https://github.com/kellycryptos/ZiniPay/pull/1" \
+    --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" \
     --recipient "zinipay-recipient2.testnet" \
     --github-handle "kellycryptos" \
     --amount 0.1 \
@@ -53,7 +53,7 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
     >
     > When a contributor submits work, the agent runs our evaluation pipeline:
     > In Gate 1, policy clearance reads the contract state directly on-chain: it confirms the deliverable proof is attached, verifies it stays under the recipient's Silver tier cap (15 NEAR max), and confirms zero-replay against `zinipay-policy2.testnet`.
-    > In Gate 2, the Inspector Agent verifies the real GitHub PR #1: it confirms the PR is merged, matches the author handle @kellycryptos, and checks that the PR description explicitly binds `zinipay-recipient: zinipay-recipient2.testnet`.
+    > In Gate 2, the Inspector Agent verifies the real GitHub PR #2: it confirms the PR is merged, matches the author handle @kellycryptos, and checks that the PR description explicitly binds `zinipay-recipient: zinipay-recipient2.testnet`.
     > The Inspector scores it 95/100, the Risk Arbiter confirms LOW risk, and deliberation reaches consensus: APPROVED.
     > In Gate 3, the agent formats a constrained FunctionCall proposal for `zinipay-policy2.testnet` ready for Sputnik DAO council multi-sig review."*
 

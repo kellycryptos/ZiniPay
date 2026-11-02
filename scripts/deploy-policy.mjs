@@ -2,16 +2,15 @@
 /**
  * scripts/deploy-policy.mjs
  *
- * Deploys the newly compiled PolicyHelper WASM with case-insensitive canonical CID normalization
+ * Deploys the compiled PolicyHelper WASM with case-insensitive canonical CID normalization
  * to zinipay-policy2.testnet without re-initializing contract state.
  *
  * Verifies:
  *   1. Pre-deployment code hash and cid_used state.
  *   2. Deploys WASM code via DeployContract action.
  *   3. Calls migrate_canonicalize_cids to populate canonical lowercase entries for historical CIDs.
- *   4. Queries get_policy, get_reputation, and cid_used for both casing variants:
- *        - "kellycryptos/ZiniPay#1"
- *        - "kellycryptos/zinipay#1"
+ *   4. Aligns owner to active council member (zinipay-c1.testnet) if needed.
+ *   5. Queries get_policy, get_reputation, and cid_used for both casing variants.
  */
 
 import { connect, KeyPair, keyStores, utils } from 'near-api-js';
@@ -135,7 +134,7 @@ async function main() {
   console.log(`      Explorer:    https://testnet.nearblocks.io/txns/${deployTxHash}\n`);
 
   // 3. Migrate historical CIDs to canonical lowercase
-  console.log(`[4/5] Executing CID Canonicalization Migration...`);
+  console.log(`[4/5] Executing CID Migration & Council Ownership Alignment...`);
   try {
     const migrateOutcome = await account.functionCall({
       contractId,
@@ -149,6 +148,23 @@ async function main() {
     console.log(`      Explorer:    https://testnet.nearblocks.io/txns/${migrateTxHash}\n`);
   } catch (err) {
     console.warn(`  ℹ Migration call note: ${err.message}`);
+  }
+
+  // Align owner to active council member zinipay-c1.testnet
+  const currentPolicy = await queryView('get_policy');
+  if (currentPolicy?.owner !== 'zinipay-c1.testnet') {
+    try {
+      const transferOutcome = await account.functionCall({
+        contractId,
+        methodName: 'transfer_ownership',
+        args: { new_owner: 'zinipay-c1.testnet' },
+        gas: 30000000000000n,
+      });
+      console.log(`  ✓ Ownership aligned to active council signer: zinipay-c1.testnet`);
+      console.log(`      Tx Hash:     ${transferOutcome.transaction.hash}\n`);
+    } catch (err) {
+      console.warn(`  ℹ Ownership transfer note: ${err.message}`);
+    }
   }
 
   // 4. Post-deployment verification
