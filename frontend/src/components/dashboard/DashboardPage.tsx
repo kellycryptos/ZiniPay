@@ -3,6 +3,7 @@ import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
 import { PolicyPanel } from '../PolicyPanel';
 import { AttackAttemptsPanel } from '../AttackAttemptsPanel';
 import { StepByStepProposeForm } from '../StepByStepProposeForm';
+import { StatCard } from '../ui/StatCard';
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
 import {
@@ -223,12 +224,12 @@ export function DashboardPage({
       {/* ── High-Density 4-Metric Strip ───────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {/* Metric 1: Treasury Vault Balance */}
-        <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-white/[0.15] rounded-xl p-4 flex flex-col justify-between gap-3 shadow-lg transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)] flex items-center gap-1.5">
-              <Coins size={14} className="text-[#00EC97]" />
-              <span>Treasury Vault</span>
-            </span>
+        <StatCard
+          title="Treasury Vault"
+          icon={Coins}
+          value={isLoadingOnChain ? 'Syncing...' : `${effectiveBalance.toFixed(2)} NEAR`}
+          subtext={`~$${(effectiveBalance * 5.0).toFixed(2)} USD · Sputnik DAO v2`}
+          action={
             <a
               href={`${explorerBase}/address/${daoContract}`}
               target="_blank"
@@ -239,132 +240,84 @@ export function DashboardPage({
               <span>Explorer</span>
               <ExternalLink size={10} />
             </a>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold font-mono text-white tracking-tight">
-              {isLoadingOnChain ? (
-                <span className="text-slate-600 animate-pulse">Syncing...</span>
-              ) : (
-                `${effectiveBalance.toFixed(2)} NEAR`
-              )}
-            </div>
-            <div className="text-[11px] text-[var(--text-secondary)] font-mono mt-0.5">
-              ~${(effectiveBalance * 5.0).toFixed(2)} USD · Sputnik DAO v2
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
-            <span className="text-[var(--text-muted)]">Vault State:</span>
-            <span className="inline-flex items-center gap-1 text-[#00EC97] font-medium font-mono text-[10px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
-              Solvent
-            </span>
-          </div>
-        </div>
+          }
+          footer={
+            <>
+              <span className="text-[var(--text-muted)]">Vault State:</span>
+              <span className="inline-flex items-center gap-1 text-[#00EC97] font-medium font-mono text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
+                Solvent
+              </span>
+            </>
+          }
+        />
 
         {/* Metric 2: PolicyHelper Guardrail */}
-        <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-white/[0.15] rounded-xl p-4 flex flex-col justify-between gap-3 shadow-lg transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)] flex items-center gap-1.5">
-              <ShieldAlert size={14} className="text-[#00EC97]" />
-              <span>PolicyHelper Spend Cap</span>
-            </span>
-            <span className="text-[10px] font-mono text-[#00EC97] bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/20">
-              Rust Enforced
-            </span>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold font-mono text-white tracking-tight">
-              10.0 NEAR
-            </div>
-            <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              Per-proposal cap · 50.0 NEAR daily limit
-            </div>
-          </div>
-
-          {/* Micro Progress Bar */}
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1">
-            <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-              <span>9.5 NEAR spent today</span>
-              <span>19% volume</span>
-            </div>
-            <div className="w-full bg-[var(--bg-canvas)] h-1.5 rounded-full overflow-hidden border border-[var(--border-subtle)]">
-              <div className="bg-[#00EC97] h-full rounded-full" style={{ width: '19%' }} />
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="PolicyHelper Spend Cap"
+          icon={ShieldAlert}
+          value="10.0 NEAR"
+          subtext="Per-proposal cap · 50.0 NEAR daily limit"
+          badge="Rust Enforced"
+          badgeVariant="success"
+          progress={{
+            current: 9.5,
+            max: 50.0,
+            label: "9.5 NEAR spent today",
+          }}
+        />
 
         {/* Metric 3: Three-Way Gate Security */}
-        <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-white/[0.15] rounded-xl p-4 flex flex-col justify-between gap-3 shadow-lg transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)] flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-[#00EC97]" />
-              <span>Three-Way Match</span>
-            </span>
-            <span className="text-[10px] font-mono text-emerald-400">100% Fail-Closed</span>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold font-mono text-white tracking-tight flex items-center gap-2">
-              <span>3 / 3 Gates</span>
-            </div>
-            <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">
-              Artifact · Policy · Multi-Sig Quorum
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
-            <span className="text-[var(--text-muted)]">Attacks Thwarted:</span>
-            <button
-              type="button"
-              onClick={() => setTab('security')}
-              className="text-[#00EC97] hover:underline font-mono text-[10px] flex items-center gap-1 cursor-pointer"
-            >
-              <span>42 Blocked</span>
-              <ArrowRight size={10} />
-            </button>
-          </div>
-        </div>
+        <StatCard
+          title="Three-Way Match"
+          icon={ShieldCheck}
+          value="3 / 3 Gates"
+          subtext="Artifact · Policy · Multi-Sig Quorum"
+          badge="100% Fail-Closed"
+          badgeVariant="success"
+          footer={
+            <>
+              <span className="text-[var(--text-muted)]">Attacks Thwarted:</span>
+              <button
+                type="button"
+                onClick={() => setTab('security')}
+                className="text-[#00EC97] hover:underline font-mono text-[10px] flex items-center gap-1 cursor-pointer"
+              >
+                <span>42 Blocked</span>
+                <ArrowRight size={10} />
+              </button>
+            </>
+          }
+        />
 
         {/* Metric 4: Council Quorum & Signer */}
-        <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-white/[0.15] rounded-xl p-4 flex flex-col justify-between gap-3 shadow-lg transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)] flex items-center gap-1.5">
-              <Users size={14} className="text-[#00EC97]" />
-              <span>Council Quorum</span>
-            </span>
-            <span className="text-[10px] font-mono text-[var(--text-muted)]">
-              2 of 3 Required
-            </span>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold font-mono text-white tracking-tight">
-              {pendingCount > 0 ? `${pendingCount} Pending` : 'All Approved'}
-            </div>
-            <div className="text-[11px] text-[var(--text-secondary)] truncate font-mono mt-0.5">
-              {connectedAccount ? (
-                <span className="text-[#00EC97]">Signer: {connectedAccount}</span>
-              ) : (
-                'No wallet connected'
-              )}
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px]">
-            <span className="text-[var(--text-muted)]">Signer Status:</span>
-            <button
-              type="button"
-              onClick={onOpenWalletModal}
-              className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Wallet size={11} />
-              <span>{connectedAccount ? 'Switch Role' : 'Connect Wallet'}</span>
-            </button>
-          </div>
-        </div>
+        <StatCard
+          title="Council Quorum"
+          icon={Users}
+          value={pendingCount > 0 ? `${pendingCount} Pending` : 'All Approved'}
+          badge="2 of 3 Required"
+          badgeVariant="neutral"
+          subtext={
+            connectedAccount ? (
+              <span className="text-[#00EC97]">Signer: {connectedAccount}</span>
+            ) : (
+              'No wallet connected'
+            )
+          }
+          footer={
+            <>
+              <span className="text-[var(--text-muted)]">Signer Status:</span>
+              <button
+                type="button"
+                onClick={onOpenWalletModal}
+                className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Wallet size={11} />
+                <span>{connectedAccount ? 'Switch Role' : 'Connect Wallet'}</span>
+              </button>
+            </>
+          }
+        />
       </div>
 
       {/* ── Main Two-Column Governance Board ────────────────────────── */}

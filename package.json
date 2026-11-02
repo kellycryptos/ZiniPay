@@ -29,5 +29,10 @@
     "@freedomofpress/crypto-browser": {
       "@noble/curves": "2.4.0"
     }
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "react-aria-components": "^1.22.1",
+    "tailwind-merge": "^3.7.0"
   }
 }
