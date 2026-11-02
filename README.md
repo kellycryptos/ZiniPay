@@ -38,12 +38,14 @@ npm run verify:testnet
 
 ```bash
 # Step 4: Run independent proposal verifier (~5s)
-npm run verify:proposal -- 5
+npm run verify:proposal -- 6
 ```
-**See**: `✓ STATE CHECKS PASSED`. Cross-references Sputnik DAO Proposal #5 on-chain against `PolicyHelper` spend limits and anti-replay registry. *(To test fail-closed rejection on a non-release proposal, run `npm run verify:proposal -- 0`)*.
+**See**: `✓ STATE CHECKS PASSED`. Cross-references Sputnik DAO Proposal #6 on-chain against `PolicyHelper` spend limits and anti-replay registry. *(To test fail-closed rejection on a non-release proposal, run `npm run verify:proposal -- 7`)*.
 
 ```bash
-# Step 5: Test agent deliberation & pre-flight policy check locally (~5s, dry run)
+# Step 5: Test agent deliberation & on-chain anti-replay clearance (~5s, dry run)
+# Note: PR #1 (Proposal #5) and PR #2 (Proposal #6) are permanently burned on-chain.
+# Running PR #2 demonstrates live on-chain anti-replay rejection in real time:
 npm run agent:propose -- \
   --task "Implement Sputnik DAO Three-Way Gate" \
   --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" \
@@ -52,7 +54,19 @@ npm run agent:propose -- \
   --github-handle kellycryptos \
   --dry-run
 ```
-**See**: Agent verifies pull request metadata and explicit `zinipay-recipient` binding, queries live testnet `PolicyHelper` view method for tier limits, and constructs a valid Sputnik DAO `FunctionCall` proposal with zero token expenditure.
+**See**: `✗ THREE-WAY MATCH FAILED: Deliverable proof "kellycryptos/zinipay#2" has already been settled on-chain (zero-double-spend protection)`.
+
+```bash
+# Step 5b: Test Gate 2 author-mismatch defense on an unauthorized PR (~5s, dry run)
+npm run agent:propose -- \
+  --task "Implement Sputnik DAO Three-Way Gate" \
+  --deliverable "https://github.com/near/near-sdk-rs/pull/1651" \
+  --recipient "zinipay-recipient2.testnet" \
+  --amount 0.1 \
+  --github-handle kellycryptos \
+  --dry-run
+```
+**See**: `Consensus Verdict: REJECTED (Confidence: 0%)` — `PR author (vsavchyn-dev) does not match recipient handle`.
 
 ```bash
 # Step 6 (Optional): Run smart contract unit tests (~5s, requires Rust toolchain)
@@ -197,9 +211,9 @@ ZiniPay includes an independent, keyless proposal verification tool (`scripts/ve
 npm run verify:proposal -- <proposal_id>
 ```
 
-#### Example: Verifying Proposal #5
+#### Example: Verifying Proposal #6 (or #5)
 ```bash
-npm run verify:proposal -- 5
+npm run verify:proposal -- 6
 ```
 
 #### What the Verifier Does
