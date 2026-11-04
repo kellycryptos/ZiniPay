@@ -53,15 +53,11 @@ export function LandingTechStack() {
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
         {/* Header */}
         <div className="border-b border-[var(--border-subtle)] pb-6">
-          <div className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[var(--color-passed)] uppercase tracking-wider mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
-            Infrastructure
-          </div>
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
-            Core Infrastructure & Integrations
+            Infrastructure
           </h2>
-          <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-            Direct integration with battle-tested multi-sig governance, smart contract guardrails, and confidential computing infrastructure.
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-2xl leading-relaxed">
+            Core protocol integrations across governance, verification, and settlement.
           </p>
         </div>
 
@@ -97,9 +93,8 @@ export function LandingTechStack() {
                 </div>
 
                 {item.contractId && (
-                  <div className="mt-5 pt-3 border-t border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] flex items-center justify-between">
-                    <span>TARGET:</span>
-                    <span className="text-white font-medium truncate max-w-[170px]" title={item.contractId}>
+                  <div className="mt-5 pt-3 border-t border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] flex items-center justify-end">
+                    <span className="text-slate-300 font-medium truncate max-w-[200px]" title={item.contractId}>
                       {item.contractId}
                     </span>
                   </div>

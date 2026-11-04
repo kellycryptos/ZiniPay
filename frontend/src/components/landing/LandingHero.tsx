@@ -188,32 +188,27 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroP
         {/* Left Column: Outcome, Value Proposition, Action CTAs & Three-Way Gate Preview */}
         <div className="flex-1 flex flex-col gap-6 text-left w-full">
           {/* Status Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[var(--bg-panel-alt)]/90 border border-white/[0.08] text-[11px] font-mono text-slate-300 w-fit backdrop-blur-md shadow-sm">
+          <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-white/[0.08] text-xs font-mono text-slate-300 w-fit backdrop-blur-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-passed)] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-passed)]" />
             </span>
-            <span className="font-semibold text-white tracking-wide">FAIL-CLOSED TREASURY LAYER</span>
+            <span className="font-medium text-white">NEAR Protocol</span>
             <span className="text-[var(--text-muted)]">·</span>
-            <span className="text-[var(--color-passed)] font-mono">v1.0 Testnet Verified</span>
+            <span className="text-[var(--color-passed)]">Sputnik DAO v2</span>
           </div>
 
-          {/* Headline with display font, balanced scale, and tight leading */}
-          <h1 className="font-display text-3xl sm:text-5xl lg:text-[52px] font-bold tracking-tight text-white leading-[1.12] max-w-xl text-balance">
-            Your community's money, with three locks.
+          {/* Headline */}
+          <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-bold tracking-tight text-white leading-[1.12] max-w-xl text-balance">
+            Constrained agent payouts for community treasuries.
           </h1>
 
-          {/* Subtext with warm human metaphor */}
-          <div className="flex flex-col gap-2.5 text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-prose">
-            <p className="font-semibold text-white/95 text-lg sm:text-xl">
-              The agent can ask. It can't take. Two humans still turn the keys.
-            </p>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Autonomous AI agents verify deliverable evidence and prepare proposals. Smart contracts enforce spend caps on-chain. Human councils hold the multi-sig quorum.
-            </p>
-          </div>
+          {/* Concise mechanism statement */}
+          <p className="text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-prose">
+            Autonomous agents verify deliverables, smart contracts enforce spend caps on-chain, and human councils hold the multi-sig quorum.
+          </p>
 
-          {/* Primary Action Button Row */}
+          {/* Action Row */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="button"
@@ -244,120 +239,64 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroP
               <Github size={16} />
               <span>View Contracts & Code</span>
             </a>
-
-            <a
-              href="https://github.com/zinipay/zinipay/tree/main/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary text-xs sm:text-sm py-2.5 px-3 flex items-center gap-1.5 text-slate-400 hover:text-white border border-white/[0.08]"
-              title="Documentation"
-            >
-              <BookOpen size={14} />
-              <span>Docs</span>
-            </a>
           </div>
 
-          {/* Three-Way Gate Hero Preview Widget (Harmonized Tri-Color Grammar) */}
-          <div className="mt-1 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)]/90 border border-[var(--border-subtle)] backdrop-blur-sm shadow-sm">
-            <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[var(--border-subtle)] text-[11px] font-mono">
-              <span className="text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5 font-medium">
-                <ShieldCheck size={14} className="text-[var(--color-passed)]" />
-                <span>Three-Way Gate Invariants</span>
-              </span>
-              <span className="text-[var(--color-passed)] font-semibold flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
-                <span>All 3 Must Pass</span>
-              </span>
-            </div>
-
+          {/* Three-Way Gate Preview */}
+          <div className="mt-1 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)]">
             <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-              {/* Gate 01: Agent Proof (Cyan) */}
+              {/* Gate 1 */}
               <div
                 onMouseEnter={() => setHoveredGate(1)}
                 onMouseLeave={() => setHoveredGate(null)}
-                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between ${
                   hoveredGate === 1
                     ? 'border-cyan-400/60 shadow-[0_4px_16px_rgba(34,211,238,0.12)] -translate-y-0.5'
-                    : 'border-cyan-500/20 hover:border-cyan-500/40'
+                    : 'border-cyan-500/20'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-[10px] text-cyan-400 font-bold">GATE 01</span>
-                    <FileCheck size={14} className="text-cyan-300" />
-                  </div>
-                  <div className="text-xs font-semibold text-white tracking-tight">Verifiable Proof</div>
-                  <div className="text-[10px] text-slate-400 truncate mt-0.5">PR & CID Hash</div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] text-cyan-400 font-bold">01</span>
+                  <FileCheck size={14} className="text-cyan-300" />
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-cyan-400">
-                  <Check size={11} />
-                  <span>Verified</span>
-                </div>
+                <div className="text-xs font-semibold text-white tracking-tight">Deliverable Proof</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">PR & CID Hash</div>
               </div>
 
-              {/* Gate 02: On-Chain Policy (Emerald) */}
+              {/* Gate 2 */}
               <div
                 onMouseEnter={() => setHoveredGate(2)}
                 onMouseLeave={() => setHoveredGate(null)}
-                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between ${
                   hoveredGate === 2
                     ? 'border-emerald-400/60 shadow-[0_4px_16px_rgba(0,236,151,0.12)] -translate-y-0.5'
-                    : 'border-emerald-500/20 hover:border-emerald-500/40'
+                    : 'border-emerald-500/20'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">GATE 02</span>
-                    <ShieldAlert size={14} className="text-[var(--color-passed)]" />
-                  </div>
-                  <div className="text-xs font-semibold text-white tracking-tight">On-Chain Policy</div>
-                  <div className="text-[10px] text-slate-400 truncate mt-0.5">Tier Cap & Rules</div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">02</span>
+                  <ShieldAlert size={14} className="text-[var(--color-passed)]" />
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-[var(--color-passed)]">
-                  <Check size={11} />
-                  <span>Enforced</span>
-                </div>
+                <div className="text-xs font-semibold text-white tracking-tight">Spend Limits</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">Tier Cap & Rules</div>
               </div>
 
-              {/* Gate 03: Human Quorum (Amber) */}
+              {/* Gate 3 */}
               <div
                 onMouseEnter={() => setHoveredGate(3)}
                 onMouseLeave={() => setHoveredGate(null)}
-                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between cursor-default ${
+                className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between ${
                   hoveredGate === 3
                     ? 'border-amber-400/60 shadow-[0_4px_16px_rgba(251,191,36,0.12)] -translate-y-0.5'
-                    : 'border-amber-500/20 hover:border-amber-500/40'
+                    : 'border-amber-500/20'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-[10px] text-amber-400 font-bold">GATE 03</span>
-                    <Users size={14} className="text-amber-300" />
-                  </div>
-                  <div className="text-xs font-semibold text-white tracking-tight">Human Quorum</div>
-                  <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-3 Council</div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-mono text-[10px] text-amber-400 font-bold">03</span>
+                  <Users size={14} className="text-amber-300" />
                 </div>
-                <div className="mt-2 pt-1.5 border-t border-white/[0.05] flex items-center gap-1 text-[10px] font-mono text-amber-400">
-                  <Check size={11} />
-                  <span>Consented</span>
-                </div>
+                <div className="text-xs font-semibold text-white tracking-tight">Council Quorum</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-3 Multi-Sig</div>
               </div>
-            </div>
-          </div>
-
-          {/* Integrated Product Architecture Spec Row */}
-          <div className="grid grid-cols-3 gap-2 px-3.5 py-2.5 rounded-lg bg-[var(--bg-panel-alt)]/60 border border-[var(--border-subtle)] text-xs font-mono">
-            <div>
-              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Policy Engine</div>
-              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Rust PolicyHelper</div>
-            </div>
-            <div>
-              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Execution Model</div>
-              <div className="text-[var(--color-passed)] font-semibold text-[11px] mt-0.5 truncate">Fail-Closed Gate</div>
-            </div>
-            <div>
-              <div className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider">Governance Multi-Sig</div>
-              <div className="text-white font-medium text-[11px] mt-0.5 truncate">Sputnik DAO v2</div>
             </div>
           </div>
         </div>

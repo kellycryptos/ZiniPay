@@ -28,15 +28,9 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                Deliverable Proof Inspector
-                <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded-full font-mono">
-                  Agent Deliberated
-                </span>
-              </h3>
-              <p className="text-xs text-gray-400">Verifiable artifact & agent deliberation trace</p>
-            </div>
+            <h3 className="text-sm font-bold text-white font-mono">
+              Deliverable Proof
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -49,8 +43,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
         {/* Modal Body */}
         <div className="mt-4 space-y-4">
           <div>
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Proposal Context</span>
-            <p className="text-sm font-bold text-white mt-0.5">
+            <p className="text-sm font-bold text-white">
               #{proposal.id} · {proposal.title}
             </p>
           </div>
@@ -58,13 +51,13 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
           {/* Proof CID Box */}
           <div>
             <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-              <span className="font-medium">Cryptographic Proof CID (IPFS)</span>
+              <span className="font-medium">Artifact CID</span>
               <button
                 onClick={copyToClipboard}
                 className="flex items-center space-x-1 text-[11px] text-cyan-400 hover:underline"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy CID'}</span>
+                <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             </div>
             <div className="p-3 rounded-xl bg-black/60 border border-gray-800 font-mono text-xs text-cyan-300 break-all select-all">
@@ -72,46 +65,46 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
             </div>
           </div>
 
-          {/* Autonomous Agent Evaluation */}
+          {/* Evaluation Trace */}
           <div>
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 mb-1">
               <Cpu className="w-3.5 h-3.5 text-purple-400" />
-              <span>NEAR AI Cloud Deliberation Trace</span>
+              <span>Deliberation Trace</span>
             </div>
             <div className="p-3.5 rounded-xl bg-gray-950/80 border border-gray-800 text-xs text-gray-300 leading-relaxed font-mono">
               {proposal.evidenceDetails}
             </div>
           </div>
 
-          {/* Three-Way Release Gate Audit Checklist */}
+          {/* Gate Verification Checklist */}
           <div className="p-3.5 rounded-xl border border-gray-800 bg-gray-900/40 text-xs space-y-2 font-mono">
             <div className="flex justify-between items-center text-gray-300">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                Gate 01: Artifact Evidence
+                Deliverable
               </span>
-              <span className="text-emerald-400 font-semibold">CHECKS PASSED</span>
+              <span className="text-emerald-400 font-semibold">Passed</span>
             </div>
             <div className="flex justify-between items-center text-gray-300">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                Gate 02: Policy & Cooldown
+                Policy Cap
               </span>
               <span className="text-emerald-400 font-semibold">{proposal.amountNear}N ≤ {proposal.policy.capLimit}</span>
             </div>
             <div className="flex justify-between items-center text-gray-300">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                Gate 03: Zero Replay Check
+                Anti-Replay
               </span>
-              <span className="text-emerald-400 font-semibold">0 Prior Usages (Unique)</span>
+              <span className="text-emerald-400 font-semibold">Unique CID</span>
             </div>
             <div className="flex justify-between items-center text-gray-300 border-t border-gray-800 pt-2">
               <span className="flex items-center gap-1.5 text-gray-400">
                 <Lock className="w-3.5 h-3.5 text-amber-400" />
-                Recipient Reputation:
+                Contributor
               </span>
-              <span className="text-amber-300 font-bold">{proposal.policy.reputationScore} Pts (Tier: {proposal.policy.tier})</span>
+              <span className="text-amber-300 font-bold">{proposal.policy.tier} Tier ({proposal.policy.reputationScore} pts)</span>
             </div>
           </div>
         </div>

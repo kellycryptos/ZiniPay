@@ -39,19 +39,12 @@ export function LandingHowItWorks() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5E1D8] pb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 font-mono text-xs text-[#0D7A5F] uppercase tracking-wider mb-2 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D7A5F]" />
-              Operational Lifecycle
-            </div>
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0F172A] tracking-tight">
-              From Pull Request to Paid Receipt
+              How It Works
             </h2>
             <p className="text-sm sm:text-base text-[#334155] mt-1.5 max-w-2xl leading-relaxed">
-              Every step leaves a transparent, cryptographic audit trail on NEAR. The agent drafts the invoice; humans sign the check.
+              End-to-end execution flow from deliverable submission to on-chain settlement.
             </p>
-          </div>
-          <div className="font-mono text-xs text-[#475569] bg-white px-3 py-1.5 rounded border border-[#E2DDD5] shadow-xs self-start sm:self-auto">
-            <span>GOVERNANCE:</span> <span className="font-bold text-[#0F172A]">SPUTNIK DAO v2</span>
           </div>
         </div>
 
@@ -62,7 +55,7 @@ export function LandingHowItWorks() {
             return (
               <div
                 key={st.num}
-                className="bg-white border border-[#E2DDD5] rounded-2xl p-6 shadow-sm hover-lift flex flex-col justify-between"
+                className="bg-white border border-[#E2DDD5] rounded-2xl p-6 shadow-sm flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#F1ECE1]">
@@ -83,9 +76,9 @@ export function LandingHowItWorks() {
                   </p>
                 </div>
 
-                <div className="mt-6 pt-3.5 border-t border-[#F1ECE1] flex items-center gap-2 text-[11px] font-mono text-[#475569]">
-                  <Icon size={15} className="text-[#0D7A5F]" />
-                  <span>STEP {st.num} OF 04</span>
+                <div className="mt-6 pt-3.5 border-t border-[#F1ECE1] flex items-center gap-2 text-xs font-mono text-[#0D7A5F]">
+                  <Icon size={14} />
+                  <span className="font-medium text-[11px]">Step {st.num}</span>
                 </div>
               </div>
             );

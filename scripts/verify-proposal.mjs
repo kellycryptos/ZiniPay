@@ -365,7 +365,7 @@ async function verifyProposal() {
     process.exit(1);
   }
 
-  console.log(`✓ PROPOSAL #${proposalId} VERIFIED CLEAN ON-CHAIN: 100% MATCH WITH ZERO FABRICATION!\n`);
+  console.log(`✓ PROPOSAL #${proposalId} VERIFIED CLEAN ON-CHAIN: PARAMETERS MATCH STATE\n`);
 }
 
 verifyProposal().catch((err) => {

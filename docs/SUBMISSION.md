@@ -23,18 +23,26 @@
 
 ## 2. Idea Description (Submission Form Field: 20–2,000 Characters)
 
-*Character count: 1,585 characters (strictly within the 20–2,000 character limit).*
+*Character count: 1,698 characters (strictly within the 20–2,000 character limit).*
 
 ```text
-Autonomous AI agents are transforming bounty evaluation and contributor workflows, but granting agents direct custody or unilateral signing authority over community treasuries invites catastrophic risks: prompt injection, deliverable replay attacks, hallucinated milestones, and runaway treasury drains. 
+ZiniPay is a fail-closed evaluation and payout gate for Sputnik DAO v2 treasuries on NEAR, designed for community bounty governance (Social Money track) and agent sandbox defense (AI Security track).
 
-ZiniPay solves this dilemma by introducing a fail-closed, multi-agent evaluation layer for Sputnik DAO v2 that separates deliberation, policy enforcement, and fund disbursement into a Three-Way Release Gate:
+1. Social Track (Contributor Flow & Tiered Governance):
+Contributors submit merged GitHub PRs containing an explicit "zinipay-recipient" account binding. An off-chain agent inspects PR metadata and drafts a constrained FunctionCall proposal to our custom Rust PolicyHelper contract (zinipay-policy2.testnet). Contributor payouts scale by on-chain reputation tiers (Bronze: 10N, Silver: 15N, Gold: 20N). Funds disburse only when human council multi-sig quorum (2-of-2 on zinipay-demo.sputnikv2.testnet) votes VoteApprove. On testnet, Proposal #6 successfully disbursed 0.1 NEAR to contributor zinipay-recipient2.testnet and promoted reputation from 25 to 30 pts.
 
-1. Off-Chain Evaluation: An Inspector Agent validates technical pull requests (commit hashes, merged status, and explicit "zinipay-recipient" identity binding), while a Risk Arbiter assesses treasury exposure. When configured with NEAR AI Cloud, gateway and model TEE hardware quotes are verified via @nearai/inference-sdk@0.2.1.
-2. On-Chain NEAR Enforcement: The agent operates under a restricted "Requestor" role holding zero voting keys. Proposals must target our custom Rust "PolicyHelper" smart contract (zinipay-policy2.testnet), which programmatically enforces per-proposal spend caps based on contributor reputation scores (Bronze: 10N, Silver: 15N, Gold: 20N), enforces cooldown timers, and permanently burns deliverable CIDs into an on-chain UnorderedSet to mathematically eliminate double-spends.
-3. Multi-Sig Human Quorum: Funds are disbursed only when a human council multi-sig quorum (2-of-2 on zinipay-demo.sputnikv2.testnet) votes VoteApprove. If a transfer fails, atomic callbacks rollback CID consumption.
+2. Security Track (Policy Enforcement & Reverted Attacks):
+The agent operates under a Requestor role with zero voting rights in the DAO policy. Payouts route through PolicyHelper, which enforces spend caps, a 60-second cooldown, and burns deliverable CIDs into an on-chain UnorderedSet. On testnet, five live exploit transactions were executed and reverted with contract panics:
+- Replay CID (tx 9Gp7HmJb...) reverted with "CID already used"
+- Over-cap spend of 16N (tx EiktoyYP...) reverted with "exceeds effective tier cap"
+- Unauthorized caller (tx 2zsvqGDF...) reverted with "Only owner or designated DAO"
+- Case-variant replay (tx EwQAsc5r...) reverted via canonical CID normalization
+- Cooldown violation (tx 2hVRAoT6...) reverted with "Cooldown not elapsed"
 
-Built with Rust, near-sdk v5, TypeScript, React, and Sputnik DAO v2.
+All state is audit-verifiable keylessly via scripts/verify-testnet.mjs and verify-proposal.mjs.
+
+Known Limitations:
+Agent model reviews run in deterministic simulation because NEAR AI Cloud credits were unfunded. Contract ownership was transferred to Sputnik DAO (tx BmUTUzUL...), so recovery methods strictly require council multi-sig proposals.
 ```
 
 ---
@@ -104,9 +112,32 @@ Judges and screening LLMs can verify the complete implementation using standard 
 | Check | Command | Expected Output | Zero-Key Capable |
 | :--- | :--- | :--- | :--- |
 | **Agent Unit Tests** | `npm test --prefix agent` | 14 passed (fail-closed logic, anti-replay, 1Click quote) | Yes |
-| **Testnet State Verification** | `npm run verify:testnet` | 24 PASSED / 0 UNVERIFIED / 0 FAILED | Yes |
-| **Independent Proposal Verifier** | `npm run verify:proposal -- 6` | PROPOSAL #6 VERIFIED CLEAN ON-CHAIN: 100% MATCH | Yes |
+| **Testnet State Verification** | `npm run verify:testnet` | 25 PASSED / 0 UNVERIFIED / 0 FAILED | Yes |
+| **Independent Proposal Verifier** | `npm run verify:proposal -- 6` | PROPOSAL #6 VERIFIED CLEAN ON-CHAIN: PARAMETERS MATCH STATE | Yes |
 | **Non-Release Proposal Rejection** | `npm run verify:proposal -- 7` | Fails closed (`Target Mismatch: Proposal #7 does not target PolicyHelper release()`) | Yes |
 | **Live Anti-Replay Rejection** | `npm run agent:propose -- --task "Replay" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Fails immediately: `Deliverable proof already settled on-chain` | Yes |
 | **Stolen PR Rejection** | `npm run agent:propose -- --task "Stolen PR" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Consensus REJECTED: `PR author does not match recipient handle` | Yes |
 | **Contract Unit Tests** | `cd contracts/policy-helper && cargo test && cd ../..` | 20 passed; 0 failed | Yes (Linux/macOS) |
+
+---
+
+## 6. Official API Submission Payload Contract
+
+```json
+{
+  "requestId": "e4b9f291-7c08-4d51-872f-5182103847ac",
+  "projectName": "ZiniPay",
+  "leadName": "<LEAD_NAME>",
+  "email": "<EMAIL>",
+  "size": "1",
+  "tracks": [
+    "social",
+    "security"
+  ],
+  "nearAddress": "<MAINNET_ACCOUNT>.near",
+  "projectUrl": "https://github.com/kellycryptos/ZiniPay",
+  "demoUrl": "<X_POST_URL>",
+  "idea": "ZiniPay is a fail-closed evaluation and payout gate for Sputnik DAO v2 treasuries on NEAR, designed for community bounty governance (Social Money track) and agent sandbox defense (AI Security track).\n\n1. Social Track (Contributor Flow & Tiered Governance):\nContributors submit merged GitHub PRs containing an explicit 'zinipay-recipient' account binding. An off-chain agent inspects PR metadata and drafts a constrained FunctionCall proposal to our custom Rust PolicyHelper contract (zinipay-policy2.testnet). Contributor payouts scale by on-chain reputation tiers (Bronze: 10N, Silver: 15N, Gold: 20N). Funds disburse only when human council multi-sig quorum (2-of-2 on zinipay-demo.sputnikv2.testnet) votes VoteApprove. On testnet, Proposal #6 successfully disbursed 0.1 NEAR to contributor zinipay-recipient2.testnet and promoted reputation from 25 to 30 pts.\n\n2. Security Track (Policy Enforcement & Reverted Attacks):\nThe agent operates under a Requestor role with zero voting rights in the DAO policy. Payouts route through PolicyHelper, which enforces spend caps, a 60-second cooldown, and burns deliverable CIDs into an on-chain UnorderedSet. On testnet, five live exploit transactions were executed and reverted with contract panics:\n- Replay CID (tx 9Gp7HmJb...) reverted with 'CID already used'\n- Over-cap spend of 16N (tx EiktoyYP...) reverted with 'exceeds effective tier cap'\n- Unauthorized caller (tx 2zsvqGDF...) reverted with 'Only owner or designated DAO'\n- Case-variant replay (tx EwQAsc5r...) reverted via canonical CID normalization\n- Cooldown violation (tx 2hVRAoT6...) reverted with 'Cooldown not elapsed'\n\nAll state is audit-verifiable keylessly via scripts/verify-testnet.mjs and verify-proposal.mjs.\n\nKnown Limitations:\nAgent model reviews run in deterministic simulation because NEAR AI Cloud credits were unfunded. Contract ownership was transferred to Sputnik DAO (tx BmUTUzUL...), so recovery methods strictly require council multi-sig proposals.",
+  "consent": true
+}
+```

@@ -34,6 +34,8 @@ import {
   setStoredWalletAccount,
   disconnectWallet,
   subscribeToWalletState,
+  isRealWalletConnected,
+  isStoredWalletSimulated,
 } from './lib/wallet';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -98,10 +100,44 @@ export default function App() {
     const stored = getStoredWalletAccount();
     return stored ? stored.accountId : null;
   });
+  const [isSimulatedSigner, setIsSimulatedSigner] = useState<boolean>(() => {
+    const stored = getStoredWalletAccount();
+    return stored ? Boolean(stored.isSimulated) : false;
+  });
   const [activeRole, setActiveRole] = useState<'council' | 'agent' | 'contributor'>(() => {
     const stored = getStoredWalletAccount();
-    return stored ? stored.role : 'council';
+    return stored ? stored.role : 'contributor';
   });
+
+  const resolveAccountRole = (
+    acc: string | null,
+    policy: DaoOnChainPolicy | null
+  ): 'council' | 'agent' | 'contributor' => {
+    if (!acc) return 'contributor';
+    if (policy && policy.roles) {
+      const councilRole = policy.roles.find(
+        (r) => r.name.toLowerCase() === 'council'
+      );
+      if (councilRole && Array.isArray((councilRole.kind as any)?.Group)) {
+        if ((councilRole.kind as any).Group.includes(acc)) {
+          return 'council';
+        }
+      }
+    }
+    // Well-known council account patterns on NEAR testnet
+    if (
+      acc.startsWith('zinipay-c') ||
+      acc === 'zinipay-c1.testnet' ||
+      acc === 'zinipay-c2.testnet' ||
+      acc === 'zinipay-c3.testnet'
+    ) {
+      return 'council';
+    }
+    if (acc.includes('agent') || acc.startsWith('agentzinipay')) {
+      return 'agent';
+    }
+    return 'contributor';
+  };
 
   // Proposals & activities initialized with rich initial items so interface is never empty
   const [proposals, setProposals] = useState<Proposal[]>(() => initialProposals);
@@ -126,10 +162,12 @@ export default function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const urlAccountId = urlParams.get('account_id');
       if (urlAccountId) {
+        const verifiedRole = resolveAccountRole(urlAccountId, daoPolicy);
         setConnectedAccount(urlAccountId);
-        setActiveRole('council');
-        setStoredWalletAccount(urlAccountId, 'council');
-        showToast(`Connected wallet: ${urlAccountId}`);
+        setIsSimulatedSigner(false);
+        setActiveRole(verifiedRole);
+        setStoredWalletAccount(urlAccountId, verifiedRole, false);
+        showToast(`Connected verified wallet: ${urlAccountId} (${verifiedRole})`);
       }
     }
 
@@ -137,10 +175,12 @@ export default function App() {
     let isSubscribed = true;
     subscribeToWalletState(network, (acc) => {
       if (isSubscribed && acc) {
+        const verifiedRole = resolveAccountRole(acc, daoPolicy);
         setConnectedAccount(acc);
-        setActiveRole('council');
-        setStoredWalletAccount(acc, 'council');
-        showToast(`Connected via wallet: ${acc}`);
+        setIsSimulatedSigner(false);
+        setActiveRole(verifiedRole);
+        setStoredWalletAccount(acc, verifiedRole, false);
+        showToast(`Connected verified wallet: ${acc} (${verifiedRole})`);
       }
     }).then((unsub) => {
       if (!isSubscribed) unsub();
@@ -172,6 +212,13 @@ export default function App() {
 
       setTreasuryState(balResult);
       setDaoPolicy(liveDaoPol);
+
+      // Re-verify connected account role against on-chain policy
+      if (connectedAccount && !isSimulatedSigner) {
+        const verifiedRole = resolveAccountRole(connectedAccount, liveDaoPol);
+        setActiveRole(verifiedRole);
+        setStoredWalletAccount(connectedAccount, verifiedRole, false);
+      }
 
       if (policyContractId) {
         const onChain = await fetchPolicyContractConfig(policyContractId, targetNet);
@@ -212,23 +259,33 @@ export default function App() {
 
   // Real Council Multi-Sig Vote Execution
   const handleVote = async (proposalId: number, approve: boolean) => {
-    try {
-      if (
-        connectedAccount &&
-        !connectedAccount.includes('judge-') &&
-        !connectedAccount.includes('agent.') &&
-        !connectedAccount.includes('demo')
-      ) {
-        showToast('Broadcasting act_proposal vote to NEAR RPC...');
+    if (!connectedAccount) {
+      showToast('Please connect your account or select a demo passport first');
+      setIsWalletModalOpen(true);
+      return;
+    }
+
+    if (activeRole !== 'council') {
+      showToast(`Unauthorized: ${connectedAccount} is not an authorized Sputnik DAO council member.`);
+      return;
+    }
+
+    if (isSimulatedSigner) {
+      showToast(`[Simulated Vote] Demo vote recorded locally for #ZP-${proposalId} (No on-chain transaction)`);
+    } else {
+      try {
+        showToast('Broadcasting signed act_proposal to NEAR testnet...');
         await signAndSendDaoVote({
           daoContractId: daoContract,
           proposalId,
           approve,
         });
-        showToast('Transaction confirmed on NEAR! Vote cast.');
+        showToast('Transaction confirmed on NEAR! On-chain vote cast.');
+      } catch (err: any) {
+        console.error('Wallet signing error:', err);
+        showToast(`Vote failed: ${err.message || 'Transaction rejected'}`);
+        return;
       }
-    } catch (err: any) {
-      console.warn('Wallet signing notice:', err);
     }
 
     setProposals((prev) =>
@@ -253,8 +310,8 @@ export default function App() {
     );
 
     const title = approve
-      ? `Council Vote Cast: Approved #ZP-${proposalId}`
-      : `Council Vote Cast: Rejected #ZP-${proposalId}`;
+      ? `Council Vote Cast: Approved #ZP-${proposalId}${isSimulatedSigner ? ' (Simulated)' : ''}`
+      : `Council Vote Cast: Rejected #ZP-${proposalId}${isSimulatedSigner ? ' (Simulated)' : ''}`;
     showToast(title);
 
     setActivities((prev) => [
@@ -263,7 +320,7 @@ export default function App() {
         timestamp: 'Just now',
         type: approve ? 'quorum_reached' : 'policy_pass',
         title,
-        description: `Member voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
+        description: `${connectedAccount}${isSimulatedSigner ? ' (simulated)' : ''} voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
         badge: approve ? 'Vote Approve' : 'Vote Reject',
       },
       ...prev,
@@ -315,15 +372,22 @@ export default function App() {
         onClose={() => setIsWalletModalOpen(false)}
         network={network}
         connectedAccount={connectedAccount}
-        onConnect={(acc, role) => {
+        isSimulated={isSimulatedSigner}
+        onConnect={(acc, role, isSim) => {
           setConnectedAccount(acc);
+          setIsSimulatedSigner(Boolean(isSim));
           setActiveRole(role);
-          setStoredWalletAccount(acc, role);
-          showToast(`Connected as ${acc} (${role})`);
+          setStoredWalletAccount(acc, role, Boolean(isSim));
+          showToast(
+            isSim
+              ? `Connected in demo sandbox: ${acc} (${role})`
+              : `Connected as ${acc} (${role})`
+          );
         }}
         onDisconnect={async () => {
           await disconnectWallet();
           setConnectedAccount(null);
+          setIsSimulatedSigner(false);
           showToast('Wallet disconnected');
         }}
       />
@@ -351,6 +415,7 @@ export default function App() {
               showToast(`Switched active view to: ${r}`);
             }}
             connectedAccount={connectedAccount}
+            isSimulated={isSimulatedSigner}
             onOpenWalletModal={() => setIsWalletModalOpen(true)}
             onNavigateToLanding={() => navigate('/')}
             currentPath="/board"
@@ -396,6 +461,7 @@ export default function App() {
               showToast(`Switched active view to: ${r}`);
             }}
             connectedAccount={connectedAccount}
+            isSimulated={isSimulatedSigner}
             onOpenWalletModal={() => setIsWalletModalOpen(true)}
             onNavigateToLanding={() => navigate('/')}
             currentPath="/app"
@@ -422,6 +488,7 @@ export default function App() {
               daoPolicy={daoPolicy}
               contributorReputation={contributorReputation}
               connectedAccount={connectedAccount}
+              isSimulated={isSimulatedSigner}
               activeRole={activeRole}
               onVote={handleVote}
               onInspectProof={(prop) => setSelectedProofProposal(prop)}

@@ -59,17 +59,24 @@ export function getTierInfo(score: number): TierInfo {
 }
 
 /**
- * Computes tiered approval requirement based on contributor reputation score and payout amount:
+ * Computes tiered approval recommendation based on contributor reputation score and payout amount:
+ *
+ * NOTE ON ON-CHAIN ENFORCEMENT VS AGENT ADVISORY HINT:
+ * This tiered calculation (AutoApprove / SingleCouncil / FullDaoQuorum) is an ADVISORY HINT
+ * and UI/Agent recommendation. It is NOT enforced by the smart contract to override Sputnik DAO voting.
+ * On-chain, Sputnik DAO v2 enforces a mandatory 2-of-2 human council quorum for all
+ * FunctionCall proposals targeting PolicyHelper::release.
+ *
  * - High-reputation (Gold >= 60 pts):
- *     <= 2 NEAR: AutoApprove (0 votes / instant release)
- *     <= 8 NEAR: SingleCouncil (1 council member approval)
- *     > 8 NEAR: FullDaoQuorum (>= 2 council members)
+ *     <= 2 NEAR: AutoApprove (advisory fast-track)
+ *     <= 8 NEAR: SingleCouncil (advisory recommendation: 1 council vote)
+ *     > 8 NEAR: FullDaoQuorum (standard 2 council votes)
  * - Medium-reputation (Silver 20 - 59 pts):
- *     <= 1 NEAR: SingleCouncil (fast-track micro payout, 1 vote)
- *     <= 5 NEAR: SingleCouncil (1 council member approval)
- *     > 5 NEAR: FullDaoQuorum (>= 2 council members)
+ *     <= 1 NEAR: SingleCouncil (advisory fast-track micro payout)
+ *     <= 5 NEAR: SingleCouncil (advisory recommendation: 1 council vote)
+ *     > 5 NEAR: FullDaoQuorum (standard 2 council votes)
  * - Entry-reputation (Bronze 0 - 19 pts):
- *     All amounts: FullDaoQuorum (mandatory multi-sig council quorum)
+ *     All amounts: FullDaoQuorum (mandatory 2 council votes)
  */
 export function getApprovalRequirement(score: number, amountNear: number): ApprovalRequirementInfo {
   const tierInfo = getTierInfo(score);

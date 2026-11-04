@@ -82,19 +82,15 @@ export function LandingVerifiedSection() {
         {/* Header on Dark Desk */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--color-passed)] uppercase tracking-wider mb-2 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)]" />
-              On-Chain Audit Trail
-            </div>
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
-              Verified Run on Testnet
+              Verified Testnet Run
             </h2>
             <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 max-w-2xl leading-relaxed">
-              Every step from proposal submission to dual-key council execution produces an immutable ticket stub on NEAR.
+              Transactions executed on NEAR testnet via Sputnik DAO v2 and PolicyHelper.
             </p>
             {meta.generatedAt && (
               <div className="font-mono text-xs text-[var(--text-muted)] mt-2">
-                Recorded run: {new Date(meta.generatedAt).toLocaleString()} ({meta.network || 'testnet'})
+                {new Date(meta.generatedAt).toLocaleString()} · {meta.network || 'testnet'}
               </div>
             )}
           </div>
@@ -136,26 +132,26 @@ export function LandingVerifiedSection() {
           <div className="flex flex-col gap-8">
             {/* The Ticket-Stub Strip Container */}
             <div className="relative rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel)] overflow-hidden shadow-2xl">
-              {/* Header banner of the ticket roll */}
+              {/* Header banner */}
               <div className="px-5 py-3.5 bg-[var(--bg-panel-header)] border-b border-[var(--border-subtle)] flex items-center justify-between text-xs font-mono">
                 <div className="flex items-center gap-2 text-slate-300">
                   <Ticket size={15} className="text-[var(--color-passed)]" />
-                  <span className="font-bold uppercase tracking-wider text-[11px]">
-                    VERIFIED TRANSACTION STUB STRIP ({txs.length} STUBS)
+                  <span className="font-bold tracking-wider text-[11px]">
+                    VERIFIED TRANSACTIONS ({txs.length})
                   </span>
                 </div>
                 <span className="tag-passed text-[10px] font-mono">
-                  SPUTNIK DAO v2 + POLICY CONTRACT
+                  SPUTNIK DAO v2
                 </span>
               </div>
 
-              {/* Vertical Strip of Connected Stubs */}
-              <div className="divide-y-2 divide-dashed divide-[var(--border-subtle)]">
+              {/* Strip of Transactions */}
+              <div className="divide-y divide-[var(--border-subtle)]">
                 {txs.map((tx, idx) => {
                   const label = tx.label || tx.action || `Transaction #${idx + 1}`;
                   const explorerLink = tx.explorerUrl || tx.url || `https://testnet.nearblocks.io/txns/${tx.txHash}`;
                   const shortHash = tx.txHash
-                    ? `${tx.txHash.slice(0, 8)}...${tx.txHash.slice(-6)}`
+                    ? `${tx.txHash.slice(0, 10)}...${tx.txHash.slice(-6)}`
                     : 'Unknown Tx';
                   const formattedTime = tx.timestamp
                     ? new Date(tx.timestamp).toLocaleString(undefined, {
@@ -163,24 +159,18 @@ export function LandingVerifiedSection() {
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit',
-                        timeZoneName: 'short',
                       })
                     : null;
 
                   return (
                     <div
                       key={tx.txHash || idx}
-                      className="relative p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-alt)]/60 transition-colors duration-200 group"
+                      className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--bg-panel)] hover:bg-[var(--bg-panel-alt)]/60 transition-colors duration-200 group"
                     >
-                      {/* Ticket punch-out notches on left & right */}
-                      <span className="stub-notch-left hidden sm:block" aria-hidden="true" />
-                      <span className="stub-notch-right hidden sm:block" aria-hidden="true" />
-
-                      {/* Left: Stub Index & Label */}
+                      {/* Left: Index & Label */}
                       <div className="flex items-start sm:items-center gap-3.5">
-                        <div className="px-2.5 py-1 rounded bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[11px] font-bold text-[var(--color-passed)] shrink-0 group-hover:border-[var(--color-passed-border)] transition-colors">
-                          STUB #{String(idx + 1).padStart(2, '0')}
+                        <div className="px-2.5 py-1 rounded bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-[11px] font-bold text-[var(--color-passed)] shrink-0">
+                          {String(idx + 1).padStart(2, '0')}
                         </div>
 
                         <div className="flex flex-col gap-0.5">
@@ -195,7 +185,6 @@ export function LandingVerifiedSection() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 font-mono text-xs">
-                            <span className="text-[var(--text-muted)] text-[10px] uppercase">Hash:</span>
                             <span className="text-slate-300 select-all font-mono" title={tx.txHash}>
                               {shortHash}
                             </span>
@@ -203,20 +192,20 @@ export function LandingVerifiedSection() {
                         </div>
                       </div>
 
-                      {/* Right: Explorer Link & Validated Stamp */}
+                      {/* Right: Explorer Link */}
                       <div className="flex items-center gap-3 shrink-0 self-start md:self-auto pl-11 sm:pl-0">
-                        <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--color-passed-bg)] border border-[var(--color-passed-border)] text-[10px] font-mono text-[var(--color-passed)] font-semibold">
+                        <span className="hidden lg:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--color-passed-bg)] border border-[var(--color-passed-border)] text-[10px] font-mono text-[var(--color-passed)] font-semibold">
                           <CheckCircle2 size={11} />
-                          <span>ON-CHAIN</span>
-                        </div>
+                          <span>Passed</span>
+                        </span>
 
                         <a
                           href={explorerLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--bg-canvas)] hover:bg-[#171B26] border border-[var(--border-subtle)] hover:border-[var(--color-passed-border)] text-xs font-mono text-[var(--color-passed)] font-semibold transition-all shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--bg-canvas)] hover:bg-[#171B26] border border-[var(--border-subtle)] hover:border-[var(--color-passed-border)] text-xs font-mono text-[var(--color-passed)] font-semibold transition-all"
                         >
-                          <span>nearblocks</span>
+                          <span>Explorer</span>
                           <ExternalLink size={12} />
                         </a>
                       </div>

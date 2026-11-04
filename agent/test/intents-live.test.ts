@@ -19,12 +19,18 @@ export async function runIntentsLiveTests() {
 
   try {
     const quote = await intents.getQuote(quoteReq);
+    if (!(Number(quote.amountOut) > 0)) {
+      throw new Error(`Assertion failed: Amount out must be positive, got ${quote.amountOut}`);
+    }
     console.log('✓ Test 1: Received live quote from 1Click API:');
     console.log(`  Amount Out: ${quote.amountOutFormatted ?? quote.amountOut} USDC`);
     console.log(`  Correlation ID: ${quote.correlationId}`);
     console.log(`  Estimated Time: ${quote.estimatedTimeSeconds}s`);
-    console.assert(Number(quote.amountOut) > 0, 'Amount out must be positive');
   } catch (err: any) {
+    if (err.message?.startsWith('Assertion failed:')) {
+      console.error(`✗ Test 1 FAILED: ${err.message}`);
+      process.exit(1);
+    }
     const statusOrCode = err.response?.status ? `HTTP ${err.response.status}` : (err.code || err.message);
     const detail = err.response?.data?.message || err.message;
     console.log(`  - [SKIPPED] Test 1: 1Click live quote API unavailable or pair offline (${statusOrCode}: ${detail})`);
@@ -36,9 +42,15 @@ export async function runIntentsLiveTests() {
   console.log(`\nQuerying live status for depositAddress ${testDepositAddr.slice(0, 10)}...`);
   try {
     const status = await intents.getStatus(testDepositAddr);
+    if (status.status === 'UNKNOWN') {
+      throw new Error(`Assertion failed: Status must not be UNKNOWN, got ${status.status}`);
+    }
     console.log(`✓ Test 2: Live status check succeeded. Status: ${status.status} (Terminal: ${status.isTerminal})`);
-    console.assert(status.status !== 'UNKNOWN', 'Status must not be UNKNOWN');
   } catch (err: any) {
+    if (err.message?.startsWith('Assertion failed:')) {
+      console.error(`✗ Test 2 FAILED: ${err.message}`);
+      process.exit(1);
+    }
     const statusOrCode = err.response?.status ? `HTTP ${err.response.status}` : (err.code || err.message);
     const detail = err.response?.data?.message || err.message;
     console.log(`  - [SKIPPED] Test 2: 1Click live status API unavailable (${statusOrCode}: ${detail})`);

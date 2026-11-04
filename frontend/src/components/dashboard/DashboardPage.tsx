@@ -40,6 +40,7 @@ interface DashboardPageProps {
   daoPolicy: DaoOnChainPolicy | null;
   contributorReputation: number | null;
   connectedAccount: string | null;
+  isSimulated?: boolean;
   activeRole: 'council' | 'agent' | 'contributor';
   onVote: (proposalId: number, approve: boolean) => void;
   onInspectProof: (proposal: Proposal) => void;
@@ -65,6 +66,7 @@ export function DashboardPage({
   onChainPolicy,
   daoPolicy,
   connectedAccount,
+  isSimulated = false,
   activeRole,
   onVote,
   onInspectProof,
@@ -136,19 +138,14 @@ export function DashboardPage({
     <div className="flex-1 max-w-7xl w-full min-w-0 max-w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 font-sans">
       {/* ── Top Governance Context & Toolbar ────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[var(--border-subtle)]">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Treasury Governance & Multi-Sig
-            </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-950/60 text-[#00EC97] border border-emerald-500/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97] animate-pulse" />
-              NEAR {network.toUpperCase()} Live
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-            Autonomous multi-agent verification layer with mathematical spend caps and 2-of-3 human council quorum.
-          </p>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Treasury Governance
+          </h1>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-950/60 text-[#00EC97] border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97] animate-pulse" />
+            NEAR {network.toUpperCase()}
+          </span>
         </div>
 
         {/* Action Controls */}
@@ -173,7 +170,6 @@ export function DashboardPage({
                   <span className="text-[10px] text-[var(--text-muted)]">Testnet</span>
                 </div>
                 <form onSubmit={handleConnectDao} className="flex flex-col gap-2">
-                  <label htmlFor="dao-switcher-input" className="text-[11px] text-[var(--text-muted)]">Enter Sputnik DAO contract account:</label>
                   <input
                     id="dao-switcher-input"
                     value={tempDaoInput}
@@ -190,7 +186,7 @@ export function DashboardPage({
                       }}
                       className="text-[11px] text-[#00EC97] hover:underline cursor-pointer"
                     >
-                      Reset to zinipay-demo
+                      Reset to default
                     </button>
                     <button
                       type="submit"
@@ -212,7 +208,7 @@ export function DashboardPage({
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
               tab === 'new_payout'
                 ? 'bg-white text-black'
-                : 'bg-[#00EC97] hover:bg-[#00EC97]/90 text-black hover:shadow-[#00EC97]/20'
+                : 'bg-[#00EC97] hover:bg-[#00EC97]/90 text-black'
             }`}
           >
             <Plus size={14} />
@@ -223,9 +219,9 @@ export function DashboardPage({
 
       {/* ── High-Density 4-Metric Strip ───────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        {/* Metric 1: Treasury Vault Balance */}
+        {/* Metric 1: Treasury Balance */}
         <StatCard
-          title="Treasury Vault"
+          title="Treasury"
           icon={Coins}
           value={isLoadingOnChain ? 'Syncing...' : `${effectiveBalance.toFixed(2)} NEAR`}
           subtext={`~$${(effectiveBalance * 5.0).toFixed(2)} USD · Sputnik DAO v2`}
@@ -241,25 +237,14 @@ export function DashboardPage({
               <ExternalLink size={10} />
             </a>
           }
-          footer={
-            <>
-              <span className="text-[var(--text-muted)]">Vault State:</span>
-              <span className="inline-flex items-center gap-1 text-[#00EC97] font-medium font-mono text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
-                Solvent
-              </span>
-            </>
-          }
         />
 
-        {/* Metric 2: PolicyHelper Guardrail */}
+        {/* Metric 2: PolicyHelper Spend Cap */}
         <StatCard
-          title="PolicyHelper Spend Cap"
+          title="Spend Cap"
           icon={ShieldAlert}
           value="10.0 NEAR"
-          subtext="Per-proposal cap · 50.0 NEAR daily limit"
-          badge="Rust Enforced"
-          badgeVariant="success"
+          subtext="50.0 NEAR daily limit"
           progress={{
             current: 9.5,
             max: 50.0,
@@ -269,25 +254,10 @@ export function DashboardPage({
 
         {/* Metric 3: Three-Way Gate Security */}
         <StatCard
-          title="Three-Way Match"
+          title="Release Gates"
           icon={ShieldCheck}
-          value="3 / 3 Gates"
-          subtext="Artifact · Policy · Multi-Sig Quorum"
-          badge="100% Fail-Closed"
-          badgeVariant="success"
-          footer={
-            <>
-              <span className="text-[var(--text-muted)]">Attacks Thwarted:</span>
-              <button
-                type="button"
-                onClick={() => setTab('security')}
-                className="text-[#00EC97] hover:underline font-mono text-[10px] flex items-center gap-1 cursor-pointer"
-              >
-                <span>42 Blocked</span>
-                <ArrowRight size={10} />
-              </button>
-            </>
-          }
+          value="3 of 3 Gates"
+          subtext="Deliverable · Policy · Quorum"
         />
 
         {/* Metric 4: Council Quorum & Signer */}
@@ -295,27 +265,26 @@ export function DashboardPage({
           title="Council Quorum"
           icon={Users}
           value={pendingCount > 0 ? `${pendingCount} Pending` : 'All Approved'}
-          badge="2 of 3 Required"
-          badgeVariant="neutral"
           subtext={
             connectedAccount ? (
-              <span className="text-[#00EC97]">Signer: {connectedAccount}</span>
+              <span className={`truncate flex items-center gap-1.5 ${isSimulated ? 'text-amber-400' : 'text-[#00EC97]'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSimulated ? 'bg-amber-400' : 'bg-[#00EC97] animate-pulse'}`} />
+                <span className="truncate">{connectedAccount}</span>
+                <span className="text-[10px] opacity-75 shrink-0">({isSimulated ? 'Simulated' : activeRole})</span>
+              </span>
             ) : (
               'No wallet connected'
             )
           }
-          footer={
-            <>
-              <span className="text-[var(--text-muted)]">Signer Status:</span>
-              <button
-                type="button"
-                onClick={onOpenWalletModal}
-                className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Wallet size={11} />
-                <span>{connectedAccount ? 'Switch Role' : 'Connect Wallet'}</span>
-              </button>
-            </>
+          action={
+            <button
+              type="button"
+              onClick={onOpenWalletModal}
+              className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Wallet size={11} />
+              <span>{connectedAccount ? 'Role' : 'Connect'}</span>
+            </button>
           }
         />
       </div>
@@ -354,7 +323,7 @@ export function DashboardPage({
                       : 'text-[var(--text-secondary)] hover:text-white'
                   }`}
                 >
-                  <span>Pending approval</span>
+                  <span>Pending</span>
                   <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
                     pendingCount > 0 ? 'bg-emerald-950 text-[#00EC97] border border-emerald-500/30' : 'bg-white/[0.05] text-[var(--text-muted)]'
                   }`}>
@@ -371,7 +340,7 @@ export function DashboardPage({
                       : 'text-[var(--text-secondary)] hover:text-white'
                   }`}
                 >
-                  <span>Paid & Settled</span>
+                  <span>Paid</span>
                   <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/[0.05] text-[var(--text-muted)]">
                     {paidCount}
                   </span>
@@ -386,7 +355,7 @@ export function DashboardPage({
                       : 'text-[var(--text-secondary)] hover:text-white'
                   }`}
                 >
-                  <span>All proposals</span>
+                  <span>All</span>
                   <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/[0.05] text-[var(--text-muted)]">
                     {totalCount}
                   </span>
@@ -402,7 +371,7 @@ export function DashboardPage({
                   }`}
                 >
                   <Plus size={12} className="text-[#00EC97]" />
-                  <span>Submit payout</span>
+                  <span>Submit</span>
                 </button>
 
                 <button
@@ -415,7 +384,7 @@ export function DashboardPage({
                   }`}
                 >
                   <ShieldAlert size={12} className="text-red-400" />
-                  <span>Security log</span>
+                  <span>Security</span>
                 </button>
               </nav>
             </div>
@@ -443,7 +412,7 @@ export function DashboardPage({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search proposals, PRs, CIDs or recipients..."
+                  placeholder="Filter proposals, PRs, CIDs..."
                   className="w-full bg-[var(--bg-panel)] border border-[var(--border-subtle)] focus:border-[#00EC97] rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-gray-500 focus:outline-none"
                 />
                 {searchQuery && (

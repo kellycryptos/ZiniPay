@@ -14,6 +14,7 @@ pub enum StorageKey {
 /// Canonicalizes deliverable CIDs and PR keys before checking or storing in used_cids:
 /// - Strips leading/trailing whitespace
 /// - Lowercases all characters to prevent case-variant replay attacks (e.g. KELLYCRYPTOS/ZINIPAY#1 vs kellycryptos/zinipay#1)
+/// - Note: ASCII-only lowercasing by design (`to_ascii_lowercase`); deliverable PR identifiers (`owner/repo#num`) and IPFS CIDs are restricted to ASCII.
 pub fn canonical_cid(cid: &str) -> String {
     cid.trim().to_ascii_lowercase()
 }
@@ -80,17 +81,22 @@ impl PolicyHelper {
         };
         (self.per_proposal_cap * multiplier_bp) / 100
     }
-    /// Returns the required approval tier for an account and requested payout amount:
+    /// Returns the advisory approval tier recommendation for an account and requested payout amount.
+    ///
+    /// NOTE: This view method returns advisory metadata for frontends and agent heuristics.
+    /// On-chain execution is governed strictly by Sputnik DAO v2 council policy
+    /// (requiring full 2-of-2 human council approval before executing `PolicyHelper::release`).
+    ///
     /// - High-reputation (Gold >= 60 pts):
-    ///     <= 2 NEAR: AutoApprove (0 votes / micro-clearance)
-    ///     <= 8 NEAR: SingleCouncil (1 council member approval)
-    ///     > 8 NEAR: FullDaoQuorum (>= 2 council members)
+    ///     <= 2 NEAR: AutoApprove (advisory micro-clearance)
+    ///     <= 8 NEAR: SingleCouncil (advisory recommendation: 1 council vote)
+    ///     > 8 NEAR: FullDaoQuorum (standard 2 council votes)
     /// - Medium-reputation (Silver 20 - 59 pts):
-    ///     <= 1 NEAR: SingleCouncil (fast-track micro payout, 1 vote)
-    ///     <= 5 NEAR: SingleCouncil (1 council member approval)
-    ///     > 5 NEAR: FullDaoQuorum (>= 2 council members)
+    ///     <= 1 NEAR: SingleCouncil (advisory fast-track micro payout)
+    ///     <= 5 NEAR: SingleCouncil (advisory recommendation: 1 council vote)
+    ///     > 5 NEAR: FullDaoQuorum (standard 2 council votes)
     /// - Entry-reputation (Bronze 0 - 19 pts):
-    ///     All amounts: FullDaoQuorum (mandatory multi-sig council quorum)
+    ///     All amounts: FullDaoQuorum (mandatory 2 council votes)
     pub fn get_approval_tier(&self, account: AccountId, amount: U128) -> near_sdk::serde_json::Value {
         let score = self.reputation_scores.get(&account).unwrap_or(0);
         let amount_yocto = amount.0;
@@ -383,6 +389,14 @@ impl PolicyHelper {
 
     // ─── Owner Recovery ──────────────────────────────────────────────
 
+    /// Owner/DAO recovery: explicitly burns a CID into used_cids without setting last_release cooldown.
+    /// Used for retroactive canonical normalization of legacy entries (e.g. kellycryptos/ZiniPay#1).
+    pub fn burn_cid(&mut self, cid: String) {
+        self.assert_owner_or_dao();
+        let norm_cid = canonical_cid(&cid);
+        self.used_cids.insert(&norm_cid);
+    }
+
     /// Owner recovery: unburn a CID if a payout transfer failed or was cancelled.
     /// By default, failed transfers leave the CID burned to prevent double-spending;
     /// the owner can unburn it after manual verification.
@@ -452,6 +466,8 @@ impl PolicyHelper {
         }
     }
 
+    /// View method: returns the canonical lowercase form of a deliverable CID or PR identifier.
+    /// Note: ASCII-only lowercasing by design (`to_ascii_lowercase`); deliverable PRs and CIDs are restricted to ASCII.
     pub fn normalize_cid(&self, cid: String) -> String {
         canonical_cid(&cid)
     }
@@ -939,6 +955,39 @@ mod tests {
         // check_policy with uppercase variant for other recipient must panic with exact duplicate CID message
         let upper_cid = "BAFYBEIGDYRZT5SFP7UDM7HU76UH7Y26NF3EFUYLQABF3OCLGTQY55FBZDI".to_string();
         contract.check_policy(other, amount, upper_cid);
+    }
+
+    #[test]
+    fn test_owner_burn_cid_without_cooldown() {
+        let (mut contract, owner, _) = setup_contract();
+        let recipient: AccountId = "zinipay-recipient2.testnet".parse().unwrap();
+        let legacy_cid = "kellycryptos/ZiniPay#1".to_string();
+
+        // Owner burns legacy mixed-case CID
+        let ctx_owner = get_context(owner.clone(), 0, 1_001_000_000_000);
+        testing_env!(ctx_owner.build());
+        contract.burn_cid(legacy_cid.clone());
+
+        // Canonical CID is now burned in all case variants
+        assert!(contract.cid_used(legacy_cid.clone()));
+        assert!(contract.cid_used("kellycryptos/zinipay#1".to_string()));
+        assert!(contract.cid_used("KELLYCRYPTOS/ZINIPAY#1".to_string()));
+
+        // Crucially: last_release cooldown was NOT touched for recipient
+        // Cooldown check passes immediately with a new deliverable CID
+        let ctx_dao = get_context(owner, 0, 1_002_000_000_000);
+        testing_env!(ctx_dao.build());
+        assert!(contract.check_policy(recipient, U128(1_000_000_000_000_000_000_000_000), "new_work#2".to_string()));
+    }
+
+    #[test]
+    #[should_panic(expected = "Only owner or designated DAO can call this")]
+    fn test_non_owner_cannot_burn_cid() {
+        let (mut contract, _, _) = setup_contract();
+        let attacker: AccountId = "attacker.testnet".parse().unwrap();
+        let ctx_attacker = get_context(attacker, 0, 1_000_000_000_000);
+        testing_env!(ctx_attacker.build());
+        contract.burn_cid("kellycryptos/ZiniPay#1".to_string());
     }
 
     #[test]

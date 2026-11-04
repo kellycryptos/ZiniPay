@@ -14,7 +14,6 @@
  * Requires NO private keys, NO wallets, and NO environment variables.
  */
 
-import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
@@ -76,12 +75,13 @@ function report(step, title, state, details = '') {
 async function rpcPost(method, params, endpoints = VIEW_RPC_ENDPOINTS, timeoutMs = 6000) {
   for (const url of endpoints) {
     try {
-      const res = await axios.post(
-        url,
-        { jsonrpc: '2.0', id: 'verify-suite', method, params },
-        { timeout: timeoutMs }
-      );
-      if (res.data?.result) return res.data.result;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 'verify-suite', method, params }),
+        signal: AbortSignal.timeout(timeoutMs),
+      }).then((r) => r.json());
+      if (res?.result) return res.result;
     } catch {
       // try next fallback
     }
@@ -119,9 +119,11 @@ async function queryTxStatus(txHash, senderId) {
 
   // Fallback to NearBlocks public testnet API if available
   try {
-    const nbRes = await axios.get(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, { timeout: 4000 });
-    if (nbRes.data?.txns?.[0]) {
-      const nbTx = nbRes.data.txns[0];
+    const nbRes = await fetch(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, {
+      signal: AbortSignal.timeout(4000),
+    }).then((r) => r.json());
+    if (nbRes?.txns?.[0]) {
+      const nbTx = nbRes.txns[0];
       return {
         transaction: { hash: nbTx.transaction_hash },
         status: nbTx.outcomes?.status ? { SuccessValue: '' } : { Failure: {} },
@@ -154,22 +156,25 @@ async function main() {
   const councilMembers = daoPolicy?.roles?.find(r => r.name === 'council')?.kind?.Group || [];
   report('1.2', 'DAO Council Multi-Sig (>= 2 signers)', hasCouncil, `Signers: ${councilMembers.join(', ')}`);
 
-  // 1.3: Read DAO policy roles and assert agent holds zero voting permissions
+  // 1.3: Read DAO policy roles and assert agent holds zero voting or wildcard permissions (*:*, *:Vote*)
+  const isVotingOrWildcard = (p) =>
+    p === '*:*' || p === '*' || p.includes('Vote');
   const votingRoles = daoPolicy?.roles?.filter(r =>
-    r.permissions?.some(p => p.includes('VoteApprove') || p.includes('VoteReject') || p === '*')
+    r.permissions?.some(isVotingOrWildcard)
   ) || [];
   const agentInVotingRole = votingRoles.some(r =>
     r.kind === 'Everyone' || (r.kind?.Group && r.kind.Group.includes('agentzinipaytestnet.testnet'))
   );
   const hasProposerPermission = daoPolicy?.roles?.some(r =>
-    r.permissions?.includes('*:AddProposal') && (r.kind === 'Everyone' || (r.kind?.Group && r.kind.Group.includes('agentzinipaytestnet.testnet')))
+    (r.permissions?.includes('*:AddProposal') || r.permissions?.includes('*:*') || r.permissions?.includes('*')) &&
+    (r.kind === 'Everyone' || (r.kind?.Group && r.kind.Group.includes('agentzinipaytestnet.testnet')))
   );
   const agentIsolated = !agentInVotingRole && hasProposerPermission;
   report(
     '1.3',
     'Agent Proposer Isolation (0 Voting Rights)',
     agentIsolated,
-    `agent in voting roles: ${agentInVotingRole} | proposal creation (*:AddProposal): ${hasProposerPermission}`
+    `agent in voting/wildcard roles (*:*, *:Vote*): ${agentInVotingRole} | proposal creation (*:AddProposal): ${hasProposerPermission}`
   );
 
   // ── 2. Proposal Verification ────────────────────────────────────────────────
@@ -227,8 +232,7 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  const hashHex = policyAcct?.code_hash === '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt' ? '35124c43...' : 'c7ea86d5...';
-  console.log(`  ℹ [INFO] 3.2: Deployed hash ${policyAcct?.code_hash || 'unknown'} (redeployed with canonical CID normalization; code hash matches build ${hashHex})`);
+  console.log(`  ℹ [INFO] 3.2: deployed hash ${policyAcct?.code_hash || 'unknown'}, source believed to match commit 8e8ef52, not independently reproduced`);
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');
