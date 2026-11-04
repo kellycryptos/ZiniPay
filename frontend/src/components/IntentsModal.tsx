@@ -72,13 +72,8 @@ export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, on
               <Globe size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">NEAR Intents 1Click Settlement</h3>
-                <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">
-                  Defuse Solver
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5">Cross-Chain Treasury Release to {targetChain}</p>
+              <h3 className="font-bold text-base text-white">NEAR Intents Settlement</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Cross-Chain Release to {targetChain}</p>
             </div>
           </div>
           <button

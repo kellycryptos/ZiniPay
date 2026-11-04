@@ -226,11 +226,10 @@ export function PublicBoard({
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Public Activity & Reputation Board
+              Public Activity & Reputation
             </h1>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-prose">
-              Publicly verifiable governance track records on NEAR Protocol. Payout releases are evaluated by
-              multi-agent deliberation, constrained by on-chain PolicyHelper spend caps, and settled via Sputnik DAO v2.
+              On-chain contributor activity, reputation tiers, and verified releases on Sputnik DAO v2.
             </p>
           </div>
 

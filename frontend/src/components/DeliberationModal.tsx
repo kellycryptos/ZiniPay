@@ -110,13 +110,8 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
               <Cpu size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
-                <span className="text-[10px] bg-near-green-subtle text-near-green border border-near-green-border px-2 py-0.5 rounded-full font-mono font-bold">
-                  VERIFIED ATTESTATION
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mt-0.5">Proposal #{proposal.id} · Multi-Agent Consensus Attestation</p>
+              <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Proposal #{proposal.id}</p>
             </div>
           </div>
           <button
@@ -130,14 +125,14 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         {/* Tab switcher */}
         <div className="flex border-b border-gray-800 px-5 bg-black/40 text-xs font-medium">
           {[
-            { id: 'flow', label: 'Consensus Pipeline' },
-            { id: 'tee', label: 'NEAR AI Cloud Execution' },
-            { id: 'raw', label: 'Deliberation Attestation' },
+            { id: 'flow', label: 'Pipeline' },
+            { id: 'tee', label: 'Inference' },
+            { id: 'raw', label: 'Raw Memo' },
           ].map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-4 border-b-2 transition-all ${
+              className={`py-3 px-4 border-b-2 transition-all cursor-pointer ${
                 activeTab === t.id
                   ? 'border-near-green text-near-green font-bold'
                   : 'border-transparent text-gray-400 hover:text-gray-200'

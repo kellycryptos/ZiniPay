@@ -82,14 +82,9 @@ export function AttackAttemptsPanel() {
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
         <div className="flex items-center gap-2">
           <Shield size={16} className="text-[var(--text-secondary)]" />
-          <div>
-            <h3 className="font-semibold text-sm text-white">
-              Security audit log
-            </h3>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Attempts blocked by PolicyHelper smart contract invariants.
-            </p>
-          </div>
+          <h3 className="font-semibold text-sm text-white">
+            Security Log
+          </h3>
         </div>
 
         <button

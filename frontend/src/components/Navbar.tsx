@@ -11,6 +11,7 @@ interface NavbarProps {
   activeRole: 'council' | 'agent' | 'contributor';
   onRoleChange: (role: 'council' | 'agent' | 'contributor') => void;
   connectedAccount: string | null;
+  isSimulated?: boolean;
   onOpenWalletModal: () => void;
   onNavigateToLanding: () => void;
   currentPath?: string;
@@ -28,6 +29,7 @@ export function Navbar({
   activeRole,
   onRoleChange,
   connectedAccount,
+  isSimulated = false,
   onOpenWalletModal,
   onNavigateToLanding,
   currentPath = '/app',
@@ -138,7 +140,7 @@ export function Navbar({
             aria-expanded={connectionOpen}
           >
             <Settings2 size={13} />
-            <span className="hidden sm:inline">Contracts & Network</span>
+            <span className="hidden sm:inline">Settings</span>
           </button>
 
           {connectionOpen && (
@@ -151,7 +153,7 @@ export function Navbar({
               {/* DAO Contract Input */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="dao-contract-input" className="text-[var(--text-muted)] font-medium">
-                  Sputnik DAO Contract
+                  Sputnik DAO
                 </label>
                 <input
                   id="dao-contract-input"
@@ -165,7 +167,7 @@ export function Navbar({
               {/* Policy Contract Input */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="policy-contract-input" className="text-[var(--text-muted)] font-medium">
-                  PolicyHelper Contract
+                  PolicyHelper
                 </label>
                 <input
                   id="policy-contract-input"
@@ -203,7 +205,7 @@ export function Navbar({
 
               {/* Custody Layer */}
               <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px]">
-                <span className="text-[var(--text-muted)]">Custody layer:</span>
+                <span className="text-[var(--text-muted)]">Custody</span>
                 <span className="text-[#00EC97] font-mono bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20 text-[10px]">
                   Sputnik DAO v2
                 </span>
@@ -228,15 +230,19 @@ export function Navbar({
             <button
               type="button"
               onClick={() => setAccountOpen(!accountOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] border border-emerald-500/30 text-xs transition-colors cursor-pointer"
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[#1E232F] border text-xs transition-colors cursor-pointer ${
+                isSimulated ? 'border-amber-500/40 text-amber-300' : 'border-emerald-500/30 text-white'
+              }`}
               aria-expanded={accountOpen}
             >
-              <span className="w-2 h-2 rounded-full bg-[#00EC97] animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${isSimulated ? 'bg-amber-400' : 'bg-[#00EC97] animate-pulse'}`} />
               <span className="font-mono text-white max-w-[100px] sm:max-w-[150px] truncate">
                 {connectedAccount}
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/[0.08] text-slate-300 capitalize">
-                {activeRole}
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded capitalize ${
+                isSimulated ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.08] text-slate-300'
+              }`}>
+                {isSimulated ? `Simulated · ${activeRole}` : activeRole}
               </span>
               <ChevronDown size={12} className="text-[var(--text-muted)]" />
             </button>
@@ -245,7 +251,9 @@ export function Navbar({
           {connectedAccount && accountOpen && (
             <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-strong)] shadow-2xl p-4 z-50 flex flex-col gap-3 text-xs font-sans animate-fade-in">
               <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
-                <span className="text-[var(--text-muted)] font-medium">Connected Signer</span>
+                <span className="text-[var(--text-muted)] font-medium">
+                  {isSimulated ? 'Simulated Signer (Demo)' : 'Verified Signer'}
+                </span>
                 <span className="tag-passed text-[10px] uppercase font-mono">{network}</span>
               </div>
 

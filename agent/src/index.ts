@@ -441,7 +441,7 @@ async function runPropose(opts: ProposeOpts) {
     `  Recipient:   ${opts.recipient} [Tier: ${chalk.yellow(tierInfo.tier)} | Score: ${recipientRep} ${repDataSource}]`
   );
   console.log(
-    `  Requested:   ${opts.amountNear} NEAR [Spend Cap: ${tierInfo.maxPerProposalMultiplier}x base | Reward Multiplier: ${tierInfo.multiplier}x]`
+    `  Requested:   ${opts.amountNear} NEAR (Tier Cap: ${formatNearAmount(effectiveCapYocto)} max)`
   );
   if (opts.crossChain) console.log(`  Settlement:  Cross-chain via NEAR Intents → ${opts.crossChain}`);
   if (opts.dryRun) console.log(chalk.yellow('\n  [SIMULATION / DRY RUN — no on-chain transactions will be broadcast]\n'));
@@ -452,22 +452,37 @@ async function runPropose(opts: ProposeOpts) {
 
   // 1a. On-chain CID check if policy contract configured
   let onChainCidUsed: boolean | null = null;
+  let burnedCidMatched: string | null = null;
   if (cfg.policyContractId) {
-    onChainCidUsed = await queryContractView<boolean>(
-      cfg.nodeUrl,
-      cfg.policyContractId,
-      'cid_used',
-      { cid: canonicalCid }
-    );
+    const ghMatch = opts.deliverable.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i);
+    const originalCaseCid = ghMatch ? `${ghMatch[1]}/${ghMatch[2]}#${ghMatch[3]}` : opts.deliverable;
+    const formsToCheck = Array.from(new Set([canonicalCid, originalCaseCid, opts.deliverable]));
+
+    for (const form of formsToCheck) {
+      const isUsed = await queryContractView<boolean>(
+        cfg.nodeUrl,
+        cfg.policyContractId,
+        'cid_used',
+        { cid: form }
+      );
+      if (isUsed === true) {
+        onChainCidUsed = true;
+        burnedCidMatched = form;
+        break;
+      }
+    }
+    if (onChainCidUsed === null) {
+      onChainCidUsed = false;
+    }
   }
 
   if (onChainCidUsed === true) {
-    const reason = `Deliverable proof "${canonicalCid}" has already been settled on-chain (zero-double-spend protection).`;
+    const reason = `Deliverable proof "${burnedCidMatched || canonicalCid}" has already been settled on-chain (zero-double-spend protection).`;
     console.log(chalk.red(`\n  ✗ THREE-WAY MATCH FAILED: ${reason}`));
     logAttackEvent({
       vector: 'Replay Deliverable',
       caller: opts.recipient,
-      details: `Requested ${opts.amountNear} NEAR for deliverable '${canonicalCid}'`,
+      details: `Requested ${opts.amountNear} NEAR for deliverable '${burnedCidMatched || canonicalCid}'`,
       rejectionReason: reason,
       blockedBy: 'PolicyHelper (On-Chain Gate)',
       simulated: opts.dryRun,
@@ -663,7 +678,7 @@ async function runPropose(opts: ProposeOpts) {
     console.log(chalk.gray(`  Attached Deposit:  ${SputnikDAO.formatNear(cfg.proposalBond)} NEAR bond`));
     console.log(
       chalk.gray(
-        `  Contributor Tier:  ${tierInfo.tier} (${tierInfo.maxPerProposalMultiplier}x cap | ${tierInfo.multiplier}x reward bonus)`
+        `  Contributor Tier:  ${tierInfo.tier} (${tierInfo.maxPerProposalMultiplier}x cap)`
       )
     );
     console.log(

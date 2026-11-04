@@ -561,6 +561,18 @@ Key friction points analyzed include:
 
 ---
 
-## 11. License
+## 11. Known Limitations & Security Model
+
+Based on verified on-chain state queries directly on NEAR Testnet (`test.rpc.fastnear.com`):
+
+1. **Contract Ownership Transferred to DAO**: The `PolicyHelper` smart contract (`zinipay-policy2.testnet`) has had its ownership transferred directly to the Sputnik DAO multi-sig (`zinipay-demo.sputnikv2.testnet`) via tx [`BmUTUzULrC...`](https://testnet.nearblocks.io/txns/BmUTUzULrCHQ3r46h8Gtzg8nJc4uD3C8aZJj9sJj3v4). Former deployer keys cannot modify policy rules or unburn CIDs (`assert_owner_or_dao()` blocks them on-chain).
+2. **Public Proposal Creation & Spam Costs**: The Sputnik DAO policy defines the `all` role as `Everyone` with permission `*:AddProposal`. Proposals are public, meaning any account can submit a proposal. The on-chain `proposal_bond` is **1.0 NEAR** (`1000000000000000000000000` yoctoNEAR), which is the sole economic spam deterrent preventing proposal flooding.
+3. **Mandatory 2-of-2 Council Quorum**: While `PolicyHelper::get_approval_tier` and `agent/src/reputation.ts` provide advisory recommendations for fast-track micro-clearance (e.g., SingleCouncil for Silver <= 5 NEAR), **these are client-side and UI advisory hints**. Sputnik DAO's live on-chain policy requires a strict 2-of-2 council quorum (`zinipay-c1.testnet` and `zinipay-c2.testnet`) to approve and execute any `FunctionCall` proposal executing `PolicyHelper::release`.
+4. **Off-Chain Reputation Cache**: `zinipay-reputation.json` is a local read cache utilized by the agent runner for offline simulations and CLI previews. The canonical source of truth for contributor reputation and tier multiplier checks is permanently stored on-chain in `PolicyHelper::reputation_scores`.
+5. **Serverless Rate Limiting is Best-Effort**: The in-memory sliding window rate limiter on Vercel endpoints (`frontend/api/deliberate.ts`) is ephemeral and scoped to warm serverless containers. Hard protection against runaway LLM inference credit exhaustion relies on spending caps and quota cutoffs configured directly on the AI provider dashboard.
+
+---
+
+## 12. License
 
 This project is licensed under the [MIT License](LICENSE).

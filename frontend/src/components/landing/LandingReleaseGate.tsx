@@ -193,25 +193,15 @@ export function LandingReleaseGate() {
   return (
     <section className="py-20 border-b border-[#E5E1D8] bg-[#F7F5F0] text-[#0F172A]">
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
-        {/* Section Header on Paper Desk */}
+        {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5E1D8] pb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 font-mono text-xs text-[#0D7A5F] uppercase tracking-wider mb-2 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D7A5F]" />
-              Fail-Closed Architecture
-            </div>
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0F172A] tracking-tight">
-              The Three-Way Release Gate
+              Three-Way Release Gate
             </h2>
             <p className="text-sm sm:text-base text-[#334155] mt-1.5 max-w-2xl leading-relaxed">
-              Every payout requires all three independent gates to clear in sequence. If any layer fails, the transaction is rejected fail-closed.
+              Every release requires three sequential verifications. If any layer fails, the transaction is rejected.
             </p>
-          </div>
-          <div className="font-mono text-xs text-[#475569] flex items-center gap-2 self-start sm:self-auto">
-            <span>RULE:</span>
-            <span className="text-[#0F172A] font-bold bg-white px-2.5 py-1 rounded border border-[#E2DDD5] shadow-xs">
-              ALL 3 GATES MUST PASS
-            </span>
           </div>
         </div>
 
@@ -222,13 +212,13 @@ export function LandingReleaseGate() {
             return (
               <div
                 key={g.step}
-                className="bg-white border border-[#E2DDD5] rounded-2xl p-6 shadow-sm hover-lift flex flex-col justify-between"
+                className="bg-white border border-[#E2DDD5] rounded-2xl p-6 shadow-sm flex flex-col justify-between"
               >
                 <div>
                   {/* Gate Number & Tag */}
                   <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#F1ECE1]">
                     <span className="font-mono font-bold text-xs text-[#0D7A5F]">
-                      LOCK {g.step}
+                      {g.step}
                     </span>
                     <span className="font-mono text-[10px] text-[#475569] tracking-wider uppercase font-semibold">
                       {g.tag}
@@ -251,14 +241,13 @@ export function LandingReleaseGate() {
                   </p>
                 </div>
 
-                {/* Truthful Status Badge */}
-                <div className="mt-6 pt-3.5 border-t border-[#F1ECE1] flex items-center justify-between text-xs font-mono text-[#475569]">
-                  <span className="font-medium text-[11px]">STATUS:</span>
+                {/* Status Badge */}
+                <div className="mt-6 pt-3.5 border-t border-[#F1ECE1] flex items-center justify-end text-xs font-mono">
                   <span
                     className={
                       g.isTestnetRun
-                        ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#EDF7F4] border border-[#A3DACB] text-[#0D7A5F]'
-                        : 'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#F1F5F9] border border-[#CBD5E1] text-[#475569]'
+                        ? 'inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-[#EDF7F4] border border-[#A3DACB] text-[#0D7A5F]'
+                        : 'inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium bg-[#F1F5F9] border border-[#CBD5E1] text-[#475569]'
                     }
                   >
                     <CheckCircle2 size={12} className={g.isTestnetRun ? 'text-[#0D7A5F]' : 'text-[#475569]'} />

@@ -349,15 +349,10 @@ export function StepByStepProposeForm({
     <div className="ledger-card p-4 sm:p-6 flex flex-col gap-6 w-full max-w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-subtle)] gap-2">
-        <div>
-          <h2 className="font-bold text-base text-white flex items-center gap-2">
-            <FileCheck size={18} className="text-[var(--color-passed)]" />
-            <span>Step-by-step payout proposal</span>
-          </h2>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Every submission moves through 5 verification stages before being broadcast to Sputnik DAO.
-          </p>
-        </div>
+        <h2 className="font-bold text-base text-white flex items-center gap-2">
+          <FileCheck size={18} className="text-[var(--color-passed)]" />
+          <span>New Payout Proposal</span>
+        </h2>
       </div>
 
       {/* Simulation Presets (Only visible in ?demo=1 mode) */}
@@ -538,20 +533,14 @@ export function StepByStepProposeForm({
         </button>
       </div>
 
-      {/* Live Results Panel: Steps 2 to 5 */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)] text-xs">
-        <div className="text-xs font-medium text-white">
-          Verification steps
-        </div>
-
+      {/* Verification Pipeline Results */}
+      <div className="flex flex-col gap-2.5 pt-4 border-t border-[var(--border-subtle)] text-xs">
         {/* Step 2 Result */}
-        <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">Step 2:</span>
-            <div>
-              <span className="font-semibold text-white">Deliverable check: </span>
-              <span className="text-[var(--text-secondary)]">{deliverableStatus.reason}</span>
-            </div>
+        <div className="p-3 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-white">Deliverable</span>
+            <span className="text-[var(--text-muted)]">·</span>
+            <span className="text-[var(--text-secondary)]">{deliverableStatus.reason}</span>
           </div>
           <span
             className={
@@ -567,13 +556,11 @@ export function StepByStepProposeForm({
         </div>
 
         {/* Step 3 Result */}
-        <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">Step 3:</span>
-            <div>
-              <span className="font-semibold text-white">Policy check: </span>
-              <span className="text-[var(--text-secondary)]">{policyStatus.reason}</span>
-            </div>
+        <div className="p-3 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-white">Policy</span>
+            <span className="text-[var(--text-muted)]">·</span>
+            <span className="text-[var(--text-secondary)]">{policyStatus.reason}</span>
           </div>
           <span
             className={
@@ -589,25 +576,16 @@ export function StepByStepProposeForm({
         </div>
 
         {/* Step 4 Result */}
-        <div className="p-3 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <span className="text-[var(--text-muted)]">Step 4:</span>
-            <div className="flex flex-col gap-1">
-              <div>
-                <span className="font-semibold text-white">Deliberation: </span>
-                <span className="text-[var(--text-secondary)]">{deliberationStatus.reason}</span>
-              </div>
-              {deliberationStatus.simulated && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold">
-                    SIMULATION
-                  </span>
-                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
-                    format-check-only
-                  </span>
-                </div>
-              )}
-            </div>
+        <div className="p-3 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-white">Deliberation</span>
+            <span className="text-[var(--text-muted)]">·</span>
+            <span className="text-[var(--text-secondary)]">{deliberationStatus.reason}</span>
+            {deliberationStatus.simulated && (
+              <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded text-[10px] font-mono">
+                SIMULATION
+              </span>
+            )}
           </div>
           <span
             className={
@@ -623,14 +601,12 @@ export function StepByStepProposeForm({
         </div>
 
         {/* Step 5 Result & Dispatch Action */}
-        <div className="p-4 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <span className="text-[var(--text-muted)]">Step 5:</span>
-              <div>
-                <span className="font-semibold text-white">Proposal payload: </span>
-                <span className="text-[var(--text-secondary)]">{payloadStatus.reason}</span>
-              </div>
+        <div className="p-3.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white">Payload</span>
+              <span className="text-[var(--text-muted)]">·</span>
+              <span className="text-[var(--text-secondary)]">{payloadStatus.reason}</span>
             </div>
             <span
               className={

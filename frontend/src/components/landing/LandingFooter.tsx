@@ -65,10 +65,10 @@ export function LandingFooter({ onNavigateToApp }: LandingFooterProps) {
 
       <div className="max-w-6xl mx-auto px-6 mt-8 pt-6 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[var(--text-muted)]">
         <div>
-          Zero-Fabrication Ledger · Fail-Closed Policy Invariants
+          Sputnik DAO v2 · PolicyHelper Guardrails
         </div>
         <div>
-          Testnet & Mainnet Ready
+          NEAR Protocol
         </div>
       </div>
     </footer>

@@ -12,7 +12,7 @@
     "frontend:build": "cd frontend && npm run build",
     "agent:build": "cd agent && npm run build",
     "agent:dev": "npm --workspace=@zinipay/agent run dev",
-    "agent:propose": "tsx agent/src/index.ts propose",
+    "agent:propose": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts propose",
     "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
     "setup:testnet": "node scripts/setup-testnet.mjs",
     "test": "npm --workspace=@zinipay/agent test",
@@ -23,7 +23,8 @@
     "demo:social-money": "node scripts/demo-social-money.mjs"
   },
   "devDependencies": {
-    "playwright": "^1.64.1"
+    "playwright": "^1.64.1",
+    "tsx": "^4.19.2"
   },
   "overrides": {
     "@freedomofpress/crypto-browser": {
@@ -31,8 +32,10 @@
     }
   },
   "dependencies": {
+    "caniuse-lite": "^1.0.30001820",
     "clsx": "^2.1.1",
     "react-aria-components": "^1.22.1",
+    "react-dom": "^18.3.1",
     "tailwind-merge": "^3.7.0"
   }
 }
