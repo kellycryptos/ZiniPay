@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Wallet, Shield, Sparkles, ExternalLink, Check, ArrowRight, UserCheck, Bot, User } from 'lucide-react';
+import { X, Wallet, Shield, ExternalLink, ArrowRight, Eye, User } from 'lucide-react';
 import { initNearWallet } from '../lib/wallet';
 
 interface WalletModalProps {
@@ -7,8 +7,10 @@ interface WalletModalProps {
   onClose: () => void;
   network?: 'testnet' | 'mainnet';
   connectedAccount: string | null;
+  activeRole?: 'council' | 'agent' | 'contributor';
   isSimulated?: boolean;
-  onConnect: (accountId: string, role: 'council' | 'agent' | 'contributor', isSimulated: boolean) => void;
+  onConnectObserver: (accountId: string) => void;
+  onLaunchSelector?: () => void;
   onDisconnect: () => void;
 }
 
@@ -17,18 +19,24 @@ export function WalletModal({
   onClose,
   network = 'testnet',
   connectedAccount,
+  activeRole = 'contributor',
   isSimulated = false,
-  onConnect,
+  onConnectObserver,
+  onLaunchSelector,
   onDisconnect,
 }: WalletModalProps) {
   const [customInput, setCustomInput] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'council' | 'agent' | 'contributor'>('council');
   const [isLaunching, setIsLaunching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleLaunchOfficialModal = async () => {
+    if (onLaunchSelector) {
+      onLaunchSelector();
+      onClose();
+      return;
+    }
     setIsLaunching(true);
     setErrorMsg(null);
     try {
@@ -37,36 +45,24 @@ export function WalletModal({
       onClose();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Failed to initialize NEAR Wallet Selector');
+      setErrorMsg(err.message || 'Failed to initialize NEAR Wallet Selector (12s timeout)');
     } finally {
       setIsLaunching(false);
     }
   };
 
-  const TESTNET_PASSPORTS = [
+  const OBSERVER_PRESETS = [
     {
       id: 'zinipay-c1.testnet',
-      label: 'Council Member Lead',
-      role: 'council' as const,
-      desc: 'Sputnik DAO multi-sig council member. Can vote to Approve or Reject payouts.',
-      badge: 'Council Signer',
-      icon: Shield,
-    },
-    {
-      id: 'agentzinipaytestnet.testnet',
-      label: 'ZiniPay Agent Proposer',
-      role: 'agent' as const,
-      desc: 'Authorized agent worker key. Dispatches verified proposals to Sputnik DAO.',
-      badge: 'Agent Proposer',
-      icon: Bot,
+      label: 'Council Member 1',
+      role: 'council',
+      desc: 'On-chain Sputnik DAO council member. Preview interface in read-only mode.',
     },
     {
       id: 'zinipay-recipient2.testnet',
-      label: 'Verified Contributor',
-      role: 'contributor' as const,
-      desc: 'Technical contributor with merged GitHub PR #2. Receives approved treasury payouts.',
-      badge: 'Contributor',
-      icon: User,
+      label: 'Contributor',
+      role: 'contributor',
+      desc: 'Verified contributor with PR #2 payout. Preview reputation and claims in read-only mode.',
     },
   ];
 
@@ -80,7 +76,7 @@ export function WalletModal({
               <Wallet size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-white">Connect Account</h3>
+              <h3 className="font-bold text-sm text-white">NEAR Account & Identity</h3>
               <p className="text-[11px] font-mono text-[var(--color-passed)] mt-0.5">
                 NEAR {network.toUpperCase()}
               </p>
@@ -107,24 +103,29 @@ export function WalletModal({
             /* Active Connected State */
             <div className="p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[var(--text-muted)] font-medium">Currently Connected:</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Active Account:</span>
                 {isSimulated ? (
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-950/60 text-amber-400 border border-amber-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    Simulated Identity (No Key)
+                    <Eye size={11} />
+                    Observer Mode (Read-Only)
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-[#00EC97] border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97] animate-pulse" />
-                    Verified Signer
+                    Verified Signer ({activeRole.toUpperCase()})
                   </span>
                 )}
               </div>
 
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)]">
-                <span className="text-white font-bold font-mono text-sm break-all">
-                  {connectedAccount}
-                </span>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-white font-bold font-mono text-sm break-all">
+                    {connectedAccount}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)]">
+                    On-chain role: <span className="text-slate-200 font-mono font-medium">{activeRole}</span>
+                  </span>
+                </div>
                 <a
                   href={`https://${network === 'testnet' ? 'testnet.' : ''}nearblocks.io/address/${connectedAccount}`}
                   target="_blank"
@@ -136,14 +137,26 @@ export function WalletModal({
                 </a>
               </div>
 
-              {isSimulated && (
-                <div className="text-[10px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-md p-2">
-                  Connected in simulation sandbox. Voting is recorded in local demo state only and cannot execute on-chain transactions without a private key.
+              {isSimulated ? (
+                <div className="text-[11px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-md p-2.5 leading-relaxed">
+                  <strong>Observer Mode Active:</strong> You are viewing the dashboard through this account's perspective. Observer mode is strictly read-only and cannot cast votes or sign transactions on NEAR.
+                </div>
+              ) : (
+                <div className="text-[11px] text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 rounded-md p-2.5 leading-relaxed">
+                  <strong>Cryptographic Session Active:</strong> Real NEAR wallet connected via selector. On-chain votes are signed and verified against the Sputnik DAO policy.
                 </div>
               )}
 
               <div className="pt-2 border-t border-[var(--border-subtle)] flex justify-between items-center text-[11px]">
-                <span className="text-[var(--text-muted)]">Network: NEAR {network.toUpperCase()}</span>
+                <button
+                  type="button"
+                  onClick={handleLaunchOfficialModal}
+                  disabled={isLaunching}
+                  className="text-xs text-[#00EC97] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <Wallet size={12} />
+                  <span>Connect Different Wallet</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -152,21 +165,21 @@ export function WalletModal({
                   }}
                   className="px-3 py-1 rounded bg-red-950/40 text-red-300 hover:bg-red-900/60 border border-red-500/20 text-xs cursor-pointer transition-colors"
                 >
-                  Disconnect Wallet
+                  Disconnect
                 </button>
               </div>
             </div>
           ) : (
             /* Connect Options */
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               {/* Option 1: Official NEAR Wallets */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                    Option 1: Cryptographic Authentication (Real Wallet)
+                    Connect NEAR Wallet
                   </span>
                   <span className="text-[10px] text-[#00EC97] bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono">
-                    Required for On-Chain Votes
+                    Required to Vote
                   </span>
                 </div>
                 <button
@@ -184,7 +197,7 @@ export function WalletModal({
                         {isLaunching ? 'Initializing Wallet Selector...' : 'Launch NEAR Wallet Selector'}
                       </div>
                       <div className="text-[11px] text-[var(--text-muted)]">
-                        MyNearWallet · Meteor · HERE · Sender
+                        MyNearWallet · Meteor · HERE Wallet (12s timeout)
                       </div>
                     </div>
                   </div>
@@ -192,96 +205,66 @@ export function WalletModal({
                 </button>
               </div>
 
-              {/* Option 2: 1-Click Instant Testnet Passports */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border-subtle)]">
+              {/* Option 2: View as (Read-Only Observer Mode) */}
+              <div className="flex flex-col gap-2 pt-3 border-t border-[var(--border-subtle)]">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles size={12} className="text-amber-400" />
-                    <span>Option 2: 1-Click Sandbox Passports (Simulated)</span>
+                    <Eye size={12} className="text-amber-400" />
+                    <span>View as (Read-Only Observer)</span>
                   </span>
                   <span className="text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-500/30 font-mono">
-                    Sandbox Preview Only
+                    Cannot Vote
                   </span>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  Explore UI roles and mock quorum without a wallet extension. Simulated votes update local demo state only and do not broadcast cryptographic signatures to NEAR:
+                  Inspect the treasury interface from any account's viewpoint without signing keys. Observer mode is strictly read-only and cannot cast on-chain votes:
                 </p>
 
-                <div className="flex flex-col gap-2 mt-1">
-                  {TESTNET_PASSPORTS.map((acc) => {
-                    const IconComp = acc.icon;
-                    return (
-                      <button
-                        key={acc.id}
-                        type="button"
-                        onClick={() => {
-                          onConnect(acc.id, acc.role, true);
-                          onClose();
-                        }}
-                        className="p-3 rounded-xl bg-[var(--bg-panel-alt)] hover:bg-[#1A1F2C] border border-[var(--border-subtle)] hover:border-amber-500/40 flex items-center justify-between transition-all text-left cursor-pointer group"
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-amber-400 shrink-0 mt-0.5">
-                            <IconComp size={16} />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-white text-xs group-hover:text-amber-300 transition-colors flex items-center gap-2">
-                              <span>{acc.label}</span>
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
-                                Simulated · {acc.badge}
-                              </span>
-                            </div>
-                            <div className="font-mono text-[11px] text-amber-400/80 truncate mt-0.5">
-                              {acc.id}
-                            </div>
-                            <div className="text-[10px] text-[var(--text-muted)] mt-0.5 line-clamp-1">
-                              {acc.desc}
-                            </div>
-                          </div>
-                        </div>
-                        <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-white shrink-0 ml-2 group-hover:translate-x-0.5 transition-all" />
-                      </button>
-                    );
-                  })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  {OBSERVER_PRESETS.map((acc) => (
+                    <button
+                      key={acc.id}
+                      type="button"
+                      onClick={() => {
+                        onConnectObserver(acc.id);
+                        onClose();
+                      }}
+                      className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[#1A1F2C] border border-[var(--border-subtle)] hover:border-amber-500/40 flex flex-col gap-1 text-left cursor-pointer transition-all group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-white text-xs group-hover:text-amber-300">
+                          {acc.label}
+                        </span>
+                        <span className="text-[9px] font-mono px-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          Observer
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] text-slate-400 truncate">
+                        {acc.id}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              </div>
 
-              {/* Option 3: Custom Account Entry */}
-              <div className="flex flex-col gap-2 pt-2 border-t border-[var(--border-subtle)]">
-                <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-                  Option 3: Enter Any NEAR Account ID (Simulated Preview)
-                </span>
-                <p className="text-[10px] text-[var(--text-muted)]">
-                  Inspect the app from any account's viewpoint without signing transactions.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
                   <input
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
-                    placeholder="e.g. your-account.testnet"
+                    placeholder="Enter any account.testnet"
                     className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder:text-gray-600 focus:outline-none"
                   />
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as any)}
-                    className="bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-amber-400 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none cursor-pointer"
-                  >
-                    <option value="council">Council Member (Simulated)</option>
-                    <option value="agent">Agent Proposer (Simulated)</option>
-                    <option value="contributor">Contributor (Simulated)</option>
-                  </select>
                   <button
                     type="button"
                     onClick={() => {
                       if (customInput.trim()) {
-                        onConnect(customInput.trim(), selectedRole, true);
+                        onConnectObserver(customInput.trim());
                         onClose();
                       }
                     }}
                     disabled={!customInput.trim()}
                     className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                   >
-                    Preview
+                    View as Observer
                   </button>
                 </div>
               </div>

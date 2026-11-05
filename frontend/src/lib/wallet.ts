@@ -23,23 +23,43 @@ export async function initNearWallet(network: NearNetworkId = 'testnet'): Promis
     return { selector: selectorInstance, modal: modalInstance };
   }
 
-  const selector = await setupWalletSelector({
-    network,
-    modules: [
-      setupMyNearWallet(),
-      setupMeteorWallet(),
-      setupHereWallet(),
-    ],
-  });
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            'Wallet selector initialization timed out after 12s. Please check your network connection and retry.'
+          )
+        ),
+      12000
+    )
+  );
 
-  const modal = setupModal(selector, {
-    contractId: network === 'mainnet' ? 'sputnik-dao.near' : 'sputnikv2.testnet',
-  });
+  const initPromise = (async () => {
+    const selector = await setupWalletSelector({
+      network,
+      modules: [
+        setupMyNearWallet(),
+        setupMeteorWallet(),
+        setupHereWallet(),
+      ],
+    });
 
-  selectorInstance = selector;
-  modalInstance = modal;
+    const modal = setupModal(selector, {
+      contractId: network === 'mainnet' ? 'sputnik-dao.near' : 'sputnikv2.testnet',
+    });
 
-  return { selector, modal };
+    selectorInstance = selector;
+    modalInstance = modal;
+    return { selector, modal };
+  })();
+
+  return await Promise.race([initPromise, timeoutPromise]);
+}
+
+export async function openNearWalletModal(network: NearNetworkId = 'testnet'): Promise<void> {
+  const { modal } = await initNearWallet(network);
+  modal.show();
 }
 
 export async function getActiveAccountId(): Promise<string | null> {
@@ -130,9 +150,8 @@ export async function signAndSendDaoVote(opts: {
   proposalId: number;
   approve: boolean;
 }): Promise<void> {
-  if (!selectorInstance) {
-    console.info('NEAR Wallet Selector not actively connected; recording simulated council vote.');
-    return;
+  if (!selectorInstance || !selectorInstance.isSignedIn()) {
+    throw new Error('No active NEAR wallet connected. Please connect a verified council wallet via the selector to sign votes.');
   }
   const wallet = await selectorInstance.wallet();
   

@@ -242,7 +242,7 @@ export function Navbar({
               <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded capitalize ${
                 isSimulated ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/[0.08] text-slate-300'
               }`}>
-                {isSimulated ? `Simulated · ${activeRole}` : activeRole}
+                {isSimulated ? `Observer · ${activeRole}` : activeRole}
               </span>
               <ChevronDown size={12} className="text-[var(--text-muted)]" />
             </button>
@@ -252,7 +252,7 @@ export function Navbar({
             <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-strong)] shadow-2xl p-4 z-50 flex flex-col gap-3 text-xs font-sans animate-fade-in">
               <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
                 <span className="text-[var(--text-muted)] font-medium">
-                  {isSimulated ? 'Simulated Signer (Demo)' : 'Verified Signer'}
+                  {isSimulated ? 'Observer Mode (Read-Only)' : 'Verified Signer'}
                 </span>
                 <span className="tag-passed text-[10px] uppercase font-mono">{network}</span>
               </div>
@@ -271,35 +271,27 @@ export function Navbar({
                 </button>
               </div>
 
-              {/* Preview As Role Switcher */}
+              {/* On-Chain Verified Role */}
               <div className="flex flex-col gap-1.5 pt-1 border-t border-[var(--border-subtle)]">
                 <span className="text-[var(--text-muted)] text-[11px] font-medium">
-                  Active Role
+                  Verified On-Chain Role
                 </span>
-                <div className="flex flex-col gap-1">
-                  {[
-                    { id: 'council', label: 'Council member', desc: 'Can vote to approve or reject releases' },
-                    { id: 'agent', label: 'Agent proposer', desc: 'Can dispatch payout proposals' },
-                    { id: 'contributor', label: 'Contributor', desc: 'Submits deliverables for review' },
-                  ].map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => {
-                        onRoleChange(r.id as any);
-                        setAccountOpen(false);
-                      }}
-                      className={`text-left p-2 rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-                        activeRole === r.id ? 'bg-[var(--bg-panel-alt)] text-white border border-emerald-500/20' : 'hover:bg-[var(--bg-panel-alt)]/60 text-[var(--text-secondary)]'
-                      }`}
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium text-xs">{r.label}</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">{r.desc}</span>
-                      </div>
-                      {activeRole === r.id && <Check size={13} className="text-[#00EC97]" />}
-                    </button>
-                  ))}
+                <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-white capitalize">{activeRole}</span>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      {activeRole === 'council'
+                        ? 'Sputnik DAO Council Member'
+                        : activeRole === 'agent'
+                        ? 'Authorized Agent Proposer Key'
+                        : 'Contributor Account'}
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                    activeRole === 'council' ? 'bg-emerald-950/60 text-[#00EC97] border border-emerald-500/30' : 'bg-white/[0.05] text-slate-300'
+                  }`}>
+                    {activeRole === 'council' ? 'Signer' : 'Read-Only'}
+                  </span>
                 </div>
               </div>
 
