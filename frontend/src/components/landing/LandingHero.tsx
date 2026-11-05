@@ -295,7 +295,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroP
                   <Users size={14} className="text-amber-300" />
                 </div>
                 <div className="text-xs font-semibold text-white tracking-tight">Council Quorum</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-3 Multi-Sig</div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-2 Multi-Sig</div>
               </div>
             </div>
           </div>

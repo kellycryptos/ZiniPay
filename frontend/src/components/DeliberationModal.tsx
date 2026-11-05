@@ -64,10 +64,10 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
           'Tier Ceiling Cap': proposal.policy.capLimit,
         },
       },
-      summary: 'Enforced rolling 24h limits, recipient trust history, and tier spend multiplier.',
+      summary: 'Enforced on-chain spend cap, recipient trust history, and 60s cooldown.',
       details: [
         `Requested ${proposal.amountNear} NEAR is within the ${proposal.policy.capLimit} cap`,
-        '24h rolling velocity budget not exceeded',
+        'Recipient 60s cooldown elapsed and tier budget satisfied',
         `Contributor account ${proposal.recipient} in good standing`,
         'Cooldown period satisfied between consecutive payouts',
       ],
@@ -84,7 +84,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         name: 'sputnik_dao_add_proposal',
         target: `dao: zinipay-demo.sputnikv2.testnet (Proposal #${proposal.id})`,
         details: {
-          'Required Quorum': '2-of-3 Council Signatures',
+          'Required Quorum': '2-of-2 Council Signatures',
           'Proposal Type': 'Payout',
           'Dispatched State': 'Pending Human Multi-Sig',
         },

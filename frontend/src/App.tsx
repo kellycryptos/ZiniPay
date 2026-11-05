@@ -36,6 +36,7 @@ import {
   subscribeToWalletState,
   isRealWalletConnected,
   isStoredWalletSimulated,
+  openNearWalletModal,
 } from './lib/wallet';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -77,16 +78,16 @@ export default function App() {
       const urlDao = new URLSearchParams(window.location.search).get('dao');
       if (urlDao !== null && urlDao.trim()) return urlDao.trim();
     }
-    return import.meta.env.VITE_DAO_CONTRACT_ID || 'zinipay-demo.sputnikv2.testnet';
+    return import.meta.env.VITE_DAO_CONTRACT_ID || '';
   });
   const [policyContractId, setPolicyContractId] = useState<string>(
     import.meta.env.VITE_POLICY_CONTRACT_ID || 'zinipay-policy2.testnet'
   );
 
-  // Treasury starts with realistic balance while live RPC query is in flight
+  // Treasury starts in loading state; real data queried from chain
   const [treasuryState, setTreasuryState] = useState<TreasuryBalanceResult>({
     status: 'loading',
-    balance: 25.3,
+    balance: undefined,
   });
 
   const [isLoadingOnChain, setIsLoadingOnChain] = useState<boolean>(false);
@@ -124,24 +125,19 @@ export default function App() {
         }
       }
     }
-    // Well-known council account patterns on NEAR testnet
-    if (
-      acc.startsWith('zinipay-c') ||
-      acc === 'zinipay-c1.testnet' ||
-      acc === 'zinipay-c2.testnet' ||
-      acc === 'zinipay-c3.testnet'
-    ) {
+    // Only exact verified council accounts on testnet before policy resolves
+    if (acc === 'zinipay-c1.testnet' || acc === 'zinipay-c2.testnet') {
       return 'council';
     }
-    if (acc.includes('agent') || acc.startsWith('agentzinipay')) {
+    if (acc === 'agentzinipaytestnet.testnet') {
       return 'agent';
     }
     return 'contributor';
   };
 
-  // Proposals & activities initialized with rich initial items so interface is never empty
-  const [proposals, setProposals] = useState<Proposal[]>(() => initialProposals);
-  const [activities, setActivities] = useState<ActivityEvent[]>(() => initialActivities);
+  // In demo mode (?demo=1), load initial simulated proposals; in live mode, start empty and fetch from on-chain RPC
+  const [proposals, setProposals] = useState<Proposal[]>(() => isDemoMode ? initialProposals : []);
+  const [activities, setActivities] = useState<ActivityEvent[]>(() => isDemoMode ? initialActivities : []);
 
   // Modal inspection states
   const [selectedProofProposal, setSelectedProofProposal] = useState<Proposal | null>(null);
@@ -195,8 +191,12 @@ export default function App() {
   const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
     if (!targetDao || !targetDao.trim()) {
       setIsLoadingOnChain(false);
-      setDaoError(null);
-      setTreasuryState({ status: 'error', error: 'DAO contract is not configured' });
+      const errMsg = 'DAO contract is not configured (missing VITE_DAO_CONTRACT_ID). Provide a valid DAO contract ID via ?dao=... or append ?demo=1 to view simulated data.';
+      setDaoError(errMsg);
+      setTreasuryState({ status: 'error', error: errMsg, balance: undefined });
+      if (!isDemoMode) {
+        setProposals([]);
+      }
       return;
     }
 
@@ -230,24 +230,23 @@ export default function App() {
       }
 
       if (!isDemoMode) {
-        // If liveProps has items, combine with interactive pending simulation proposals so council review queue always has interactive items ready to vote on
-        const samplePending = initialProposals.filter((p) => p.status === 'pending_quorum');
-        const hasPendingOnChain = liveProps.some((p) => p.status === 'pending_quorum');
-        const merged = hasPendingOnChain || liveProps.length === 0
-          ? (liveProps.length > 0 ? liveProps : initialProposals)
-          : [...samplePending, ...liveProps];
-
-        setProposals(merged);
-        if (merged.length > 0 && currentPath.startsWith('/app')) {
+        // Honest live data: show real on-chain proposals only
+        setProposals(liveProps);
+        if (liveProps.length > 0 && currentPath.startsWith('/app')) {
           showToast(`Synced ${liveProps.length} on-chain proposals from ${targetDao}`);
         }
+      } else {
+        const demoProps = initialProposals.map((p) => ({ ...p, simulated: true }));
+        setProposals(demoProps);
       }
     } catch (err: any) {
       console.warn('NEAR RPC query:', err);
       const errMsg = err.message || 'Failed to query Sputnik DAO on NEAR RPC';
       setDaoError(errMsg);
-      // Keep existing balance / proposals on network error so UI doesn't collapse
-      setTreasuryState((prev) => ({ status: 'success', balance: prev.balance !== undefined ? prev.balance : 25.3 }));
+      setTreasuryState({ status: 'error', error: errMsg, balance: undefined });
+      if (!isDemoMode) {
+        setProposals([]);
+      }
     } finally {
       setIsLoadingOnChain(false);
     }
@@ -257,11 +256,26 @@ export default function App() {
     loadLiveDaoData();
   }, [network, daoContract, policyContractId, connectedAccount]);
 
+  const handleOpenWalletSelector = async () => {
+    try {
+      showToast('Opening NEAR Wallet Selector (12s timeout)...');
+      await openNearWalletModal(network);
+    } catch (err: any) {
+      console.error('Wallet selector error:', err);
+      showToast(err.message || 'Failed to initialize NEAR Wallet Selector. Please check your connection.');
+    }
+  };
+
   // Real Council Multi-Sig Vote Execution
   const handleVote = async (proposalId: number, approve: boolean) => {
     if (!connectedAccount) {
-      showToast('Please connect your account or select a demo passport first');
-      setIsWalletModalOpen(true);
+      showToast('Please connect your NEAR wallet via the selector to vote.');
+      await handleOpenWalletSelector();
+      return;
+    }
+
+    if (isSimulatedSigner) {
+      showToast(`Observer mode (${connectedAccount}) is read-only. Connect a verified council wallet on NEAR to sign.`);
       return;
     }
 
@@ -270,49 +284,25 @@ export default function App() {
       return;
     }
 
-    if (isSimulatedSigner) {
-      showToast(`[Simulated Vote] Demo vote recorded locally for #ZP-${proposalId} (No on-chain transaction)`);
-    } else {
-      try {
-        showToast('Broadcasting signed act_proposal to NEAR testnet...');
-        await signAndSendDaoVote({
-          daoContractId: daoContract,
-          proposalId,
-          approve,
-        });
-        showToast('Transaction confirmed on NEAR! On-chain vote cast.');
-      } catch (err: any) {
-        console.error('Wallet signing error:', err);
-        showToast(`Vote failed: ${err.message || 'Transaction rejected'}`);
-        return;
-      }
+    try {
+      showToast('Broadcasting signed act_proposal to NEAR testnet...');
+      await signAndSendDaoVote({
+        daoContractId: daoContract,
+        proposalId,
+        approve,
+      });
+      showToast('Transaction confirmed on NEAR! On-chain vote cast.');
+      await loadLiveDaoData();
+    } catch (err: any) {
+      console.error('Wallet signing error:', err);
+      showToast(`Vote failed: ${err.message || 'Transaction rejected'}`);
+      // A failed signature changes nothing on screen: no fake local bump!
+      return;
     }
 
-    setProposals((prev) =>
-      prev.map((p) => {
-        if (p.id === proposalId) {
-          const newApprove = approve ? p.votes.approve + 1 : p.votes.approve;
-          const newReject = !approve ? p.votes.reject + 1 : p.votes.reject;
-          const isQuorum = newApprove >= p.votes.required;
-
-          return {
-            ...p,
-            status: isQuorum ? 'settled' : p.status,
-            votes: {
-              ...p.votes,
-              approve: newApprove,
-              reject: newReject,
-            },
-          };
-        }
-        return p;
-      })
-    );
-
     const title = approve
-      ? `Council Vote Cast: Approved #ZP-${proposalId}${isSimulatedSigner ? ' (Simulated)' : ''}`
-      : `Council Vote Cast: Rejected #ZP-${proposalId}${isSimulatedSigner ? ' (Simulated)' : ''}`;
-    showToast(title);
+      ? `Council Vote Cast: Approved #ZP-${proposalId}`
+      : `Council Vote Cast: Rejected #ZP-${proposalId}`;
 
     setActivities((prev) => [
       {
@@ -320,7 +310,7 @@ export default function App() {
         timestamp: 'Just now',
         type: approve ? 'quorum_reached' : 'policy_pass',
         title,
-        description: `${connectedAccount}${isSimulatedSigner ? ' (simulated)' : ''} voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
+        description: `${connectedAccount} voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
         badge: approve ? 'Vote Approve' : 'Vote Reject',
       },
       ...prev,
@@ -372,22 +362,22 @@ export default function App() {
         onClose={() => setIsWalletModalOpen(false)}
         network={network}
         connectedAccount={connectedAccount}
+        activeRole={activeRole}
         isSimulated={isSimulatedSigner}
-        onConnect={(acc, role, isSim) => {
+        onConnectObserver={(acc) => {
+          const verifiedRole = resolveAccountRole(acc, daoPolicy);
           setConnectedAccount(acc);
-          setIsSimulatedSigner(Boolean(isSim));
-          setActiveRole(role);
-          setStoredWalletAccount(acc, role, Boolean(isSim));
-          showToast(
-            isSim
-              ? `Connected in demo sandbox: ${acc} (${role})`
-              : `Connected as ${acc} (${role})`
-          );
+          setIsSimulatedSigner(true);
+          setActiveRole(verifiedRole);
+          setStoredWalletAccount(acc, verifiedRole, true);
+          showToast(`Viewing as observer: ${acc} (${verifiedRole} · Read-Only)`);
         }}
+        onLaunchSelector={handleOpenWalletSelector}
         onDisconnect={async () => {
           await disconnectWallet();
           setConnectedAccount(null);
           setIsSimulatedSigner(false);
+          setActiveRole('contributor');
           showToast('Wallet disconnected');
         }}
       />
@@ -416,7 +406,13 @@ export default function App() {
             }}
             connectedAccount={connectedAccount}
             isSimulated={isSimulatedSigner}
-            onOpenWalletModal={() => setIsWalletModalOpen(true)}
+            onOpenWalletModal={() => {
+              if (connectedAccount) {
+                setIsWalletModalOpen(true);
+              } else {
+                handleOpenWalletSelector();
+              }
+            }}
             onNavigateToLanding={() => navigate('/')}
             currentPath="/board"
             onNavigateToDashboard={() => navigate('/app')}
@@ -462,7 +458,13 @@ export default function App() {
             }}
             connectedAccount={connectedAccount}
             isSimulated={isSimulatedSigner}
-            onOpenWalletModal={() => setIsWalletModalOpen(true)}
+            onOpenWalletModal={() => {
+              if (connectedAccount) {
+                setIsWalletModalOpen(true);
+              } else {
+                handleOpenWalletSelector();
+              }
+            }}
             onNavigateToLanding={() => navigate('/')}
             currentPath="/app"
             onNavigateToDashboard={() => navigate('/app')}
@@ -494,7 +496,13 @@ export default function App() {
               onInspectProof={(prop) => setSelectedProofProposal(prop)}
               onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
               onExecuteIntent={(prop) => setIntentsProposal(prop)}
-              onOpenWalletModal={() => setIsWalletModalOpen(true)}
+              onOpenWalletModal={() => {
+                if (connectedAccount) {
+                  setIsWalletModalOpen(true);
+                } else {
+                  handleOpenWalletSelector();
+                }
+              }}
               onProposalCreated={(newProp) => {
                 setProposals((prev) => [newProp, ...prev]);
                 setActivities((prev) => [

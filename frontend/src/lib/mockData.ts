@@ -43,9 +43,9 @@ export const initialProposals: Proposal[] = [
       recipientAddress: 'contributor.testnet',
     },
     votes: {
-      approve: 2,
+      approve: 1,
       reject: 0,
-      required: 3,
+      required: 2,
     },
   },
   {
@@ -82,7 +82,7 @@ export const initialProposals: Proposal[] = [
     votes: {
       approve: 1,
       reject: 0,
-      required: 3,
+      required: 2,
     },
   },
   {
@@ -116,9 +116,9 @@ export const initialProposals: Proposal[] = [
       recipientAddress: 'designer-bob.testnet',
     },
     votes: {
-      approve: 3,
+      approve: 2,
       reject: 0,
-      required: 3,
+      required: 2,
     },
   },
 ];

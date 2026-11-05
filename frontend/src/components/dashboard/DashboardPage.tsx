@@ -87,8 +87,9 @@ export function DashboardPage({
   const [daoSwitchOpen, setDaoSwitchOpen] = useState(false);
   const [tempDaoInput, setTempDaoInput] = useState('');
 
-  // Effective Treasury Balance
-  const effectiveBalance = treasuryState.balance !== undefined ? treasuryState.balance : 25.3;
+  // Live Treasury Balance State
+  const hasLiveBalance = treasuryState.status === 'success' && treasuryState.balance !== undefined;
+  const effectiveBalance = treasuryState.balance;
 
   // Counts
   const pendingCount = proposals.filter((p) => p.status === 'pending_quorum').length;
@@ -223,8 +224,8 @@ export function DashboardPage({
         <StatCard
           title="Treasury"
           icon={Coins}
-          value={isLoadingOnChain ? 'Syncing...' : `${effectiveBalance.toFixed(2)} NEAR`}
-          subtext={`~$${(effectiveBalance * 5.0).toFixed(2)} USD · Sputnik DAO v2`}
+          value={isLoadingOnChain ? 'Syncing...' : hasLiveBalance ? `${treasuryState.balance!.toFixed(2)} NEAR` : 'Unavailable'}
+          subtext={hasLiveBalance ? `~$${(treasuryState.balance! * 5.0).toFixed(2)} USD · Sputnik DAO v2` : 'Chain unreachable · Sputnik DAO v2'}
           action={
             <a
               href={`${explorerBase}/address/${daoContract}`}
@@ -240,53 +241,80 @@ export function DashboardPage({
         />
 
         {/* Metric 2: PolicyHelper Spend Cap */}
-        <StatCard
-          title="Spend Cap"
-          icon={ShieldAlert}
-          value="10.0 NEAR"
-          subtext="50.0 NEAR daily limit"
-          progress={{
-            current: 9.5,
-            max: 50.0,
-            label: "9.5 NEAR spent today",
-          }}
-        />
+        {(() => {
+          const capNear = onChainPolicy
+            ? (Number(BigInt(onChainPolicy.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1)
+            : null;
+          const cooldownSecs = onChainPolicy ? onChainPolicy.cooldown_seconds : null;
+
+          return (
+            <StatCard
+              title="Spend Cap"
+              icon={ShieldAlert}
+              value={isLoadingOnChain && !onChainPolicy ? 'Syncing...' : capNear ? `${capNear} NEAR` : 'Unavailable'}
+              subtext={cooldownSecs !== null ? `Cooldown ${cooldownSecs}s · PolicyHelper` : 'Policy contract unreachable'}
+            />
+          );
+        })()}
 
         {/* Metric 3: Three-Way Gate Security */}
         <StatCard
           title="Release Gates"
           icon={ShieldCheck}
           value="3 of 3 Gates"
-          subtext="Deliverable · Policy · Quorum"
-        />
-
-        {/* Metric 4: Council Quorum & Signer */}
-        <StatCard
-          title="Council Quorum"
-          icon={Users}
-          value={pendingCount > 0 ? `${pendingCount} Pending` : 'All Approved'}
-          subtext={
-            connectedAccount ? (
-              <span className={`truncate flex items-center gap-1.5 ${isSimulated ? 'text-amber-400' : 'text-[#00EC97]'}`}>
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSimulated ? 'bg-amber-400' : 'bg-[#00EC97] animate-pulse'}`} />
-                <span className="truncate">{connectedAccount}</span>
-                <span className="text-[10px] opacity-75 shrink-0">({isSimulated ? 'Simulated' : activeRole})</span>
-              </span>
-            ) : (
-              'No wallet connected'
-            )
-          }
+          subtext="7 Blocked Attacks · Fail-Closed"
           action={
             <button
               type="button"
-              onClick={onOpenWalletModal}
-              className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
+              onClick={() => setTab('security')}
+              className="text-[10px] font-mono text-[var(--text-muted)] hover:text-[#00EC97] flex items-center gap-1 cursor-pointer"
+              title="View verified blocked attack log"
             >
-              <Wallet size={11} />
-              <span>{connectedAccount ? 'Role' : 'Connect'}</span>
+              <span>Audit Log</span>
+              <ExternalLink size={10} />
             </button>
           }
         />
+
+        {/* Metric 4: Council Quorum & Signer */}
+        {(() => {
+          const councilRole = daoPolicy?.roles.find((r) => r.name.toLowerCase() === 'council');
+          const councilMembers = Array.isArray((councilRole?.kind as any)?.Group)
+            ? (councilRole!.kind as any).Group
+            : ['zinipay-c1.testnet', 'zinipay-c2.testnet'];
+          const councilCount = councilMembers.length;
+
+          return (
+            <StatCard
+              title="Council Quorum"
+              icon={Users}
+              value={daoPolicy ? `${councilCount}-of-${councilCount} Quorum` : (isLoadingOnChain ? 'Syncing...' : 'Unavailable')}
+              subtext={
+                connectedAccount ? (
+                  <span className={`truncate flex items-center gap-1.5 ${isSimulated ? 'text-amber-400' : 'text-[#00EC97]'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSimulated ? 'bg-amber-400' : 'bg-[#00EC97] animate-pulse'}`} />
+                    <span className="truncate">{connectedAccount}</span>
+                    <span className="text-[10px] opacity-75 shrink-0">
+                      ({isSimulated ? 'Observer · Read-Only' : activeRole === 'council' ? 'Council' : 'Contributor'})
+                    </span>
+                  </span>
+                ) : (
+                  `${councilCount} Signers Required · No wallet`
+                )
+              }
+              action={
+                <button
+                  type="button"
+                  onClick={onOpenWalletModal}
+                  className="text-[10px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Wallet size={11} />
+                  <span>{connectedAccount ? (isSimulated ? 'Observer' : 'Account') : 'Connect'}</span>
+                </button>
+              }
+            />
+          );
+        })()}
       </div>
 
       {/* ── Main Two-Column Governance Board ────────────────────────── */}
@@ -294,7 +322,7 @@ export function DashboardPage({
         {/* ── Left Sidebar (280px) ─────────────────────────────────── */}
         <aside className="w-full lg:w-72 shrink-0 min-w-0 max-w-full">
           <PolicyPanel
-            treasuryBalance={effectiveBalance}
+            treasuryBalance={hasLiveBalance ? treasuryState.balance : undefined}
             treasuryLoading={isLoadingOnChain}
             treasuryError={daoError || undefined}
             daoConfigured={Boolean(daoContract && daoContract.trim())}
@@ -303,7 +331,7 @@ export function DashboardPage({
             policyContractConfigured={Boolean(policyContractId && policyContractId.trim())}
             policyContractId={policyContractId}
             onOpenSecurityLog={() => setTab('security')}
-            securityEventCount={42}
+            securityEventCount={7}
             network={network}
           />
         </aside>
@@ -485,7 +513,7 @@ export function DashboardPage({
                       Gate 2: PolicyHelper
                     </span>
                     <p className="text-[11px] text-[var(--text-muted)]">
-                      Rust contract enforces per-payout spend cap (10 NEAR), 24h recipient cooldown, and CID anti-replay.
+                      Rust contract enforces per-payout spend cap (10 NEAR), 60s recipient cooldown, and CID anti-replay.
                     </p>
                   </div>
 
@@ -495,7 +523,7 @@ export function DashboardPage({
                       Gate 3: Council Quorum
                     </span>
                     <p className="text-[11px] text-[var(--text-muted)]">
-                      Human multi-sig approval (2 of 3 council signatures) required on Sputnik DAO v2 before execution.
+                      Human multi-sig approval (2-of-2 council quorum, or 1-of-2 for Silver fast-track &le; 5N) required on Sputnik DAO v2 before execution.
                     </p>
                   </div>
                 </div>
@@ -506,6 +534,21 @@ export function DashboardPage({
           {/* Proposals Feed Area */}
           {(tab === 'pending' || tab === 'paid' || tab === 'all') && (
             <div className="flex flex-col gap-4">
+              {daoError && !isDemoMode && (
+                <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-xs text-red-200 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 font-semibold text-red-300">
+                    <ShieldAlert size={16} className="text-red-400" />
+                    <span>Configuration / Network Error</span>
+                  </div>
+                  <p className="text-[11px] text-red-200/90 leading-relaxed font-mono">
+                    {daoError}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    Set <code className="text-white font-mono">VITE_DAO_CONTRACT_ID</code> in environment or URL (<code className="text-white font-mono">?dao=...</code>), or append <code className="text-amber-400 font-mono">?demo=1</code> to test in simulated demo mode.
+                  </p>
+                </div>
+              )}
+
               {isLoadingOnChain && proposals.length === 0 ? (
                 /* Loading State Skeleton */
                 <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl p-12 flex flex-col items-center justify-center gap-3 text-xs text-[var(--text-muted)] animate-pulse">
