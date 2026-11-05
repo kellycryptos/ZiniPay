@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   FileCheck,
   ShieldAlert,
@@ -19,6 +20,7 @@ import { PolicyContractState, DaoOnChainPolicy } from '../lib/nearRpc';
 
 interface StepByStepProposeFormProps {
   daoContract: string;
+  policyContractId?: string;
   network: 'testnet' | 'mainnet';
   connectedAccount: string | null;
   onOpenWalletModal: () => void;
@@ -30,6 +32,7 @@ interface StepByStepProposeFormProps {
 
 export function StepByStepProposeForm({
   daoContract,
+  policyContractId = 'zinipay-policy2.testnet',
   network,
   connectedAccount,
   onOpenWalletModal,
