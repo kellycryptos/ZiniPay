@@ -8,11 +8,14 @@
     "frontend"
   ],
   "scripts": {
+    "start": "node server.mjs",
     "build": "cd frontend && npm run build",
     "frontend:build": "cd frontend && npm run build",
     "agent:build": "cd agent && npm run build",
     "agent:dev": "npm --workspace=@zinipay/agent run dev",
     "agent:propose": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts propose",
+    "agent:inspect": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --inspect",
+    "agent:demo": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --demo",
     "frontend:dev": "npm --workspace=@zinipay/frontend run dev",
     "setup:testnet": "node scripts/setup-testnet.mjs",
     "test": "npm --workspace=@zinipay/agent test",
@@ -20,7 +23,9 @@
     "verify:proposal": "node scripts/verify-proposal.mjs",
     "verify:reputation": "node scripts/verify-reputation.mjs",
     "verify:testnet": "node scripts/verify-testnet.mjs",
-    "demo:social-money": "node scripts/demo-social-money.mjs"
+    "demo:social-money": "node scripts/demo-social-money.mjs",
+    "demo": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --demo",
+    "inspect": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --inspect"
   },
   "devDependencies": {
     "playwright": "^1.64.1",
