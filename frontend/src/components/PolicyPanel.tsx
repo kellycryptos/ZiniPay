@@ -41,21 +41,17 @@ export function PolicyPanel({
   // Compute on-chain policy limits if available
   const perPayoutCapNear = policyState
     ? `${(Number(BigInt(policyState.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1)} NEAR`
-    : policyContractConfigured
-    ? (policyState === null ? '10.0 NEAR' : 'Reading...')
-    : '10.0 NEAR';
+    : treasuryLoading
+    ? 'Syncing...'
+    : 'Unavailable';
 
   const cooldownHours = policyState
     ? policyState.cooldown_seconds >= 3600
       ? `${(policyState.cooldown_seconds / 3600).toFixed(1)} h`
       : `${policyState.cooldown_seconds}s`
-    : policyContractConfigured
-    ? (policyState === null ? '60s' : 'Reading...')
-    : '60s';
-
-  const dailySpendLimit = (policyState as any)?.daily_limit
-    ? `${(policyState as any).daily_limit} NEAR`
-    : '50.0 NEAR (Agent Limit)';
+    : treasuryLoading
+    ? 'Syncing...'
+    : 'Unavailable';
 
   return (
     <div className="flex flex-col gap-4 font-sans text-xs">
@@ -83,11 +79,13 @@ export function PolicyPanel({
           ) : (
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-bold font-mono text-white tracking-tight">
-                {treasuryBalance !== undefined ? treasuryBalance.toFixed(2) : '25.30'} NEAR
+                {treasuryBalance !== undefined ? `${treasuryBalance.toFixed(2)} NEAR` : 'Unavailable'}
               </span>
-              <span className="text-[11px] text-[var(--text-muted)] font-mono">
-                ~${((treasuryBalance !== undefined ? treasuryBalance : 25.3) * 5.0).toFixed(2)}
-              </span>
+              {treasuryBalance !== undefined && (
+                <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                  ~${(treasuryBalance * 5.0).toFixed(2)}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -140,14 +138,6 @@ export function PolicyPanel({
             </span>
           </div>
 
-          {/* Daily Limit */}
-          <div className="flex items-center justify-between">
-            <span className="text-slate-300 text-xs font-medium">Daily limit</span>
-            <span className="font-mono text-xs font-semibold text-white bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
-              {dailySpendLimit}
-            </span>
-          </div>
-
           {/* Cooldown */}
           <div className="flex items-center justify-between">
             <span className="text-slate-300 text-xs font-medium">Cooldown</span>
@@ -184,7 +174,7 @@ export function PolicyPanel({
             <span className="font-semibold text-white text-xs">Council Signers</span>
           </div>
           <span className="text-[10px] font-mono text-[#00EC97] bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20">
-            2-of-3 Quorum
+            2-of-2 Quorum
           </span>
         </div>
 

@@ -37,10 +37,30 @@ export interface DaoOnChainProposal {
   submission_time: string;
 }
 
+const TESTNET_RPCS = [
+  'https://test.rpc.fastnear.com',
+  'https://rpc.testnet.near.org',
+];
+
 export function getRpcUrl(network: 'testnet' | 'mainnet'): string {
   return network === 'mainnet'
     ? 'https://rpc.mainnet.near.org'
-    : 'https://rpc.testnet.near.org';
+    : TESTNET_RPCS[0];
+}
+
+async function postRpc(network: 'testnet' | 'mainnet', payload: any, timeout = 7000): Promise<any> {
+  if (network === 'mainnet') {
+    return axios.post('https://rpc.mainnet.near.org', payload, { timeout });
+  }
+  for (const url of TESTNET_RPCS) {
+    try {
+      const res = await axios.post(url, payload, { timeout });
+      if (res && res.data) return res;
+    } catch {
+      // Try fallback RPC
+    }
+  }
+  return axios.post(TESTNET_RPCS[0], payload, { timeout });
 }
 
 export type TreasuryBalanceResult = {
@@ -96,7 +116,7 @@ export async function fetchDaoTreasuryBalance(daoId: string, network: 'testnet' 
 
 export async function fetchDaoPolicy(daoId: string, network: 'testnet' | 'mainnet'): Promise<DaoOnChainPolicy | null> {
   try {
-    const res = await axios.post(getRpcUrl(network), {
+    const res = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-policy',
       method: 'query',
@@ -108,6 +128,14 @@ export async function fetchDaoPolicy(daoId: string, network: 'testnet' | 'mainne
         args_base64: 'e30=',
       },
     });
+
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
 
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
@@ -125,7 +153,7 @@ export async function fetchPolicyContractConfig(
 ): Promise<PolicyContractState | null> {
   if (!policyContractId || policyContractId.includes('your-dao')) return null;
   try {
-    const res = await axios.post(getRpcUrl(network), {
+    const res = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-policy-config',
       method: 'query',
@@ -137,6 +165,14 @@ export async function fetchPolicyContractConfig(
         args_base64: 'e30=',
       },
     });
+
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
 
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
@@ -155,7 +191,7 @@ export async function fetchOnChainReputation(
 ): Promise<number> {
   if (!policyContractId || !accountId) return 0;
   try {
-    const res = await axios.post(getRpcUrl(network), {
+    const res = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-rep',
       method: 'query',
@@ -167,6 +203,14 @@ export async function fetchOnChainReputation(
         args_base64: btoa(JSON.stringify({ account: accountId })),
       },
     });
+
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
 
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
@@ -185,7 +229,7 @@ export async function checkOnChainCidUsed(
 ): Promise<boolean> {
   if (!policyContractId || !cid) return false;
   try {
-    const res = await axios.post(getRpcUrl(network), {
+    const res = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-cid-used',
       method: 'query',
@@ -197,6 +241,14 @@ export async function checkOnChainCidUsed(
         args_base64: btoa(JSON.stringify({ cid })),
       },
     });
+
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
 
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
@@ -269,6 +321,14 @@ export async function verifyOnChainPolicyLive(
       return { status: 'failed', reason: panicText };
     }
 
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
+
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));
       const isAllowed = JSON.parse(decoded);
@@ -303,7 +363,7 @@ export async function fetchDaoProposals(
   if (!daoId || !daoId.trim()) return [];
   try {
     // 1. Get last proposal ID
-    const countRes = await axios.post(getRpcUrl(network), {
+    const countRes = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-count',
       method: 'query',
@@ -314,7 +374,7 @@ export async function fetchDaoProposals(
         method_name: 'get_last_proposal_id',
         args_base64: 'e30=',
       },
-    }, { timeout: 7000 });
+    }, 7000);
 
     let total = 0;
     if (countRes.data.result?.result) {
@@ -327,7 +387,7 @@ export async function fetchDaoProposals(
     const fromIndex = Math.max(0, total - limit);
     const argsBase64 = btoa(JSON.stringify({ from_index: fromIndex, limit }));
 
-    const res = await axios.post(getRpcUrl(network), {
+    const res = await postRpc(network, {
       jsonrpc: '2.0',
       id: 'zinipay-props',
       method: 'query',
@@ -338,7 +398,15 @@ export async function fetchDaoProposals(
         method_name: 'get_proposals',
         args_base64: argsBase64,
       },
-    }, { timeout: 7000 });
+    }, 7000);
+
+    if (res.data.result?.error) {
+      const errStr = res.data.result.error;
+      const logs = res.data.result.logs || [];
+      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
+      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
+      return { status: 'failed', reason };
+    }
 
     if (res.data.result?.result) {
       const decoded = new TextDecoder().decode(new Uint8Array(res.data.result.result));

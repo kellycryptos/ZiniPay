@@ -9,6 +9,18 @@
 
 ---
 
+## Sponsor Track Verification Matrix ("The Receipt Box")
+
+| Capability / Sponsor Track | Specific Endpoint or Method Called | Source Code File & Line Numbers | Verified Explorer Tx / Proof | Demonstration Link |
+| :--- | :--- | :--- | :--- | :--- |
+| **NEAR Protocol (Sputnik DAO v2)** | `add_proposal` (FunctionCall / Transfer), `act_proposal` (VoteApprove/Reject), `get_policy`, `get_proposals` | [`agent/src/dao.ts#L71-L200`](agent/src/dao.ts#L71-L200)<br>[`frontend/src/lib/nearRpc.ts#L116-L450`](frontend/src/lib/nearRpc.ts#L116-L450) | Proposal #6: [`HBs2djKV...`](https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK)<br>Contract: [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | [60-Second Walkthrough](#1-for-judges--ai-reviewers-do-x--see-y) |
+| **NEAR Smart Contracts (Rust SDK)** | `PolicyHelper::release`, `check_policy`, `get_reputation`, `get_effective_cap`, `burn_cid` | [`contracts/policy-helper/src/lib.rs#L169-L324`](contracts/policy-helper/src/lib.rs#L169-L324) | Payout Tx: [`2nWMVtQ4...`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d)<br>Blocked Drain: [`EiktoyYP...`](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ)<br>Blocked Replay: [`9Gp7HmJb...`](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb) | [Contract Execution Demo](#1-for-judges--ai-reviewers-do-x--see-y) |
+| **NEAR AI Cloud (LLM Deliberation)** | `POST /v1/chat/completions` (`z-ai/glm-5.3-flash`) | [`agent/src/deliberation.ts#L34-L245`](agent/src/deliberation.ts#L34-L245)<br>[`agent/src/validator.ts#L40-L105`](agent/src/validator.ts#L40-L105) | Dual-agent deliberation (Inspector + Risk Arbiter) with prompt injection defense (Hardware TEE attestation not claimed) | [Deliberation Test Suite](#1-for-judges--ai-reviewers-do-x--see-y) |
+| **NEAR Intents (ChainDefuser 1Click)** | `POST /v0/quote` | [`agent/src/intents.ts#L45-L95`](agent/src/intents.ts#L45-L95)<br>[`frontend/src/components/IntentsModal.tsx#L40-L110`](frontend/src/components/IntentsModal.tsx#L40-L110) | Live Dry Quote API verified; cross-chain settlement execution not claimed (quote-only) | [NEAR Intents Live Suite](#1-for-judges--ai-reviewers-do-x--see-y) |
+| **NEAR Wallet Selector & Observer** | `setupWalletSelector`, MyNearWallet, Meteor, HERE + Read-Only Observer Preview | [`frontend/src/lib/wallet.ts#L20-L185`](frontend/src/lib/wallet.ts#L20-L185)<br>[`frontend/src/components/WalletModal.tsx#L35-L95`](frontend/src/components/WalletModal.tsx#L35-L95) | Live testnet council signer (`22HTUkeVM...`) & read-only Observer view (fake signers dropped) | [UI Sandbox Simulation](#1-for-judges--ai-reviewers-do-x--see-y) |
+
+---
+
 ## 1. For Judges / AI Reviewers (Do X → See Y)
 
 You can verify the entire codebase, live testnet deployment, and Social Money track features in under 5 minutes with **zero private keys, zero wallet setup, and no `.env` required**:
@@ -155,7 +167,7 @@ ZiniPay solves agent treasury risk through a **Three-Way Release Gate**:
      - **Bronze Tier (0–19 pts)**: 1.0x multiplier (10 NEAR cap)
      - **Silver Tier (20–59 pts)**: 1.5x multiplier (15 NEAR cap)
      - **Gold Tier (60+ pts)**: 2.0x multiplier (20 NEAR cap)
-   - Enforces per-recipient cooldown timers (e.g. 24 hours between payouts).
+   - Enforces per-recipient cooldown timers (e.g. 60 seconds on testnet between payouts).
    - Permanently burns deliverable CIDs into an on-chain `UnorderedSet` (`used_cids`). Duplicate attempts fail immediately with: `"CID already used — duplicate release attempt blocked"`.
    - Normalizes CIDs (`normalize_cid`) at contract level to defeat case-variant bypass attempts.
 
@@ -570,6 +582,7 @@ Based on verified on-chain state queries directly on NEAR Testnet (`test.rpc.fas
 3. **Mandatory 2-of-2 Council Quorum**: While `PolicyHelper::get_approval_tier` and `agent/src/reputation.ts` provide advisory recommendations for fast-track micro-clearance (e.g., SingleCouncil for Silver <= 5 NEAR), **these are client-side and UI advisory hints**. Sputnik DAO's live on-chain policy requires a strict 2-of-2 council quorum (`zinipay-c1.testnet` and `zinipay-c2.testnet`) to approve and execute any `FunctionCall` proposal executing `PolicyHelper::release`.
 4. **Off-Chain Reputation Cache**: `zinipay-reputation.json` is a local read cache utilized by the agent runner for offline simulations and CLI previews. The canonical source of truth for contributor reputation and tier multiplier checks is permanently stored on-chain in `PolicyHelper::reputation_scores`.
 5. **Serverless Rate Limiting is Best-Effort**: The in-memory sliding window rate limiter on Vercel endpoints (`frontend/api/deliberate.ts`) is ephemeral and scoped to warm serverless containers. Hard protection against runaway LLM inference credit exhaustion relies on spending caps and quota cutoffs configured directly on the AI provider dashboard.
+6. **AI-Assisted Engineering Disclosure**: In full accordance with hackathon rules and transparency standards, AI tooling (Claude, Antigravity) was utilized for code generation, adversarial edge-case analysis, test automation, and UI implementation under human architectural direction and verification.
 
 ---
 

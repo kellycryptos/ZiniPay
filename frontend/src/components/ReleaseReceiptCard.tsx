@@ -268,7 +268,7 @@ export function ReleaseReceiptCard({
             <CheckCircle2 size={11} /> Council Quorum
           </span>
           <span className="font-mono text-xs text-[var(--text-receipt)]">
-            {proposal.votes ? `${proposal.votes.approve} of ${proposal.votes.required} Votes` : '2 of 3 Required'}
+            {proposal.votes ? `${proposal.votes.approve} of ${proposal.votes.required} Votes` : '2 of 2 Required'}
           </span>
           <span className="text-[10px] font-mono flex items-center gap-1">
             {quorumStatus === 'passed' ? (
