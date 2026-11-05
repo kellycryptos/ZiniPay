@@ -130,11 +130,8 @@ export async function fetchDaoPolicy(daoId: string, network: 'testnet' | 'mainne
     });
 
     if (res.data.result?.error) {
-      const errStr = res.data.result.error;
-      const logs = res.data.result.logs || [];
-      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
-      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
-      return { status: 'failed', reason };
+      console.warn(`RPC error in fetchDaoPolicy for ${daoId}:`, res.data.result.error);
+      return null;
     }
 
     if (res.data.result?.result) {
@@ -167,11 +164,8 @@ export async function fetchPolicyContractConfig(
     });
 
     if (res.data.result?.error) {
-      const errStr = res.data.result.error;
-      const logs = res.data.result.logs || [];
-      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
-      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
-      return { status: 'failed', reason };
+      console.warn(`RPC error in fetchPolicyContractConfig for ${policyContractId}:`, res.data.result.error);
+      return null;
     }
 
     if (res.data.result?.result) {
@@ -205,11 +199,8 @@ export async function fetchOnChainReputation(
     });
 
     if (res.data.result?.error) {
-      const errStr = res.data.result.error;
-      const logs = res.data.result.logs || [];
-      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
-      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
-      return { status: 'failed', reason };
+      console.warn(`RPC error in fetchOnChainReputation for ${accountId}:`, res.data.result.error);
+      return 0;
     }
 
     if (res.data.result?.result) {
@@ -243,11 +234,8 @@ export async function checkOnChainCidUsed(
     });
 
     if (res.data.result?.error) {
-      const errStr = res.data.result.error;
-      const logs = res.data.result.logs || [];
-      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
-      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
-      return { status: 'failed', reason };
+      console.warn(`RPC error in checkOnChainCidUsed for ${cid}:`, res.data.result.error);
+      return false;
     }
 
     if (res.data.result?.result) {
@@ -401,11 +389,8 @@ export async function fetchDaoProposals(
     }, 7000);
 
     if (res.data.result?.error) {
-      const errStr = res.data.result.error;
-      const logs = res.data.result.logs || [];
-      const logMsg = logs.find((l: string) => l.includes('exceeds per-proposal') || l.includes('panicked'));
-      const reason = logMsg || (errStr.includes('WasmTrap') ? 'WasmTrap: per-proposal spend cap exceeded (10 NEAR cap)' : errStr);
-      return { status: 'failed', reason };
+      console.warn(`RPC error in fetchDaoProposals for ${daoId}:`, res.data.result.error);
+      return [];
     }
 
     if (res.data.result?.result) {
