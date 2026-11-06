@@ -379,7 +379,7 @@ export function VerificationModal({
               <strong className="text-emerald-400">{passCount} PASSED</strong>
               {infoCount > 0 && <strong className="text-blue-400 ml-2">{infoCount} INFO</strong>}
               {failCount > 0 && <strong className="text-red-400 ml-2">{failCount} FAILED</strong>}
-              {' / '}10 Enforced Checks
+              {' / '}11 Total (9 Enforced + 2 Info)
             </span>
             {lastRunAt && (
               <span className="text-[11px] text-[var(--text-muted)]">
