@@ -291,15 +291,17 @@ async function main() {
   report('4.3', 'Silver Tier Spend Cap Scaled to 15 NEAR', capNear === 15, `Effective Cap: ${capNear} NEAR (1.5x base 10N)`);
 
   const cidUsed = await callViewMethod(POLICY_ID, 'cid_used', { cid: 'kellycryptos/ZiniPay#1' });
-  report('4.4', 'CID Anti-Replay: Proposal #5 Deliverable is Burned', cidUsed === true, `cid_used('kellycryptos/ZiniPay#1'): ${cidUsed}`);
-
-  // 4.5: Social Money Track: Tiered Approval Resolution
-  const isSilver = repScore >= 20 && repScore < 60;
+  const cid2Used = await callViewMethod(POLICY_ID, 'cid_used', { cid: 'kellycryptos/zinipay#2' });
   report(
-    '4.5',
-    'Social Money Tiered Approval (Silver Fast-Track <= 5N)',
-    isSilver,
-    `Tier: Silver (Score: ${repScore}) | Fast-Track: 1 Council Vote (<= 5N) | Full Quorum: 2 Votes (> 5N)`
+    '4.4',
+    'CID Anti-Replay: Proposal Deliverables are Burned',
+    cidUsed === true && cid2Used === true,
+    `cid_used('kellycryptos/ZiniPay#1'): ${cidUsed}\n      cid_used('kellycryptos/zinipay#2'): ${cid2Used}`
+  );
+
+  // 4.5: Social Money Track: Advisory Tiered Approval Schedule
+  console.log(
+    `  ℹ [INFO] 4.5: Approval schedule is advisory, computed client-side from agent/src/reputation.ts, not enforced on chain. Every payout requires Sputnik DAO 2-of-2 council quorum vote; get_approval_tier is not deployed on-chain.`
   );
 
   // ── 5. Transaction & Attack Proofs in verified.json ───────────────────────
@@ -350,18 +352,20 @@ async function main() {
           expectedMsg = 'CID already used — duplicate release attempt blocked';
         } else if (tx.label.includes('Over-Cap')) {
           expectedMsg = 'exceeds effective tier cap';
-        } else if (tx.label.includes('Unauthorized')) {
+        } else if (tx.label.includes('Unauthorized') || tx.label.includes('Former Owner') || tx.label.includes('Unburn')) {
           expectedMsg = 'Only owner or designated DAO can call this';
+        } else if (tx.label.includes('Cooldown')) {
+          expectedMsg = 'Cooldown not elapsed';
         }
 
-        const msgMatched = expectedMsg ? logs.some(l => l.includes(expectedMsg)) : true;
+        const msgMatched = expectedMsg ? logs.some(l => l.includes(expectedMsg)) : false;
         const passedAttackCheck = exists && hasFailure && msgMatched;
 
         report(
           `5.Tx-${tx.index}`,
           `${tx.label}`,
           passedAttackCheck,
-          `Tx: ${tx.txHash.slice(0, 10)}... (status.Failure: ${hasFailure}, msg: "${expectedMsg ? expectedMsg.slice(0, 28) + '...' : 'verified'}")`
+          `Tx: ${tx.txHash.slice(0, 10)}... (status.Failure: ${hasFailure}, msg: "${msgMatched ? (expectedMsg.length > 28 ? expectedMsg.slice(0, 28) + '...' : expectedMsg) : 'UNMATCHED'}")`
         );
       } else {
         const isSuccess = typeof status?.status?.SuccessValue === 'string';

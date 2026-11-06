@@ -45,12 +45,12 @@ npm test --prefix agent
 # Step 3: Run keyless testnet verification suite (~15s)
 npm run verify:testnet
 ```
-**See**: `25 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
+**See**: `24 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
 - Active Sputnik DAO v2 council with 2-of-2 multi-sig quorum (`zinipay-c1.testnet`, `zinipay-c2.testnet`).
 - Agent proposer isolation: `agentzinipaytestnet.testnet` holds `Requestor` role only (0 council seats, 0 voting keys).
 - Active Rust `PolicyHelper` contract bound strictly to DAO treasury.
 - Contributor reputation score (Silver tier: 30 pts) and deliverable CID burn status (`cid_used: true`).
-- Check 4.5: Social Money Tiered Approval Resolution (Silver tier qualifies for 1-vote fast-track for <= 5 NEAR, full quorum for > 5 NEAR).
+- Check 4.5: Social Money Tiered Approval Resolution (advisory client-side schedule; Sputnik DAO enforces 2-of-2 council quorum for all payouts).
 - 14 confirmed on-chain transaction receipts (proposal creation, council approvals, promotion, and 5 blocked attack transactions reverted with exact contract panic messages).
 
 ```bash
