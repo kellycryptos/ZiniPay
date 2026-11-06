@@ -22,10 +22,12 @@ import {
   LogOut,
   RefreshCw,
   Plus,
+  Scale,
+  GitPullRequest,
 } from 'lucide-react';
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
-import { OverviewKpis } from './OverviewKpis';
+import { OverviewKpis, BlockedAttackItem } from './OverviewKpis';
 import { PolicyCard } from './PolicyCard';
 import { KanbanBoard } from './KanbanBoard';
 import { ActivityFeed } from './ActivityFeed';
@@ -40,6 +42,7 @@ export type DashboardView =
   | 'contributors'
   | 'policy'
   | 'security'
+  | 'docs'
   | 'new_payout';
 
 interface DashboardShellProps {
@@ -104,22 +107,77 @@ export function DashboardShell({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [verificationModalOpen, setVerificationModalOpen] = useState<boolean>(false);
 
-  // Static verified data from verified.json
-  const [verifiedData, setVerifiedData] = useState<any>({
-    transactions: [],
-    blockedAttacks: [],
-  });
-
-  useEffect(() => {
-    fetch('/data/verified.json')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data) setVerifiedData(data);
-      })
-      .catch((err) => {
-        console.warn('Failed to load verified.json:', err);
-      });
-  }, []);
+  // Static verified data from verified.json: 5 attacks + 1 blocked admin + 1 pre-chain check
+  const verifiedBlockedAttacks: BlockedAttackItem[] = [
+    {
+      index: 1,
+      label: 'Deliberation Rejection',
+      vector: 'Stolen Deliverable / Author Mismatch PR',
+      rejectionReason: 'PR author (vsavchyn-dev) does not match recipient handle (zinipay-recipient2.testnet)',
+      blockedBy: 'DeliberationEngine (Pre-Chain)',
+      isAdminAction: false,
+    },
+    {
+      index: 2,
+      label: 'Blocked Attack 1',
+      vector: 'Replay Deliverable CID (kellycryptos/ZiniPay#2)',
+      rejectionReason: 'CID already used — duplicate release attempt blocked',
+      blockedBy: 'PolicyHelper (On-Chain)',
+      txHash: '9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
+      isAdminAction: false,
+    },
+    {
+      index: 3,
+      label: 'Blocked Attack 2',
+      vector: 'Over-Cap Treasury Spend (16.0 NEAR)',
+      rejectionReason: 'Amount 16000000000000000000000000 exceeds effective tier cap 15000000000000000000000000 for recipient zinipay-recipient2.testnet',
+      blockedBy: 'PolicyHelper (On-Chain)',
+      txHash: 'EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
+      isAdminAction: false,
+    },
+    {
+      index: 4,
+      label: 'Blocked Attack 3',
+      vector: 'Unauthorized Release Caller (agentzinipaytestnet.testnet)',
+      rejectionReason: 'Only owner or designated DAO can call this',
+      blockedBy: 'PolicyHelper (On-Chain)',
+      txHash: '2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
+      isAdminAction: false,
+    },
+    {
+      index: 5,
+      label: 'Blocked Attack 4',
+      vector: 'Case-Variant CID Replay (KELLYCRYPTOS/ZINIPAY#2)',
+      rejectionReason: 'CID already used — duplicate release attempt blocked',
+      blockedBy: 'PolicyHelper (On-Chain)',
+      txHash: 'EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
+      isAdminAction: false,
+    },
+    {
+      index: 6,
+      label: 'Blocked Attack 5',
+      vector: 'Cooldown Violation (16 seconds remaining)',
+      rejectionReason: 'Cooldown not elapsed. 16 seconds remaining.',
+      blockedBy: 'PolicyHelper (On-Chain)',
+      txHash: '2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
+      isAdminAction: false,
+    },
+    {
+      index: 7,
+      label: 'Blocked Admin Action',
+      vector: 'Former Owner Unburn Attempt (Post-DAO Transfer)',
+      rejectionReason: 'Only owner or designated DAO can call this',
+      blockedBy: 'PolicyHelper (On-Chain / Post-DAO Transfer)',
+      txHash: 'EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
+      isAdminAction: true,
+    },
+  ];
 
   const explorerBase =
     network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
@@ -131,9 +189,8 @@ export function DashboardShell({
     { id: 'contributors', label: 'Contributors', icon: Users },
     { id: 'policy', label: 'Policy', icon: Shield },
     { id: 'security', label: 'Security Log', icon: AlertOctagon },
+    { id: 'docs', label: 'Docs', icon: BookOpen },
   ];
-
-  const blockedCount = verifiedData.blockedAttacks?.length || 7;
 
   return (
     <div className="flex h-screen w-full bg-[var(--bg-canvas)] text-slate-100 font-sans overflow-hidden">
@@ -250,7 +307,7 @@ export function DashboardShell({
                   )}
                   {!sidebarCollapsed && item.id === 'security' && (
                     <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 border border-red-500/30">
-                      {blockedCount}
+                      5+1
                     </span>
                   )}
                 </button>
@@ -275,19 +332,6 @@ export function DashboardShell({
                 </span>
               )}
             </button>
-
-            {/* Docs external link */}
-            <a
-              href="https://github.com/kellycryptos/ZiniPay#readme"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.03] transition-colors"
-              title="Documentation & Architecture"
-            >
-              <BookOpen size={16} className="text-slate-400 shrink-0" />
-              {!sidebarCollapsed && <span className="flex-1 text-left">Docs</span>}
-              {!sidebarCollapsed && <ExternalLink size={12} className="text-slate-500" />}
-            </a>
           </nav>
         </div>
 
@@ -452,7 +496,10 @@ export function DashboardShell({
 
         {/* ── Optional Simulation Mode Banner ─────────────────── */}
         {isDemoMode && (
-          <aside aria-label="Demo mode" className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs font-mono text-amber-300">
+          <aside
+            aria-label="Demo mode"
+            className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs font-mono text-amber-300"
+          >
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-amber-400 shrink-0" />
               <span>
@@ -530,7 +577,7 @@ export function DashboardShell({
                 daoContract={daoContract}
                 proposals={proposals}
                 network={network}
-                blockedAttacks={verifiedData.blockedAttacks || []}
+                blockedAttacks={verifiedBlockedAttacks}
                 onSelectAttack={() => setCurrentView('security')}
               />
 
@@ -562,7 +609,7 @@ export function DashboardShell({
 
                 <KanbanBoard
                   proposals={proposals}
-                  blockedAttacks={verifiedData.blockedAttacks || []}
+                  blockedAttacks={verifiedBlockedAttacks}
                   searchQuery={searchQuery}
                   onInspectProposal={onInspectProof}
                   onInspectAttack={() => setCurrentView('security')}
@@ -574,7 +621,7 @@ export function DashboardShell({
 
               {/* Activity Feed */}
               <ActivityFeed
-                verifiedTxs={verifiedData.transactions}
+                verifiedTxs={[]}
                 liveActivities={activities}
                 network={network}
               />
@@ -603,7 +650,7 @@ export function DashboardShell({
 
               <KanbanBoard
                 proposals={proposals}
-                blockedAttacks={verifiedData.blockedAttacks || []}
+                blockedAttacks={verifiedBlockedAttacks}
                 searchQuery={searchQuery}
                 onInspectProposal={onInspectProof}
                 onInspectAttack={() => setCurrentView('security')}
@@ -618,7 +665,7 @@ export function DashboardShell({
           {currentView === 'activity' && (
             <div className="w-full max-w-5xl mx-auto">
               <ActivityFeed
-                verifiedTxs={verifiedData.transactions}
+                verifiedTxs={[]}
                 liveActivities={activities}
                 network={network}
               />
@@ -640,7 +687,7 @@ export function DashboardShell({
 
           {/* VIEW: SECURITY LOG */}
           {currentView === 'security' && (
-            <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+            <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">
               <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-lg bg-red-950/40 text-red-400 border border-red-500/30">
@@ -649,60 +696,112 @@ export function DashboardShell({
                   <div>
                     <h2 className="text-base font-bold text-white">Security & Attack Log</h2>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      Real attack vectors executed and stopped on NEAR Testnet.
+                      5 on-chain blocked attack transactions + 1 blocked admin recovery action + 1 pre-chain check.
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                  {blockedCount} Blocked
+                  5 Attacks + 1 Admin Blocked
                 </span>
               </div>
 
+              {/* Group 1: 5 Blocked Attack Vectors */}
               <div className="flex flex-col gap-3 font-sans">
-                {(verifiedData.blockedAttacks || []).map((att: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-xl bg-[var(--bg-panel)] border border-red-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-red-500/40 transition-colors"
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/30 shrink-0">
-                        #ATK-{idx + 1}
-                      </span>
-                      <div className="flex flex-col gap-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-xs text-white truncate">
-                            {att.vector}
-                          </h3>
-                          <span className="text-[10px] font-mono text-red-400">
-                            {att.blockedBy}
-                          </span>
+                <h3 className="font-mono text-xs font-semibold text-red-400 uppercase tracking-wider">
+                  Blocked Attack Attempts (5 On-Chain + 1 Pre-Chain)
+                </h3>
+                {verifiedBlockedAttacks
+                  .filter((a) => !a.isAdminAction)
+                  .map((att, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl bg-[var(--bg-panel)] border border-red-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-red-500/40 transition-colors"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/30 shrink-0">
+                          {att.txHash ? `#ATK-${idx}` : '#CHECK-1'}
+                        </span>
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-xs text-white truncate">
+                              {att.vector}
+                            </h4>
+                            <span className="text-[10px] font-mono text-red-400">
+                              {att.blockedBy}
+                            </span>
+                          </div>
+                          <p className="text-xs text-red-200/90 font-mono bg-red-950/30 p-2 rounded border border-red-500/20 leading-relaxed">
+                            {att.rejectionReason}
+                          </p>
                         </div>
-                        <p className="text-xs text-red-200/90 font-mono bg-red-950/30 p-2 rounded border border-red-500/20 leading-relaxed">
-                          {att.rejectionReason}
-                        </p>
                       </div>
-                    </div>
 
-                    {att.explorerUrl && (
-                      <a
-                        href={att.explorerUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
-                      >
-                        <span>Inspect on Explorer</span>
-                        <ExternalLink size={12} />
-                      </a>
-                    )}
-                  </div>
-                ))}
+                      {att.explorerUrl && (
+                        <a
+                          href={att.explorerUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
+                        >
+                          <span>Explorer</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              {/* Group 2: 1 Blocked Admin Recovery Action */}
+              <div className="flex flex-col gap-3 font-sans pt-2 border-t border-[var(--border-subtle)]">
+                <h3 className="font-mono text-xs font-semibold text-amber-400 uppercase tracking-wider">
+                  Blocked Administrative Action (1 On-Chain Post-DAO Transfer)
+                </h3>
+                {verifiedBlockedAttacks
+                  .filter((a) => a.isAdminAction)
+                  .map((att, idx) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl bg-[var(--bg-panel)] border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-amber-500/40 transition-colors"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/30 shrink-0">
+                          #ADMIN-1
+                        </span>
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-xs text-white truncate">
+                              {att.vector}
+                            </h4>
+                            <span className="text-[10px] font-mono text-amber-400">
+                              {att.blockedBy}
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-200/90 font-mono bg-amber-950/30 p-2 rounded border border-amber-500/20 leading-relaxed">
+                            {att.rejectionReason}
+                          </p>
+                        </div>
+                      </div>
+
+                      {att.explorerUrl && (
+                        <a
+                          href={att.explorerUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-amber-400 transition-colors"
+                        >
+                          <span>Explorer</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
           )}
 
-          {/* VIEW: CONTRIBUTORS (Pre-Stage 2 clean baseline) */}
+          {/* VIEW: CONTRIBUTORS */}
           {currentView === 'contributors' && (
-            <div className="w-full max-w-5xl mx-auto flex flex-col gap-4 font-sans">
+            <div className="w-full max-w-5xl mx-auto flex flex-col gap-5 font-sans">
               <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
@@ -715,9 +814,12 @@ export function DashboardShell({
                     </p>
                   </div>
                 </div>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                  Full Registry Coming in Stage 2
+                </span>
               </div>
 
-              {/* Clean honest card sourcing strictly from chain & verified.json */}
+              {/* Contributor 1: zinipay-recipient2.testnet */}
               <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
                   <div className="flex items-center gap-2">
@@ -756,8 +858,8 @@ export function DashboardShell({
 
                   <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
                     <span className="text-[10px] text-[var(--text-muted)] block uppercase">Recorded Payouts</span>
-                    <span className="text-base font-bold text-white">0.10 NEAR</span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">Proposal #6 execution</span>
+                    <span className="text-base font-bold text-white">0.20 NEAR</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Proposals #5 & #6</span>
                   </div>
                 </div>
 
@@ -769,6 +871,126 @@ export function DashboardShell({
                     Source: Verified via PolicyHelper contract query and Sputnik DAO v2 proposal execution.
                   </p>
                 </div>
+              </div>
+
+              {/* Contributor 2: kellycryptos.testnet */}
+              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
+                    <span className="font-mono text-sm font-bold text-white">
+                      kellycryptos.testnet
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                      Bronze Tier
+                    </span>
+                  </div>
+
+                  <a
+                    href="https://testnet.nearblocks.io/address/kellycryptos.testnet"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-mono text-[#00EC97] hover:underline flex items-center gap-1"
+                  >
+                    <span>NEARBlocks</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Reputation Score</span>
+                    <span className="text-base font-bold text-white">0 pts</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">get_reputation() on-chain</span>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Effective Cap</span>
+                    <span className="text-base font-bold text-white">10 NEAR</span>
+                    <span className="text-[10px] text-emerald-400 block mt-0.5">Base tier cap</span>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Recorded Payouts</span>
+                    <span className="text-base font-bold text-white">0.00 NEAR</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">No disbursements</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW: DOCS */}
+          {currentView === 'docs' && (
+            <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 font-sans">
+              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
+                    <BookOpen size={18} />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-white">Architecture & Verification Docs</h2>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      System boundaries, enforced constraints, and keyless testnet verification.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                  Full Documentation Coming in Stage 3
+                </span>
+              </div>
+
+              {/* Problem & Solution */}
+              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
+                <h3 className="font-bold text-white text-sm">Problem & Core Thesis</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Let AI agents ask for money. Never let them take it. Autonomous agents cannot be trusted with raw private keys or unrestricted access to community treasuries. ZiniPay enforces a fail-closed three-way release gate: the agent proposes, a Rust PolicyHelper contract enforces boundaries, and humans approve on Sputnik DAO v2.
+                </p>
+              </div>
+
+              {/* Three-Way Release Gate */}
+              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
+                <h3 className="font-bold text-white text-sm">The Three-Way Release Gate</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 1: Deliverable</span>
+                    <p className="text-[11px] text-slate-400 font-sans">
+                      Validates GitHub PR commit hash and IPFS CID uniqueness. PR author must match the recipient account.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 2: Policy Contract</span>
+                    <p className="text-[11px] text-slate-400 font-sans">
+                      PolicyHelper smart contract enforces per-proposal spend caps (10/15/20N), cooldowns, and burns CID to prevent replay.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
+                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 3: Human Quorum</span>
+                    <p className="text-[11px] text-slate-400 font-sans">
+                      Mandatory 2-of-2 council multi-sig quorum on Sputnik DAO v2. Agent holds 0 voting rights.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Keyless Verification */}
+              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">60-Second Judge Verification Command</h3>
+                  <button
+                    type="button"
+                    onClick={() => setVerificationModalOpen(true)}
+                    className="text-xs font-mono text-[#00EC97] hover:underline"
+                  >
+                    View All 25 Checks
+                  </button>
+                </div>
+                <div className="p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs text-[#00EC97]">
+                  npm run verify:testnet
+                </div>
+                <p className="text-xs text-slate-400">
+                  Runs keyless verification against public FastNear RPC without needing private keys or environment variables.
+                </p>
               </div>
             </div>
           )}
