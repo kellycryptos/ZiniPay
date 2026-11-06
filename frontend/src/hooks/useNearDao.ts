@@ -112,7 +112,7 @@ export function useNearDao() {
           {
             id: 102,
             proposer: 'council-member.testnet',
-            description: 'Trezu multichain operations budget renewal for Q4',
+            description: 'Community operations budget renewal for Q4',
             kind: {
               Transfer: {
                 token_id: '',

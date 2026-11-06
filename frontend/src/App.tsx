@@ -3,15 +3,13 @@
  * 
  * Routes:
  *   "/"      -> LandingPage
- *   "/app"   -> DashboardPage
- *   "/board" -> PublicBoard
+ *   "/board" -> DashboardShell (Redesigned app shell & dark finance dashboard)
+ *   "/app"   -> Redirects to "/board"
  */
 
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/landing/LandingPage';
-import { DashboardPage } from './components/dashboard/DashboardPage';
-import { PublicBoard } from './components/PublicBoard';
-import { Navbar } from './components/Navbar';
+import { DashboardShell } from './components/dashboard/DashboardShell';
 import { ProofModal } from './components/ProofModal';
 import { DeliberationModal } from './components/DeliberationModal';
 import { IntentsModal } from './components/IntentsModal';
@@ -34,8 +32,6 @@ import {
   setStoredWalletAccount,
   disconnectWallet,
   subscribeToWalletState,
-  isRealWalletConnected,
-  isStoredWalletSimulated,
   openNearWalletModal,
 } from './lib/wallet';
 import { CheckCircle2 } from 'lucide-react';
@@ -45,17 +41,30 @@ export default function App() {
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('demo') === '1';
 
-  // Client-side Router: "/" or "/app" or "/board"
+  // Client-side Router: "/" or "/board" (with "/app" redirecting to "/board")
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return window.location.pathname || '/';
+      const p = window.location.pathname || '/';
+      if (p.startsWith('/app')) {
+        const query = window.location.search || '';
+        window.history.replaceState({}, '', `/board${query}`);
+        return '/board';
+      }
+      return p;
     }
     return '/';
   });
 
   useEffect(() => {
     const onPopState = () => {
-      setCurrentPath(window.location.pathname || '/');
+      const p = window.location.pathname || '/';
+      if (p.startsWith('/app')) {
+        const query = window.location.search || '';
+        window.history.replaceState({}, '', `/board${query}`);
+        setCurrentPath('/board');
+      } else {
+        setCurrentPath(p);
+      }
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
@@ -63,8 +72,9 @@ export default function App() {
 
   const navigate = (to: string) => {
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', to);
-      setCurrentPath(to);
+      const target = to.startsWith('/app') ? '/board' : to;
+      window.history.pushState({}, '', target);
+      setCurrentPath(target);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -78,7 +88,7 @@ export default function App() {
       const urlDao = new URLSearchParams(window.location.search).get('dao');
       if (urlDao !== null && urlDao.trim()) return urlDao.trim();
     }
-    return import.meta.env.VITE_DAO_CONTRACT_ID || '';
+    return import.meta.env.VITE_DAO_CONTRACT_ID || 'zinipay-demo.sputnikv2.testnet';
   });
   const [policyContractId, setPolicyContractId] = useState<string>(
     import.meta.env.VITE_POLICY_CONTRACT_ID || 'zinipay-policy2.testnet'
@@ -136,8 +146,10 @@ export default function App() {
   };
 
   // In demo mode (?demo=1), load initial simulated proposals; in live mode, start empty and fetch from on-chain RPC
-  const [proposals, setProposals] = useState<Proposal[]>(() => isDemoMode ? initialProposals : []);
-  const [activities, setActivities] = useState<ActivityEvent[]>(() => isDemoMode ? initialActivities : []);
+  const [proposals, setProposals] = useState<Proposal[]>(() => (isDemoMode ? initialProposals : []));
+  const [activities, setActivities] = useState<ActivityEvent[]>(() =>
+    isDemoMode ? initialActivities : []
+  );
 
   // Modal inspection states
   const [selectedProofProposal, setSelectedProofProposal] = useState<Proposal | null>(null);
@@ -153,7 +165,6 @@ export default function App() {
 
   // Restore wallet session or listen to selector changes & URL redirects
   useEffect(() => {
-    // 1. Check if redirected from MyNearWallet login (?account_id=...)
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlAccountId = urlParams.get('account_id');
@@ -167,7 +178,6 @@ export default function App() {
       }
     }
 
-    // 2. Subscribe to NEAR Wallet Selector events
     let isSubscribed = true;
     subscribeToWalletState(network, (acc) => {
       if (isSubscribed && acc) {
@@ -191,7 +201,8 @@ export default function App() {
   const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
     if (!targetDao || !targetDao.trim()) {
       setIsLoadingOnChain(false);
-      const errMsg = 'DAO contract is not configured (missing VITE_DAO_CONTRACT_ID). Provide a valid DAO contract ID via ?dao=... or append ?demo=1 to view simulated data.';
+      const errMsg =
+        'DAO contract is not configured. Provide a valid DAO contract ID via ?dao=... or append ?demo=1 to view simulated data.';
       setDaoError(errMsg);
       setTreasuryState({ status: 'error', error: errMsg, balance: undefined });
       if (!isDemoMode) {
@@ -213,7 +224,6 @@ export default function App() {
       setTreasuryState(balResult);
       setDaoPolicy(liveDaoPol);
 
-      // Re-verify connected account role against on-chain policy
       if (connectedAccount && !isSimulatedSigner) {
         const verifiedRole = resolveAccountRole(connectedAccount, liveDaoPol);
         setActiveRole(verifiedRole);
@@ -230,9 +240,8 @@ export default function App() {
       }
 
       if (!isDemoMode) {
-        // Honest live data: show real on-chain proposals only
         setProposals(liveProps);
-        if (liveProps.length > 0 && currentPath.startsWith('/app')) {
+        if (liveProps.length > 0 && currentPath.startsWith('/board')) {
           showToast(`Synced ${liveProps.length} on-chain proposals from ${targetDao}`);
         }
       } else {
@@ -296,7 +305,6 @@ export default function App() {
     } catch (err: any) {
       console.error('Wallet signing error:', err);
       showToast(`Vote failed: ${err.message || 'Transaction rejected'}`);
-      // A failed signature changes nothing on screen: no fake local bump!
       return;
     }
 
@@ -317,13 +325,16 @@ export default function App() {
     ]);
   };
 
-  const isAppRoute = currentPath.startsWith('/app');
+  const isDashboardRoute = currentPath === '/board' || currentPath.startsWith('/app');
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
       {/* Toast Notification */}
       {toastMessage && (
-        <aside aria-label="Notification" className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-lg bg-[var(--bg-panel-alt)] text-[#00EC97] border border-emerald-500/30 shadow-2xl text-xs font-mono animate-fade-in">
+        <aside
+          aria-label="Notification"
+          className="fixed bottom-6 right-6 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-lg bg-[var(--bg-panel-alt)] text-[#00EC97] border border-emerald-500/30 shadow-2xl text-xs font-mono animate-fade-in"
+        >
           <CheckCircle2 className="w-4 h-4 shrink-0 text-[#00EC97]" />
           <span>{toastMessage}</span>
         </aside>
@@ -382,155 +393,63 @@ export default function App() {
         }}
       />
 
-      {/* Route Switcher: "/" -> Landing, "/app" -> Dashboard, "/board" -> PublicBoard */}
-      {currentPath === '/board' ? (
-        <div className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
-          {/* Public Board Navbar */}
-          <Navbar
-            network={network}
-            onNetworkChange={(net) => {
-              setNetwork(net);
-              showToast(`Switched network to NEAR ${net.toUpperCase()}`);
-            }}
-            daoContract={daoContract}
-            onDaoContractChange={(dao) => {
-              setDaoContract(dao);
-              loadLiveDaoData(dao, network);
-            }}
-            policyContractId={policyContractId}
-            onPolicyContractChange={(pol) => setPolicyContractId(pol)}
-            activeRole={activeRole}
-            onRoleChange={(r) => {
-              setActiveRole(r);
-              showToast(`Switched active view to: ${r}`);
-            }}
-            connectedAccount={connectedAccount}
-            isSimulated={isSimulatedSigner}
-            onOpenWalletModal={() => {
-              if (connectedAccount) {
-                setIsWalletModalOpen(true);
-              } else {
-                handleOpenWalletSelector();
-              }
-            }}
-            onNavigateToLanding={() => navigate('/')}
-            currentPath="/board"
-            onNavigateToDashboard={() => navigate('/app')}
-            onNavigateToBoard={() => navigate('/board')}
-          />
-
-          <main className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
-            <PublicBoard
-              proposals={proposals}
-              network={network}
-              daoContract={daoContract}
-              policyContractId={policyContractId}
-              onRefresh={() => {
-                loadLiveDaoData(daoContract, network);
-                showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
-              }}
-              isLoading={isLoadingOnChain}
-              onInspectProposal={(prop) => setSelectedProofProposal(prop)}
-              onNavigateToDashboard={() => navigate('/app')}
-            />
-          </main>
-        </div>
-      ) : isAppRoute ? (
-        <div className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
-          {/* Dashboard Navbar */}
-          <Navbar
-            network={network}
-            onNetworkChange={(net) => {
-              setNetwork(net);
-              showToast(`Switched network to NEAR ${net.toUpperCase()}`);
-            }}
-            daoContract={daoContract}
-            onDaoContractChange={(dao) => {
-              setDaoContract(dao);
-              loadLiveDaoData(dao, network);
-            }}
-            policyContractId={policyContractId}
-            onPolicyContractChange={(pol) => setPolicyContractId(pol)}
-            activeRole={activeRole}
-            onRoleChange={(r) => {
-              setActiveRole(r);
-              showToast(`Switched active view to: ${r}`);
-            }}
-            connectedAccount={connectedAccount}
-            isSimulated={isSimulatedSigner}
-            onOpenWalletModal={() => {
-              if (connectedAccount) {
-                setIsWalletModalOpen(true);
-              } else {
-                handleOpenWalletSelector();
-              }
-            }}
-            onNavigateToLanding={() => navigate('/')}
-            currentPath="/app"
-            onNavigateToDashboard={() => navigate('/app')}
-            onNavigateToBoard={() => navigate('/board')}
-          />
-
-          {/* Dashboard Page */}
-          <main className="flex-1 flex flex-col w-full min-w-0 max-w-full overflow-x-hidden">
-            <DashboardPage
-              proposals={proposals}
-              activities={activities}
-              network={network}
-              daoContract={daoContract}
-              onDaoContractChange={(dao) => {
-                setDaoContract(dao);
-                loadLiveDaoData(dao, network);
-              }}
-              policyContractId={policyContractId}
-              treasuryState={treasuryState}
-              isLoadingOnChain={isLoadingOnChain}
-              daoError={daoError}
-              onChainPolicy={onChainPolicy}
-              daoPolicy={daoPolicy}
-              contributorReputation={contributorReputation}
-              connectedAccount={connectedAccount}
-              isSimulated={isSimulatedSigner}
-              activeRole={activeRole}
-              onVote={handleVote}
-              onInspectProof={(prop) => setSelectedProofProposal(prop)}
-              onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
-              onExecuteIntent={(prop) => setIntentsProposal(prop)}
-              onOpenWalletModal={() => {
-                if (connectedAccount) {
-                  setIsWalletModalOpen(true);
-                } else {
-                  handleOpenWalletSelector();
-                }
-              }}
-              onProposalCreated={(newProp) => {
-                setProposals((prev) => [newProp, ...prev]);
-                setActivities((prev) => [
-                  {
-                    id: `act-${Date.now()}`,
-                    timestamp: 'Just now',
-                    type: 'proposal_created',
-                    title: `Proposal #ZP-${newProp.id} Dispatched`,
-                    description: `Three-Way Match Pass. Sputnik DAO proposal created.`,
-                    badge: 'Agent Propose',
-                  },
-                  ...prev,
-                ]);
-              }}
-              onShowToast={showToast}
-              onRefresh={() => {
-                loadLiveDaoData(daoContract, network);
-                showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
-              }}
-              isDemoMode={isDemoMode}
-              onNavigateToBoard={() => navigate('/board')}
-            />
-          </main>
-        </div>
+      {/* Route Switcher: "/" -> LandingPage, "/board" -> DashboardShell */}
+      {isDashboardRoute ? (
+        <DashboardShell
+          proposals={proposals}
+          activities={activities}
+          network={network}
+          daoContract={daoContract}
+          onDaoContractChange={(dao) => {
+            setDaoContract(dao);
+            loadLiveDaoData(dao, network);
+          }}
+          policyContractId={policyContractId}
+          treasuryState={treasuryState}
+          isLoadingOnChain={isLoadingOnChain}
+          daoError={daoError}
+          onChainPolicy={onChainPolicy}
+          daoPolicy={daoPolicy}
+          contributorReputation={contributorReputation}
+          connectedAccount={connectedAccount}
+          isSimulated={isSimulatedSigner}
+          activeRole={activeRole}
+          onVote={handleVote}
+          onInspectProof={(prop) => setSelectedProofProposal(prop)}
+          onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
+          onExecuteIntent={(prop) => setIntentsProposal(prop)}
+          onOpenWalletModal={() => {
+            if (connectedAccount) {
+              setIsWalletModalOpen(true);
+            } else {
+              handleOpenWalletSelector();
+            }
+          }}
+          onProposalCreated={(newProp) => {
+            setProposals((prev) => [newProp, ...prev]);
+            setActivities((prev) => [
+              {
+                id: `act-${Date.now()}`,
+                timestamp: 'Just now',
+                type: 'proposal_created',
+                title: `Proposal #ZP-${newProp.id} Dispatched`,
+                description: `Three-Way Match Pass. Sputnik DAO proposal created.`,
+                badge: 'Pending',
+              },
+              ...prev,
+            ]);
+          }}
+          onShowToast={showToast}
+          onRefresh={() => {
+            loadLiveDaoData(daoContract, network);
+            showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
+          }}
+          isDemoMode={isDemoMode}
+          onNavigateToLanding={() => navigate('/')}
+        />
       ) : (
-        /* Landing Page at "/" */
         <LandingPage
-          onNavigateToApp={() => navigate('/app')}
+          onNavigateToApp={() => navigate('/board')}
           onNavigateToBoard={() => navigate('/board')}
         />
       )}

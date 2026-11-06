@@ -1,5 +1,5 @@
 /**
- * nearRpc.ts — Live NEAR RPC Client for Sputnik DAO v2 & Trezu
+ * nearRpc.ts — Live NEAR RPC Client for Sputnik DAO v2
  * Direct JSON-RPC queries to Testnet and Mainnet nodes.
  */
 

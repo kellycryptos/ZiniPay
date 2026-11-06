@@ -93,7 +93,7 @@ export const initialProposals: Proposal[] = [
     amountNear: '5.0',
     amountYocto: '5000000000000000000000000',
     proofCid: 'bafybeiczsscds0b5v3knq2o5o337e72pnukb4vdc2nlg5x2f2f75i3xptw54',
-    summary: 'Deliverable bundle verified adhering to Trezu high-density design system.',
+    summary: 'Deliverable bundle verified adhering to Sputnik DAO v2 high-density governance system.',
     evidenceType: 'milestone_deliverable',
     evidenceDetails: 'Figma token bundle inspected. Components tested with Tailwind token sync and accessible contrast ratios.',
     createdAt: '1 day ago',
