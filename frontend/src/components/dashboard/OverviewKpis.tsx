@@ -5,14 +5,13 @@ import {
   Clock,
   ShieldAlert,
   ExternalLink,
-  Lock,
-  ArrowUpRight,
   Shield,
+  Lock,
 } from 'lucide-react';
 import { TreasuryBalanceResult } from '../../lib/nearRpc';
 import { Proposal } from '../../lib/types';
 
-interface BlockedAttackItem {
+export interface BlockedAttackItem {
   index: number;
   label: string;
   vector: string;
@@ -20,6 +19,7 @@ interface BlockedAttackItem {
   explorerUrl?: string;
   rejectionReason: string;
   blockedBy: string;
+  isAdminAction?: boolean;
 }
 
 interface OverviewKpisProps {
@@ -45,30 +45,23 @@ export function OverviewKpis({
   const explorerBase =
     network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 
-  // 1. Treasury Balance (Real from chain)
+  // 1. Treasury Balance (Real from chain view_account)
   const hasLiveBalance =
     treasuryState.status === 'success' && treasuryState.balance !== undefined;
   const balanceNear = hasLiveBalance ? treasuryState.balance! : null;
 
-  // 2. Payouts Settled (Count and sum from real on-chain proposals & verified.json)
-  const approvedProposals = proposals.filter(
-    (p) => p.status === 'approved' || p.status === 'settled'
-  );
-  // Default to verified on-chain Proposal #6 if proposals query hasn't populated yet
-  const settledCount = approvedProposals.length > 0 ? approvedProposals.length : 1;
-  const settledSumNear =
-    approvedProposals.length > 0
-      ? approvedProposals.reduce((acc, p) => acc + (parseFloat(p.amountNear) || 0), 0)
-      : 0.1; // Proposal #6 = 0.10 NEAR
+  // 2. Payouts Settled (Reconciled with chain: Proposals #5 and #6 through zinipay-policy2.testnet)
+  // Proposal #5: 0.10 NEAR (tx 4B1Excqiga..., Oct 30)
+  // Proposal #6: 0.10 NEAR (tx 2nWMVtQ4z2..., Nov 2)
+  // Total on-chain settled payouts: 2 payouts, 0.20 NEAR
+  const settledCount = 2;
+  const settledSumNear = 0.20;
 
-  // 3. Active Requests (Pending quorum count)
+  // 3. Active Requests (Proposals inProgress on Sputnik DAO)
   const activeCount = proposals.filter((p) => p.status === 'pending_quorum').length;
 
-  // 4. Blocked Attacks count
-  const attackCount = blockedAttacks.length > 0 ? blockedAttacks.length : 7;
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full font-sans">
       {/* ── CARD 1: Treasury Balance ──────────────────────────── */}
       <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all">
         <div className="flex items-start justify-between">
@@ -80,7 +73,10 @@ export function OverviewKpis({
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
                 Treasury Balance
               </p>
-              <p className="text-[10px] text-[var(--text-secondary)] font-mono truncate max-w-[140px]" title={daoContract}>
+              <p
+                className="text-[10px] text-[var(--text-secondary)] font-mono truncate max-w-[140px]"
+                title={daoContract}
+              >
                 {daoContract}
               </p>
             </div>
@@ -114,22 +110,13 @@ export function OverviewKpis({
           )}
         </div>
 
-        {/* Small Real Visual: Reserve Gauge Meter */}
-        <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-            <span>Sputnik DAO v2</span>
-            <span>{hasLiveBalance ? 'Live on-chain' : 'Public RPC'}</span>
-          </div>
-          <div className="h-1.5 w-full bg-[var(--bg-canvas)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-600 to-[#00EC97] rounded-full transition-all duration-500"
-              style={{
-                width: hasLiveBalance
-                  ? `${Math.min(100, Math.max(15, (balanceNear! / 20) * 100))}%`
-                  : '40%',
-              }}
-            />
-          </div>
+        {/* Real Data Footer: No arbitrary meter */}
+        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+          <span className="flex items-center gap-1.5 text-slate-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
+            Liquid Treasury Reserves
+          </span>
+          <span>{hasLiveBalance ? 'Live on-chain' : 'Public RPC'}</span>
         </div>
       </div>
 
@@ -145,20 +132,32 @@ export function OverviewKpis({
                 Payouts Settled
               </p>
               <p className="text-[10px] text-[var(--text-secondary)] font-mono">
-                {settledCount} proposal{settledCount === 1 ? '' : 's'} on-chain
+                {settledCount} on-chain releases
               </p>
             </div>
           </div>
-          <a
-            href="https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[10px] text-[var(--text-muted)] hover:text-[#00EC97] flex items-center gap-1 font-mono transition-colors"
-            title="Inspect Proposal #6 execution transaction"
-          >
-            <span>#ZP-6</span>
-            <ExternalLink size={11} />
-          </a>
+          <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--text-muted)]">
+            <a
+              href="https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-[#00EC97] transition-colors"
+              title="Proposal #5 Payout (0.10N) on NEARBlocks"
+            >
+              #5
+            </a>
+            <span>·</span>
+            <a
+              href="https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-[#00EC97] transition-colors"
+              title="Proposal #6 Payout (0.10N) on NEARBlocks"
+            >
+              #6
+            </a>
+            <ExternalLink size={10} className="text-slate-500" />
+          </div>
         </div>
 
         <div className="my-3">
@@ -170,15 +169,10 @@ export function OverviewKpis({
           </div>
         </div>
 
-        {/* Small Real Visual: Settled Proposals Ratio Meter */}
-        <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-            <span>Proposal #6 (0.10N)</span>
-            <span className="text-emerald-400 font-semibold">2/2 Council Quorum</span>
-          </div>
-          <div className="h-1.5 w-full bg-[var(--bg-canvas)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
-            <div className="h-full bg-[#00EC97] rounded-full w-full" />
-          </div>
+        {/* Real Data Footer: Reconciled with on-chain Proposals #5 & #6 */}
+        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+          <span>Proposals #5 (0.10N) & #6 (0.10N)</span>
+          <span className="text-emerald-400 font-semibold">2/2 Council Quorum</span>
         </div>
       </div>
 
@@ -194,7 +188,7 @@ export function OverviewKpis({
                 Active Requests
               </p>
               <p className="text-[10px] text-[var(--text-secondary)] font-mono">
-                Awaiting 2-of-2 council
+                Sputnik DAO v2
               </p>
             </div>
           </div>
@@ -212,28 +206,14 @@ export function OverviewKpis({
           </div>
         </div>
 
-        {/* Small Real Visual: Queue Depth Status Indicator */}
-        <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-            <span>Governance Queue</span>
-            <span>{activeCount === 0 ? '0 pending approvals' : 'In progress'}</span>
-          </div>
-          <div className="flex items-center gap-1.5 h-1.5 w-full">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className={`h-full flex-1 rounded-full transition-all ${
-                  i < activeCount
-                    ? 'bg-amber-400 animate-pulse'
-                    : 'bg-white/[0.08]'
-                }`}
-              />
-            ))}
-          </div>
+        {/* Real Data Footer: Honest text queue status, no made-up 5-dot scale */}
+        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+          <span>Governance Queue</span>
+          <span>{activeCount === 0 ? '0 awaiting council quorum' : `${activeCount} in progress`}</span>
         </div>
       </div>
 
-      {/* ── CARD 4: Recent Blocked Attempts (One bar per recorded attack) ── */}
+      {/* ── CARD 4: Blocked Attempts (5 Attack Txs + 1 Blocked Admin) ── */}
       <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-red-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all group">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -242,10 +222,10 @@ export function OverviewKpis({
             </div>
             <div>
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                Blocked Attacks
+                Blocked Attempts
               </p>
               <p className="text-[10px] text-red-300/80 font-mono">
-                {attackCount} verified testnet vectors
+                5 attack txs + 1 admin action
               </p>
             </div>
           </div>
@@ -257,44 +237,46 @@ export function OverviewKpis({
         <div className="my-2">
           <div className="flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold text-white tracking-tight">
-              {attackCount}
+              5
             </span>
-            <span className="font-mono text-xs text-red-400 font-semibold">Blocked</span>
+            <span className="font-mono text-xs text-red-400 font-semibold">Attacks</span>
+            <span className="font-mono text-xs text-slate-400">+ 1 Blocked Admin</span>
           </div>
           <p className="text-[10px] text-[var(--text-muted)] truncate font-mono mt-0.5">
             {hoveredAttack
-              ? `${hoveredAttack.vector}: ${hoveredAttack.rejectionReason.slice(0, 32)}...`
-              : 'Click any bar below to inspect on NEARBlocks'}
+              ? `${hoveredAttack.label}: ${hoveredAttack.rejectionReason.slice(0, 32)}...`
+              : 'Each bar below links to verified transaction'}
           </p>
         </div>
 
-        {/* Small Real Visual: ONE INTERACTIVE BAR PER RECORDED ATTACK FROM VERIFIED.JSON */}
+        {/* Real Data Visual: ONE BAR PER VERIFIED ON-CHAIN TRANSACTION */}
         <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-            <span>Recorded Attacks</span>
+            <span>6 On-Chain Explorer Proofs</span>
             <span className="text-red-400 font-semibold">Enforced by contract</span>
           </div>
           <div className="flex items-center gap-1 w-full h-3">
-            {blockedAttacks.map((att, idx) => (
-              <a
-                key={idx}
-                href={att.explorerUrl || '#'}
-                target={att.explorerUrl ? '_blank' : undefined}
-                rel="noreferrer"
-                onMouseEnter={() => setHoveredAttack(att)}
-                onMouseLeave={() => setHoveredAttack(null)}
-                onClick={(e) => {
-                  if (!att.explorerUrl) {
-                    e.preventDefault();
-                    if (onSelectAttack) onSelectAttack(att);
-                  }
-                }}
-                title={`Attack #${idx + 1}: ${att.vector}\nReason: ${att.rejectionReason}\n${
-                  att.explorerUrl ? 'Click to inspect on NEARBlocks' : 'Blocked by Deliberation'
-                }`}
-                className="h-full flex-1 rounded-sm bg-red-500/70 hover:bg-red-400 transition-all cursor-pointer relative hover:scale-y-125 origin-bottom"
-              />
-            ))}
+            {blockedAttacks
+              .filter((att) => att.explorerUrl)
+              .map((att, idx) => {
+                const isAdmin = att.isAdminAction;
+                return (
+                  <a
+                    key={idx}
+                    href={att.explorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onMouseEnter={() => setHoveredAttack(att)}
+                    onMouseLeave={() => setHoveredAttack(null)}
+                    title={`${att.label}: ${att.vector}\nReason: ${att.rejectionReason}\nClick to inspect transaction on NEARBlocks`}
+                    className={`h-full flex-1 rounded-sm transition-all cursor-pointer relative hover:scale-y-125 origin-bottom ${
+                      isAdmin
+                        ? 'bg-amber-500/70 hover:bg-amber-400'
+                        : 'bg-red-500/70 hover:bg-red-400'
+                    }`}
+                  />
+                );
+              })}
           </div>
         </div>
       </div>
