@@ -31,6 +31,7 @@ import { OverviewKpis, BlockedAttackItem, SettledPayoutItem } from './OverviewKp
 import { PolicyCard } from './PolicyCard';
 import { ContributorsView } from './ContributorsView';
 import { UniversalFooter } from '../navigation/UniversalFooter';
+import { DocsPage } from '../docs/DocsPage';
 import { KanbanBoard } from './KanbanBoard';
 import { ActivityFeed } from './ActivityFeed';
 import { RpcDownBanner } from './RpcDownBanner';
@@ -834,76 +835,8 @@ export function DashboardShell({
 
           {/* VIEW: DOCS */}
           {currentView === 'docs' && (
-            <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 font-sans">
-              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
-                    <BookOpen size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-white">Architecture & Verification Docs</h2>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      System boundaries, enforced constraints, and keyless testnet verification.
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20">
-                  Live Testnet Architecture
-                </span>
-              </div>
-
-              {/* Problem & Solution */}
-              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
-                <h3 className="font-bold text-white text-sm">Problem & Core Thesis</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Let AI agents ask for money. Never let them take it. Autonomous agents cannot be trusted with raw private keys or unrestricted access to community treasuries. ZiniPay enforces a fail-closed three-way release gate: the agent proposes, a Rust PolicyHelper contract enforces boundaries, and humans approve on Sputnik DAO v2.
-                </p>
-              </div>
-
-              {/* Three-Way Release Gate */}
-              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
-                <h3 className="font-bold text-white text-sm">The Three-Way Release Gate</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 1: Deliverable</span>
-                    <p className="text-[11px] text-slate-400 font-sans">
-                      Validates GitHub PR commit hash and IPFS CID uniqueness. PR author must match the recipient account.
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 2: Policy Contract</span>
-                    <p className="text-[11px] text-slate-400 font-sans">
-                      PolicyHelper smart contract enforces per-proposal spend caps (10/15/20N), cooldowns, and burns CID to prevent replay.
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[#00EC97] font-semibold block mb-1">Gate 3: Human Quorum</span>
-                    <p className="text-[11px] text-slate-400 font-sans">
-                      Mandatory 2-of-2 council multi-sig quorum on Sputnik DAO v2. Agent holds 0 voting rights.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Keyless Verification */}
-              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-white text-sm">60-Second Judge Verification Command</h3>
-                  <button
-                    type="button"
-                    onClick={() => setVerificationModalOpen(true)}
-                    className="text-xs font-mono text-[#00EC97] hover:underline"
-                  >
-                    View In-Browser Checks (11)
-                  </button>
-                </div>
-                <div className="p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs text-[#00EC97]">
-                  npm run verify:testnet
-                </div>
-                <p className="text-xs text-slate-400">
-                  Run the 11 in-browser checks above (9 live on-chain + 2 info), or execute <code className="text-[#00EC97]">npm run verify:testnet</code> for the complete 24 on-chain checks (including panic text assertions and attack vectors).
-                </p>
-              </div>
+            <div className="w-full">
+              <DocsPage embedded={true} network={network} />
             </div>
           )}
 

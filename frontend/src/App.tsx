@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardShell } from './components/dashboard/DashboardShell';
+import { DocsPage } from './components/docs/DocsPage';
 import { ProofModal } from './components/ProofModal';
 import { DeliberationModal } from './components/DeliberationModal';
 import { IntentsModal } from './components/IntentsModal';
