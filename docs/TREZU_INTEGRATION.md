@@ -8,7 +8,7 @@
 
 [Trezu](https://trezu.app) is NEAR's modern multi-sig treasury governance platform designed for DAO councils, teams, and community funds. Under the hood, Trezu treasuries are governed by **Sputnik DAO v2** smart contracts and NEAR native multi-sig policies.
 
-Because ZiniPay's architecture enforces strict role separation (**Agent proposes → PolicyHelper constrains → Human council approves**), ZiniPay is 100% wire-compatible with any Trezu-managed treasury.
+Because ZiniPay's architecture enforces strict role separation (**Agent proposes → PolicyHelper constrains → Human council approves**), ZiniPay is wire-compatible with any Trezu-managed treasury.
 
 ---
 
@@ -62,7 +62,7 @@ In Trezu's member and role management:
 Deploy or configure ZiniPay's `PolicyHelper` contract (`zinipay-policy2.testnet` on testnet):
 1. Set the Trezu DAO contract ID as the authorized caller (`dao_account_id`).
 2. Transfer or retain contract ownership with the council.
-3. Configure community spend caps: base cap (e.g. 10 NEAR), cooldown period (e.g. 24 hours), and reputation multiplier tiers.
+3. Configure community spend caps: base cap (e.g. 10 NEAR), cooldown period (demo deployment uses 60 seconds; configurable in production e.g. 24 hours), and reputation multiplier tiers.
 
 ### Step 4: Configure ZiniPay Agent & Frontend
 Point ZiniPay to your Trezu treasury:

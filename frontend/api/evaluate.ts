@@ -1,6 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
 import { evaluatePolicy } from './lib/policy.js';
 import { getReputation } from './lib/reputation.js';
+
+const EvaluateSchema = z.object({
+  recipientId: z.string().trim().min(2).max(64).regex(/^[a-z0-9_.-]+$/, 'Invalid NEAR account ID format'),
+  amountNear: z.union([z.string(), z.number()]).transform((val) => String(val)).refine((v) => {
+    const num = parseFloat(v);
+    return !isNaN(num) && num > 0 && num <= 100;
+  }, 'amountNear must be a positive number up to 100 NEAR'),
+  deliverableCid: z.string().trim().max(500).optional().default(''),
+});
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,15 +25,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
+  const parseResult = EvaluateSchema.safeParse(req.body || {});
+  if (!parseResult.success) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid evaluation request payload',
+      details: parseResult.error.format(),
+    });
+  }
+
   try {
-    const { recipientId, amountNear, deliverableCid } = req.body || {};
-
-    if (!recipientId) {
-      return res.status(400).json({ error: 'Missing required field: recipientId' });
-    }
-
+    const { recipientId, amountNear, deliverableCid } = parseResult.data;
     const repEntry = getReputation(recipientId);
-    const amount = typeof amountNear === 'number' ? amountNear : parseFloat(amountNear || '0');
+    const amount = parseFloat(amountNear);
 
     const result = evaluatePolicy(
       recipientId,
@@ -41,9 +55,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       },
     });
   } catch (error: any) {
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.error(`[${requestId}] Policy evaluation failure:`, error?.message || error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Internal policy evaluation error',
+      error: 'Internal policy evaluation error',
+      requestId,
     });
   }
 }

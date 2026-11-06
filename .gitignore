@@ -24,3 +24,4 @@ zinipay/
 frontend/scripts/
 
 e2e-output.txt
+*attack_events_simulated.jsonl
