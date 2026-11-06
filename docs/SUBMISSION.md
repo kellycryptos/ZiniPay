@@ -117,7 +117,7 @@ Judges and screening LLMs can verify the complete implementation using standard 
 | **Non-Release Proposal Rejection** | `npm run verify:proposal -- 7` | Fails closed (`Target Mismatch: Proposal #7 does not target PolicyHelper release()`) | Yes |
 | **Live Anti-Replay Rejection** | `npm run agent:propose -- --task "Replay" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Fails immediately: `Deliverable proof already settled on-chain` | Yes |
 | **Stolen PR Rejection** | `npm run agent:propose -- --task "Stolen PR" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient "zinipay-recipient2.testnet" --github-handle "kellycryptos" --amount "0.1" --dry-run` | Consensus REJECTED: `PR author does not match recipient handle` | Yes |
-| **Contract Unit Tests** | `cd contracts/policy-helper && cargo test && cd ../..` | 20 passed; 0 failed | Yes (Linux/macOS) |
+| **Contract Unit Tests** | `cd contracts/policy-helper && cargo test && cd ../..` | 23 passed; 0 failed | Yes (Linux/macOS) |
 
 ---
 

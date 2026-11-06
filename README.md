@@ -129,7 +129,7 @@ npm run frontend:dev
 # Step 9 (Optional): Run smart contract unit tests (~5s, requires Linux/macOS or MSVC linker)
 cd contracts/policy-helper && cargo test && cd ../..
 ```
-**See**: `test result: ok. 21 passed; 0 failed`. Verifies spend caps, caller authorization, cooldown logic, case-variant anti-replay normalization, atomic rollback callbacks, and `get_approval_tier` resolution.
+**See**: `test result: ok. 23 passed; 0 failed`. Verifies spend caps, caller authorization, cooldown logic, case-variant anti-replay normalization, atomic rollback callbacks, and `get_approval_tier` resolution.
 
 ---
 

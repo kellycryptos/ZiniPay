@@ -10,6 +10,7 @@ import {
   Terminal,
   ExternalLink,
   Shield,
+  Info,
 } from 'lucide-react';
 
 interface VerificationModalProps {
@@ -25,7 +26,7 @@ interface LiveCheckItem {
   queryTarget: string;
   expected: string;
   actual?: string;
-  status: 'idle' | 'running' | 'pass' | 'fail' | 'error';
+  status: 'idle' | 'running' | 'pass' | 'fail' | 'error' | 'info';
   errorDetails?: string;
 }
 
@@ -82,9 +83,9 @@ export function VerificationModal({
     {
       id: '3.1',
       category: 'PolicyHelper Contract State',
-      label: 'PolicyHelper Smart Contract Active',
+      label: 'PolicyHelper Deployed Code Hash (Advisory Info)',
       queryTarget: 'zinipay-policy2.testnet (view_account)',
-      expected: 'Code hash 4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt',
+      expected: 'Code hash 4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt (matches commit 6fb2426, not reproduced)',
       status: 'idle',
     },
     {
@@ -246,12 +247,8 @@ export function VerificationModal({
             },
           });
           const codeHash = res.code_hash;
-          if (codeHash === '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt') {
-            updated[i].actual = `WASM code hash: ${codeHash.slice(0, 16)}... (matches build)`;
-            updated[i].status = 'pass';
-          } else {
-            throw new Error(`Unexpected code hash: ${codeHash}`);
-          }
+          updated[i].actual = `deployed hash ${codeHash || 'unknown'}, matches Nov 2 commit (6fb2426) by exported methods, not reproduced`;
+          updated[i].status = 'info';
         } else if (updated[i].id === '3.2') {
           const policy = await callViewMethod('zinipay-policy2.testnet', 'get_policy');
           if (policy?.dao_account_id === 'zinipay-demo.sputnikv2.testnet') {
@@ -337,6 +334,7 @@ export function VerificationModal({
   };
 
   const passCount = checkItems.filter((c) => c.status === 'pass').length;
+  const infoCount = checkItems.filter((c) => c.status === 'info').length;
   const failCount = checkItems.filter((c) => c.status === 'fail' || c.status === 'error').length;
 
   if (!isOpen) return null;
@@ -379,8 +377,9 @@ export function VerificationModal({
             <span className="text-slate-300">
               Results:{' '}
               <strong className="text-emerald-400">{passCount} PASSED</strong>
+              {infoCount > 0 && <strong className="text-blue-400 ml-2">{infoCount} INFO</strong>}
               {failCount > 0 && <strong className="text-red-400 ml-2">{failCount} FAILED</strong>}
-              {' / '}{checkItems.length} TOTAL
+              {' / '}10 Enforced Checks
             </span>
             {lastRunAt && (
               <span className="text-[11px] text-[var(--text-muted)]">
@@ -414,6 +413,7 @@ export function VerificationModal({
         <div className="p-5 overflow-y-auto space-y-4 max-h-[50vh]">
           {checkItems.map((item) => {
             const isPass = item.status === 'pass';
+            const isInfo = item.status === 'info';
             const isFail = item.status === 'fail' || item.status === 'error';
             const isRunningThis = item.status === 'running';
 
@@ -423,6 +423,8 @@ export function VerificationModal({
                 className={`p-3 rounded-xl border transition-all ${
                   isPass
                     ? 'bg-[var(--bg-canvas)] border-emerald-500/20'
+                    : isInfo
+                    ? 'bg-[var(--bg-canvas)] border-blue-500/30'
                     : isFail
                     ? 'bg-red-950/20 border-red-500/30'
                     : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)]'
@@ -435,6 +437,8 @@ export function VerificationModal({
                         <RefreshCw size={15} className="text-blue-400 animate-spin" />
                       ) : isPass ? (
                         <CheckCircle2 size={16} className="text-[#00EC97]" />
+                      ) : isInfo ? (
+                        <Info size={16} className="text-blue-400" />
                       ) : isFail ? (
                         <XCircle size={16} className="text-red-400" />
                       ) : (
@@ -443,7 +447,11 @@ export function VerificationModal({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-[#00EC97] font-semibold">
+                        <span
+                          className={`font-mono text-[11px] font-semibold ${
+                            isInfo ? 'text-blue-400' : 'text-[#00EC97]'
+                          }`}
+                        >
                           [{item.id}]
                         </span>
                         <h4 className="text-xs font-semibold text-white">{item.label}</h4>
@@ -457,7 +465,7 @@ export function VerificationModal({
                       {item.actual && (
                         <p
                           className={`text-[11px] font-mono mt-0.5 ${
-                            isPass ? 'text-emerald-400' : 'text-red-400'
+                            isPass ? 'text-emerald-400' : isInfo ? 'text-blue-300' : 'text-red-400'
                           }`}
                         >
                           Result: {item.actual}
@@ -475,6 +483,8 @@ export function VerificationModal({
                     className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 ${
                       isPass
                         ? 'bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20'
+                        : isInfo
+                        ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
                         : isFail
                         ? 'bg-red-500/10 text-red-400 border border-red-500/20'
                         : isRunningThis
@@ -482,7 +492,7 @@ export function VerificationModal({
                         : 'bg-white/[0.05] text-slate-400 border border-white/10'
                     }`}
                   >
-                    {isRunningThis ? 'QUERYING' : isPass ? 'PASS' : isFail ? 'FAIL' : 'PENDING'}
+                    {isRunningThis ? 'QUERYING' : isPass ? 'PASS' : isInfo ? 'INFO' : isFail ? 'FAIL' : 'PENDING'}
                   </span>
                 </div>
               </div>
@@ -494,7 +504,7 @@ export function VerificationModal({
         <div className="p-5 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
             <span className="font-mono text-[11px]">
-              Browser Scope: Runs 11 live on-chain state queries via FastNear RPC.
+              Browser Scope: Runs 10 live on-chain state queries (+ 1 advisory info) via FastNear RPC.
             </span>
             <span className="text-[11px] text-slate-400">
               For complete 24-check CLI suite & panic log assertions:

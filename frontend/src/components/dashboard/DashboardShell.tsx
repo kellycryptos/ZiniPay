@@ -342,7 +342,7 @@ export function DashboardShell({
               {!sidebarCollapsed && <span className="flex-1 text-left">Verification</span>}
               {!sidebarCollapsed && (
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-[#00EC97] border border-emerald-500/30">
-                  25/25
+                  10 Live
                 </span>
               )}
             </button>
@@ -955,14 +955,14 @@ export function DashboardShell({
                     onClick={() => setVerificationModalOpen(true)}
                     className="text-xs font-mono text-[#00EC97] hover:underline"
                   >
-                    View All 25 Checks
+                    View In-Browser Checks (10)
                   </button>
                 </div>
                 <div className="p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs text-[#00EC97]">
                   npm run verify:testnet
                 </div>
                 <p className="text-xs text-slate-400">
-                  Runs keyless verification against public FastNear RPC without needing private keys or environment variables.
+                  Run the 10 live in-browser RPC checks above, or execute <code className="text-[#00EC97]">npm run verify:testnet</code> for the complete 24 on-chain checks (including panic text assertions and attack vectors).
                 </p>
               </div>
             </div>
