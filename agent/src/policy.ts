@@ -10,7 +10,7 @@
  *      - Bronze: 1.0x standard limit
  *      - Silver: 1.5x standard limit
  *      - Gold: 2.0x standard limit
- *   3. Rolling 24h aggregate limit
+ *   3. Rolling 24h aggregate limit (agent-side local policy check; contract does not enforce daily rolling limits)
  *   4. Cooldown between proposals to same recipient
  *
  * State is persisted in a JSON file via lowdb.
@@ -22,7 +22,7 @@ import { getTierInfo, getApprovalRequirement, type ReputationTier, type Approval
 
 export interface PolicyConfig {
   maxSpendPerProposal: bigint;   // Base yoctoNEAR cap
-  maxSpendPerDay: bigint;        // Daily aggregate yoctoNEAR cap
+  maxSpendPerDay: bigint;        // Daily aggregate yoctoNEAR cap (agent-side local policy check only)
   cooldownHours: number;
   minReputationScore: number;
 }

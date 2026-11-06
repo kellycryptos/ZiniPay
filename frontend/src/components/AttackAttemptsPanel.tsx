@@ -50,9 +50,19 @@ export function AttackAttemptsPanel() {
         const text = await res.text();
         const lines = text.trim().split('\n').filter(Boolean);
         if (lines.length > 0) {
-          const parsed = lines.map((l) => JSON.parse(l));
-          setAttacks(parsed.reverse());
-          return;
+          const parsed = lines
+            .map((l) => {
+              try {
+                return JSON.parse(l);
+              } catch {
+                return null;
+              }
+            })
+            .filter((entry) => entry && !entry.simulated);
+          if (parsed.length > 0) {
+            setAttacks(parsed.reverse());
+            return;
+          }
         }
       }
       if (isDemo) {

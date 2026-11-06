@@ -418,7 +418,7 @@ program
     console.log(chalk.bold.cyan(`\n─── Contributor Social Money Track Record: ${targetAccount} ───\n`));
     console.log(`  Named Account:       ${chalk.bold(targetAccount)}`);
     console.log(`  Reputation Score:    ${chalk.green(`${effectiveScore} pts`)} ${onChainScore !== null ? `[On-Chain: ${cfg.policyContractId}]` : '[Indexed Ledger]'}`);
-    console.log(`  Reputation Tier:     ${chalk.yellow(tierInfo.tier)} (${tierInfo.maxPerProposalMultiplier}x spend cap | ${tierInfo.multiplier}x reward multiplier)`);
+    console.log(`  Reputation Tier:     ${chalk.yellow(tierInfo.tier)} (${tierInfo.maxPerProposalMultiplier}x spend cap)`);
     console.log(`  Completed Tasks:     ${record.completedTasks}`);
     console.log(`  Total Paid:          ${record.totalPaidNear.toFixed(4)} NEAR`);
     console.log(`  Proposals Approved:  ${record.approvedProposals} / ${record.totalProposals > 0 ? record.totalProposals : record.approvedProposals} (${record.successRatePercent}%)`);

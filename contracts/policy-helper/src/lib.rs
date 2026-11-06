@@ -97,6 +97,9 @@ impl PolicyHelper {
     ///     > 5 NEAR: FullDaoQuorum (standard 2 council votes)
     /// - Entry-reputation (Bronze 0 - 19 pts):
     ///     All amounts: FullDaoQuorum (mandatory 2 council votes)
+    /// Note: This method is advisory only and not enforced on-chain.
+    /// Sputnik DAO v2 voting policy enforces the true quorum requirement (e.g. 2-of-2 council quorum)
+    /// for any proposal executing PolicyHelper::release.
     pub fn get_approval_tier(&self, account: AccountId, amount: U128) -> near_sdk::serde_json::Value {
         let score = self.reputation_scores.get(&account).unwrap_or(0);
         let amount_yocto = amount.0;

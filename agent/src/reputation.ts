@@ -3,8 +3,8 @@
  *
  * Implements Social Money Reputation & Tiered Approvals:
  *   - Bronze (0 - 19 pts): Base 1.0x cap (10N), mandatory 2-of-2 human multi-sig quorum.
- *   - Silver (20 - 59 pts): 1.1x reward multiplier, 1.5x spend cap (15N), single council approval for <= 5N.
- *   - Gold (60+ pts): 1.25x reward multiplier, 2.0x spend cap (20N), micro auto-clear for <= 2N, single council for <= 8N.
+ *   - Silver (20 - 59 pts): 1.5x spend cap (15N), advisory single council approval for <= 5N (reward multiplier is agent-side display only; not on-chain).
+ *   - Gold (60+ pts): 2.0x spend cap (20N), micro auto-clear for <= 2N, single council for <= 8N (reward multiplier is agent-side display only; not on-chain).
  *
  * All scores and track records are publicly readable.
  */
@@ -18,7 +18,7 @@ export type ApprovalType = 'AutoApprove' | 'SingleCouncil' | 'FullDaoQuorum';
 
 export interface TierInfo {
   tier: ReputationTier;
-  multiplier: number;
+  multiplier: number; // Informational display only in agent reports; contract does not scale payouts
   autoClearEligible: boolean;
   maxPerProposalMultiplier: number;
 }

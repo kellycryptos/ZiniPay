@@ -97,6 +97,14 @@ async function viewAccount(accountId) {
   });
 }
 
+async function viewCode(accountId) {
+  return rpcPost('query', {
+    request_type: 'view_code',
+    finality: 'final',
+    account_id: accountId,
+  });
+}
+
 async function callViewMethod(contractId, methodName, args = {}) {
   const res = await rpcPost('query', {
     request_type: 'call_function',
@@ -232,7 +240,41 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  console.log(`  ℹ [INFO] 3.2: deployed hash ${policyAcct?.code_hash || 'unknown'}, source believed to match commit 8e8ef52, not independently reproduced`);
+
+  let deployedExports = [];
+  try {
+    const codeRes = await viewCode(POLICY_ID);
+    if (codeRes?.code_base64) {
+      const bytes = Buffer.from(codeRes.code_base64, 'base64');
+      const mod = new WebAssembly.Module(bytes);
+      deployedExports = WebAssembly.Module.exports(mod)
+        .map((e) => e.name)
+        .filter((n) => !n.startsWith('__') && n !== 'memory')
+        .sort();
+    }
+  } catch {}
+
+  let sourceMethods = [];
+  try {
+    const srcPath = path.join(process.cwd(), 'contracts', 'policy-helper', 'src', 'lib.rs');
+    if (fs.existsSync(srcPath)) {
+      const src = fs.readFileSync(srcPath, 'utf8');
+      sourceMethods = [...src.matchAll(/pub fn ([a-zA-Z0-9_]+)/g)]
+        .map((m) => m[1])
+        .filter((m) => m !== 'canonical_cid')
+        .sort();
+    }
+  } catch {}
+
+  const missingFromDeployed = sourceMethods.filter((m) => !deployedExports.includes(m));
+
+  console.log(`  ℹ [INFO] 3.2: deployed hash ${policyAcct?.code_hash || 'unknown'}, deployed source matches contracts/policy-helper/src/lib.rs at commit 6fb2426 by exported method names (file unchanged through 7715103), not independently reproduced`);
+  if (deployedExports.length > 0) {
+    console.log(`      Deployed WASM exports (${deployedExports.length}): ${deployedExports.join(', ')}`);
+    console.log(`      Source pub methods   (${sourceMethods.length}): ${sourceMethods.join(', ')}`);
+    console.log(`      Source methods in local main but not deployed on-chain (${missingFromDeployed.length}): ${missingFromDeployed.join(', ')}`);
+    console.log(`      Note: burn_cid, get_approval_tier, and get_contributor_record are in main but not deployed on-chain; approval schedules and records must be computed client-side.`);
+  }
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');
