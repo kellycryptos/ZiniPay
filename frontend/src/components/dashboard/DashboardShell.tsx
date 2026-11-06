@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
-import { OverviewKpis, BlockedAttackItem } from './OverviewKpis';
+import { OverviewKpis, BlockedAttackItem, SettledPayoutItem } from './OverviewKpis';
 import { PolicyCard } from './PolicyCard';
 import { KanbanBoard } from './KanbanBoard';
 import { ActivityFeed } from './ActivityFeed';
@@ -106,6 +106,20 @@ export function DashboardShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [verificationModalOpen, setVerificationModalOpen] = useState<boolean>(false);
+  const [settledPayouts, setSettledPayouts] = useState<SettledPayoutItem[]>([]);
+
+  useEffect(() => {
+    fetch('/data/verified.json')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.settledPayouts) {
+          setSettledPayouts(data.settledPayouts);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load verified.json:', err);
+      });
+  }, []);
 
   // Static verified data from verified.json: 5 attacks + 1 blocked admin + 1 pre-chain check
   const verifiedBlockedAttacks: BlockedAttackItem[] = [
@@ -578,6 +592,7 @@ export function DashboardShell({
                 proposals={proposals}
                 network={network}
                 blockedAttacks={verifiedBlockedAttacks}
+                settledPayouts={settledPayouts}
                 onSelectAttack={() => setCurrentView('security')}
               />
 
@@ -610,6 +625,7 @@ export function DashboardShell({
                 <KanbanBoard
                   proposals={proposals}
                   blockedAttacks={verifiedBlockedAttacks}
+                settledPayouts={settledPayouts}
                   searchQuery={searchQuery}
                   onInspectProposal={onInspectProof}
                   onInspectAttack={() => setCurrentView('security')}
@@ -651,6 +667,7 @@ export function DashboardShell({
               <KanbanBoard
                 proposals={proposals}
                 blockedAttacks={verifiedBlockedAttacks}
+                settledPayouts={settledPayouts}
                 searchQuery={searchQuery}
                 onInspectProposal={onInspectProof}
                 onInspectAttack={() => setCurrentView('security')}

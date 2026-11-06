@@ -13,6 +13,7 @@ import { Proposal } from '../../lib/types';
 interface KanbanBoardProps {
   proposals: Proposal[];
   blockedAttacks: any[];
+  settledPayouts?: any[];
   searchQuery?: string;
   onInspectProposal?: (proposal: Proposal) => void;
   onInspectAttack?: (attack: any) => void;
@@ -24,6 +25,7 @@ interface KanbanBoardProps {
 export function KanbanBoard({
   proposals,
   blockedAttacks,
+  settledPayouts = [],
   searchQuery = '',
   onInspectProposal,
   onInspectAttack,

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
-  ExternalLink,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
   Copy,
   Check,
   Terminal,
+  ExternalLink,
   Shield,
-  Lock,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 
 interface VerificationModalProps {
@@ -18,14 +18,317 @@ interface VerificationModalProps {
   network?: 'testnet' | 'mainnet';
 }
 
+interface LiveCheckItem {
+  id: string;
+  category: string;
+  label: string;
+  queryTarget: string;
+  expected: string;
+  actual?: string;
+  status: 'idle' | 'running' | 'pass' | 'fail' | 'error';
+  errorDetails?: string;
+}
+
 export function VerificationModal({
   isOpen,
   onClose,
   network = 'testnet',
 }: VerificationModalProps) {
   const [copiedCmd, setCopiedCmd] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [lastRunAt, setLastRunAt] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const initialChecks: LiveCheckItem[] = [
+    {
+      id: '1.1',
+      category: 'Sputnik DAO v2 Governance',
+      label: 'DAO Account Active & Funded',
+      queryTarget: 'zinipay-demo.sputnikv2.testnet (view_account)',
+      expected: 'Active on testnet with valid storage',
+      status: 'idle',
+    },
+    {
+      id: '1.2',
+      category: 'Sputnik DAO v2 Governance',
+      label: 'Council Multi-Sig Quorum (>= 2 Signers)',
+      queryTarget: 'zinipay-demo.sputnikv2.testnet::get_policy()',
+      expected: 'Council role contains at least 2 distinct accounts',
+      status: 'idle',
+    },
+    {
+      id: '1.3',
+      category: 'Sputnik DAO v2 Governance',
+      label: 'Agent Isolation (0 Voting Rights)',
+      queryTarget: 'zinipay-demo.sputnikv2.testnet::get_policy()',
+      expected: 'agentzinipaytestnet.testnet has proposal-only rights, 0 council seats',
+      status: 'idle',
+    },
+    {
+      id: '2.1',
+      category: 'Payout Proposals on Sputnik DAO',
+      label: 'Proposal #6 Status is Approved',
+      queryTarget: 'zinipay-demo.sputnikv2.testnet::get_proposal({id: 6})',
+      expected: 'Status == "Approved", receiver == "zinipay-policy2.testnet"',
+      status: 'idle',
+    },
+    {
+      id: '2.2',
+      category: 'Payout Proposals on Sputnik DAO',
+      label: 'Proposal #5 Status is Approved',
+      queryTarget: 'zinipay-demo.sputnikv2.testnet::get_proposal({id: 5})',
+      expected: 'Status == "Approved", receiver == "zinipay-policy2.testnet"',
+      status: 'idle',
+    },
+    {
+      id: '3.1',
+      category: 'PolicyHelper Contract State',
+      label: 'PolicyHelper Smart Contract Active',
+      queryTarget: 'zinipay-policy2.testnet (view_account)',
+      expected: 'Code hash 4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt',
+      status: 'idle',
+    },
+    {
+      id: '3.2',
+      category: 'PolicyHelper Contract State',
+      label: 'Policy Bound to Sputnik DAO',
+      queryTarget: 'zinipay-policy2.testnet::get_policy()',
+      expected: 'dao_account_id == "zinipay-demo.sputnikv2.testnet"',
+      status: 'idle',
+    },
+    {
+      id: '3.3',
+      category: 'PolicyHelper Contract State',
+      label: 'Enforced Base Cap & Cooldown Period',
+      queryTarget: 'zinipay-policy2.testnet::get_policy()',
+      expected: 'per_proposal_cap == 10 NEAR, cooldown == 60 seconds',
+      status: 'idle',
+    },
+    {
+      id: '4.1',
+      category: 'Social Money & Contributor State',
+      label: 'Silver Contributor Reputation & Effective Cap',
+      queryTarget: 'zinipay-policy2.testnet::get_reputation() & get_effective_cap()',
+      expected: 'Score >= 20 pts (30 pts), Cap == 15 NEAR (1.5x multiplier)',
+      status: 'idle',
+    },
+    {
+      id: '4.2',
+      category: 'Social Money & Contributor State',
+      label: 'Anti-Replay Registry (Burned Deliverables)',
+      queryTarget: 'zinipay-policy2.testnet::cid_used(PR #1 & PR #2)',
+      expected: 'Both deliverables burned permanently in used_cids set',
+      status: 'idle',
+    },
+    {
+      id: '5.1',
+      category: 'Explorer & Blocked Attack Proofs',
+      label: 'Verified Transactions & Blocked Attacks Manifest',
+      queryTarget: 'frontend/public/data/verified.json',
+      expected: '14 confirmed txs (5 attack txs + 1 admin action + 2 payout releases)',
+      status: 'idle',
+    },
+  ];
+
+  const [checkItems, setCheckItems] = useState<LiveCheckItem[]>(initialChecks);
+
+  // Helper for JSON-RPC queries directly from browser
+  const rpcQuery = async (params: any) => {
+    const endpoints = ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
+    let lastErr: any = null;
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'in-browser-verify',
+            ...params,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.data || data.error.message || 'RPC Error');
+        return data.result;
+      } catch (err: any) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error('All RPC endpoints failed');
+  };
+
+  const callViewMethod = async (accountId: string, methodName: string, args: any = {}) => {
+    const base64Args = btoa(JSON.stringify(args));
+    const result = await rpcQuery({
+      method: 'query',
+      params: {
+        request_type: 'call_function',
+        finality: 'final',
+        account_id: accountId,
+        method_name: methodName,
+        args_base64: base64Args,
+      },
+    });
+    if (!result?.result) throw new Error('Empty return buffer from contract view');
+    const decodedStr = new TextDecoder().decode(new Uint8Array(result.result));
+    return JSON.parse(decodedStr);
+  };
+
+  const runAllChecks = async () => {
+    setIsRunning(true);
+    const updated = [...initialChecks];
+
+    for (let i = 0; i < updated.length; i++) {
+      updated[i].status = 'running';
+      setCheckItems([...updated]);
+
+      try {
+        if (updated[i].id === '1.1') {
+          const res = await rpcQuery({
+            method: 'query',
+            params: {
+              request_type: 'view_account',
+              finality: 'final',
+              account_id: 'zinipay-demo.sputnikv2.testnet',
+            },
+          });
+          const storage = res.storage_usage;
+          updated[i].actual = `Account active (Storage: ${storage} bytes)`;
+          updated[i].status = 'pass';
+        } else if (updated[i].id === '1.2') {
+          const policy = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_policy');
+          const councilRole = policy.roles?.find((r: any) => r.name === 'council');
+          const signers = councilRole?.kind?.Group || [];
+          if (signers.length >= 2) {
+            updated[i].actual = `Council signers: ${signers.join(', ')} (${signers.length} signers)`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Insufficient signers: ${signers.length}`);
+          }
+        } else if (updated[i].id === '1.3') {
+          const policy = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_policy');
+          const councilRole = policy.roles?.find((r: any) => r.name === 'council');
+          const signers = councilRole?.kind?.Group || [];
+          const agentInCouncil = signers.includes('agentzinipaytestnet.testnet');
+          const requestorRole = policy.roles?.find((r: any) => r.name === 'Requestor');
+          const permissions = requestorRole?.permissions || [];
+          if (!agentInCouncil && permissions.includes('*:AddProposal')) {
+            updated[i].actual = 'agent holds Requestor role with proposal rights, 0 voting keys';
+            updated[i].status = 'pass';
+          } else {
+            throw new Error('Agent policy isolation violation');
+          }
+        } else if (updated[i].id === '2.1') {
+          const p6 = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_proposal', { id: 6 });
+          const receiver = p6?.kind?.FunctionCall?.receiver_id;
+          if (p6?.status === 'Approved' && receiver === 'zinipay-policy2.testnet') {
+            updated[i].actual = `Status: Approved | Receiver: ${receiver}`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Unexpected status: ${p6?.status}`);
+          }
+        } else if (updated[i].id === '2.2') {
+          const p5 = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_proposal', { id: 5 });
+          const receiver = p5?.kind?.FunctionCall?.receiver_id;
+          if (p5?.status === 'Approved' && receiver === 'zinipay-policy2.testnet') {
+            updated[i].actual = `Status: Approved | Receiver: ${receiver}`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Unexpected status: ${p5?.status}`);
+          }
+        } else if (updated[i].id === '3.1') {
+          const res = await rpcQuery({
+            method: 'query',
+            params: {
+              request_type: 'view_account',
+              finality: 'final',
+              account_id: 'zinipay-policy2.testnet',
+            },
+          });
+          const codeHash = res.code_hash;
+          if (codeHash === '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt') {
+            updated[i].actual = `WASM code hash: ${codeHash.slice(0, 16)}... (matches build)`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Unexpected code hash: ${codeHash}`);
+          }
+        } else if (updated[i].id === '3.2') {
+          const policy = await callViewMethod('zinipay-policy2.testnet', 'get_policy');
+          if (policy?.dao_account_id === 'zinipay-demo.sputnikv2.testnet') {
+            updated[i].actual = `dao_account_id: ${policy.dao_account_id}`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Invalid DAO binding: ${policy?.dao_account_id}`);
+          }
+        } else if (updated[i].id === '3.3') {
+          const policy = await callViewMethod('zinipay-policy2.testnet', 'get_policy');
+          const capNear = Number(BigInt(policy.per_proposal_cap) / 10n ** 24n);
+          const cooldown = policy.cooldown_seconds;
+          if (capNear === 10 && cooldown === 60) {
+            updated[i].actual = `Base cap: ${capNear} NEAR | Cooldown: ${cooldown}s`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Cap: ${capNear}N, Cooldown: ${cooldown}s`);
+          }
+        } else if (updated[i].id === '4.1') {
+          const score = await callViewMethod('zinipay-policy2.testnet', 'get_reputation', {
+            account: 'zinipay-recipient2.testnet',
+          });
+          const capYocto = await callViewMethod('zinipay-policy2.testnet', 'get_effective_cap', {
+            recipient: 'zinipay-recipient2.testnet',
+          });
+          const capNear = Number(BigInt(capYocto) / 10n ** 24n);
+          if (score >= 20 && capNear === 15) {
+            updated[i].actual = `Score: ${score} pts (Silver) | Effective cap: ${capNear} NEAR`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Score: ${score}, Cap: ${capNear}N`);
+          }
+        } else if (updated[i].id === '4.2') {
+          const cid1Used = await callViewMethod('zinipay-policy2.testnet', 'cid_used', {
+            cid: 'kellycryptos/ZiniPay#1',
+          });
+          const cid2Used = await callViewMethod('zinipay-policy2.testnet', 'cid_used', {
+            cid: 'kellycryptos/zinipay#2',
+          });
+          if (cid1Used === true && cid2Used === true) {
+            updated[i].actual = 'PR #1 (Proposal #5) & PR #2 (Proposal #6) both burned';
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`cid1: ${cid1Used}, cid2: ${cid2Used}`);
+          }
+        } else if (updated[i].id === '5.1') {
+          const res = await fetch('/data/verified.json');
+          if (!res.ok) throw new Error(`HTTP ${res.status} loading verified.json`);
+          const data = await res.json();
+          const txsCount = data.transactions?.length || 0;
+          const attacksCount = data.blockedAttacks?.length || 0;
+          const settledCount = data.settledPayouts?.length || 0;
+          if (txsCount >= 14 && attacksCount >= 7) {
+            updated[i].actual = `${txsCount} confirmed txs (${attacksCount} security vectors, ${settledCount} settled payouts)`;
+            updated[i].status = 'pass';
+          } else {
+            throw new Error(`Unexpected counts: ${txsCount} txs, ${attacksCount} attacks`);
+          }
+        }
+      } catch (err: any) {
+        updated[i].status = 'fail';
+        updated[i].actual = 'Query Failed';
+        updated[i].errorDetails = err?.message || 'RPC Network Error';
+      }
+
+      setCheckItems([...updated]);
+    }
+
+    setIsRunning(false);
+    setLastRunAt(new Date().toLocaleTimeString());
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      runAllChecks();
+    }
+  }, [isOpen]);
 
   const copyCommand = () => {
     navigator.clipboard.writeText('npm run verify:testnet');
@@ -33,173 +336,194 @@ export function VerificationModal({
     setTimeout(() => setCopiedCmd(false), 2000);
   };
 
-  const checks = [
-    {
-      category: 'Sputnik DAO v2 Governance',
-      items: [
-        { label: 'DAO Active Account', val: 'zinipay-demo.sputnikv2.testnet', status: 'PASS' },
-        { label: 'Council Multi-Sig Signers', val: 'zinipay-c1.testnet, zinipay-c2.testnet (>= 2 signers)', status: 'PASS' },
-        { label: 'Agent Isolation (0 Vote Weight)', val: 'agentzinipaytestnet.testnet has proposal-only rights', status: 'PASS' },
-      ],
-    },
-    {
-      category: 'PolicyHelper Rust Contract',
-      items: [
-        { label: 'Contract Address', val: 'zinipay-policy2.testnet', status: 'PASS' },
-        { label: 'Contract Ownership', val: 'Transferred on-chain to zinipay-demo.sputnikv2.testnet', status: 'PASS' },
-        { label: 'Base Spend Cap', val: '10.0 NEAR (Enforced)', status: 'PASS' },
-        { label: 'Tier Scale', val: '1.5x (Silver: 15N) / 2.0x (Gold: 20N) (Enforced)', status: 'PASS' },
-        { label: 'Cooldown Period', val: '60 seconds (Enforced)', status: 'PASS' },
-        { label: 'Anti-Replay Mechanism', val: 'cid_used(CID) burns deliverable upon release (Enforced)', status: 'PASS' },
-        { label: 'Approval Schedule', val: 'get_approval_tier schedule is Advisory (DAO 2/2 executes)', status: 'PASS' },
-      ],
-    },
-    {
-      category: 'On-Chain Proofs & Blocked Attacks',
-      items: [
-        {
-          label: 'Proposal #6 Multi-Sig Execution (0.10 NEAR)',
-          tx: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Attack 1: Replay CID (kellycryptos/ZiniPay#2)',
-          tx: '9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Attack 2: Over-Cap Spend (16.0 NEAR)',
-          tx: 'EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Attack 3: Unauthorized Caller (agent release)',
-          tx: '2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Attack 4: Case-Variant Replay',
-          tx: 'EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Attack 5: Cooldown Violation',
-          tx: '2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
-          status: 'PASS',
-        },
-        {
-          label: 'Blocked Admin: Former Owner Unburn Attempt',
-          tx: 'EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
-          status: 'PASS',
-        },
-      ],
-    },
-  ];
+  const passCount = checkItems.filter((c) => c.status === 'pass').length;
+  const failCount = checkItems.filter((c) => c.status === 'fail' || c.status === 'error').length;
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-sans">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--border-strong)] bg-[var(--bg-panel)] p-6 shadow-2xl flex flex-col gap-5 text-xs text-slate-200">
-        {/* ── Modal Header ────────────────────────────────────── */}
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4">
+      <div className="relative w-full max-w-3xl max-h-[90vh] bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
-              <Terminal size={18} />
+            <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-[#00EC97]">
+              <Shield size={20} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">
-                Keyless On-Chain Verification Suite
-              </h3>
-              <p className="text-xs text-[var(--text-secondary)]">
-                25 automated tests against NEAR Testnet RPC.
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  In-Browser Live Testnet Verification Suite
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Live RPC Queries
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                Executes live JSON-RPC calls directly from your browser to FastNear testnet node. Zero canned responses.
               </p>
             </div>
           </div>
-
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* ── 60-Second CLI Command Card ──────────────────────── */}
-        <div className="p-4 rounded-xl bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono text-[var(--text-muted)] uppercase">
-              Run Keyless Test In Terminal (No Private Keys Required)
+        {/* Verification Status Banner */}
+        <div className="px-5 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-4 font-mono">
+            <span className="text-slate-300">
+              Results:{' '}
+              <strong className="text-emerald-400">{passCount} PASSED</strong>
+              {failCount > 0 && <strong className="text-red-400 ml-2">{failCount} FAILED</strong>}
+              {' / '}{checkItems.length} TOTAL
             </span>
+            {lastRunAt && (
+              <span className="text-[11px] text-[var(--text-muted)]">
+                Last run: {lastRunAt}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={runAllChecks}
+            disabled={isRunning}
+            className="px-3 py-1 rounded-md bg-white/[0.08] hover:bg-white/[0.12] text-xs font-mono text-white flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={isRunning ? 'animate-spin' : ''} />
+            <span>{isRunning ? 'Running Queries...' : 'Re-Run Live Checks'}</span>
+          </button>
+        </div>
+
+        {/* Failure Alert Banner if any query failed */}
+        {failCount > 0 && (
+          <div className="px-5 py-2.5 bg-red-950/40 border-b border-red-500/30 flex items-center gap-2 text-xs text-red-300">
+            <AlertTriangle size={15} className="text-red-400 shrink-0" />
+            <span>
+              Live RPC calls failed. If testnet RPC is rate-limited or blocked, verification will honestly report failures.
+            </span>
+          </div>
+        )}
+
+        {/* Check Items List */}
+        <div className="p-5 overflow-y-auto space-y-4 max-h-[50vh]">
+          {checkItems.map((item) => {
+            const isPass = item.status === 'pass';
+            const isFail = item.status === 'fail' || item.status === 'error';
+            const isRunningThis = item.status === 'running';
+
+            return (
+              <div
+                key={item.id}
+                className={`p-3 rounded-xl border transition-all ${
+                  isPass
+                    ? 'bg-[var(--bg-canvas)] border-emerald-500/20'
+                    : isFail
+                    ? 'bg-red-950/20 border-red-500/30'
+                    : 'bg-[var(--bg-canvas)] border-[var(--border-subtle)]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5">
+                      {isRunningThis ? (
+                        <RefreshCw size={15} className="text-blue-400 animate-spin" />
+                      ) : isPass ? (
+                        <CheckCircle2 size={16} className="text-[#00EC97]" />
+                      ) : isFail ? (
+                        <XCircle size={16} className="text-red-400" />
+                      ) : (
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[11px] text-[#00EC97] font-semibold">
+                          [{item.id}]
+                        </span>
+                        <h4 className="text-xs font-semibold text-white">{item.label}</h4>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                          ({item.category})
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-slate-400 mt-1">
+                        Target: <span className="text-slate-300">{item.queryTarget}</span>
+                      </p>
+                      {item.actual && (
+                        <p
+                          className={`text-[11px] font-mono mt-0.5 ${
+                            isPass ? 'text-emerald-400' : 'text-red-400'
+                          }`}
+                        >
+                          Result: {item.actual}
+                        </p>
+                      )}
+                      {item.errorDetails && (
+                        <p className="text-[10px] font-mono text-red-300 mt-0.5">
+                          Error: {item.errorDetails}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <span
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 ${
+                      isPass
+                        ? 'bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20'
+                        : isFail
+                        ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                        : isRunningThis
+                        ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                        : 'bg-white/[0.05] text-slate-400 border border-white/10'
+                    }`}
+                  >
+                    {isRunningThis ? 'QUERYING' : isPass ? 'PASS' : isFail ? 'FAIL' : 'PENDING'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer: Scope Notice & 60-Second CLI Command */}
+        <div className="p-5 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col gap-3">
+          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+            <span className="font-mono text-[11px]">
+              Browser Scope: Runs 11 live on-chain state queries via FastNear RPC.
+            </span>
+            <span className="text-[11px] text-slate-400">
+              For complete 24-check CLI suite & panic log assertions:
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs">
+            <div className="flex items-center gap-2 text-slate-300">
+              <Terminal size={14} className="text-[#00EC97]" />
+              <span className="text-[#00EC97] font-semibold">npm run verify:testnet</span>
+            </div>
             <button
               type="button"
               onClick={copyCommand}
-              className="text-[11px] font-mono text-[#00EC97] hover:underline flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              {copiedCmd ? <Check size={12} /> : <Copy size={12} />}
-              <span>{copiedCmd ? 'Copied' : 'Copy command'}</span>
+              {copiedCmd ? (
+                <>
+                  <Check size={12} className="text-emerald-400" />
+                  <span className="text-emerald-400">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>Copy</span>
+                </>
+              )}
             </button>
           </div>
-          <div className="p-2.5 rounded-lg bg-black/70 border border-white/10 font-mono text-xs text-[#00EC97] flex items-center justify-between select-all">
-            <span>npm run verify:testnet</span>
-          </div>
-          <p className="text-[10px] text-[var(--text-muted)] font-mono">
-            Directly queries public NEAR FastNear RPC for Sputnik DAO contract code, policy storage, 14 transactions, and 5 blocked attack failures.
-          </p>
-        </div>
-
-        {/* ── Checklist Groups ─────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
-          {checks.map((group, gIdx) => (
-            <div key={gIdx} className="flex flex-col gap-2">
-              <span className="font-mono text-[11px] font-semibold text-white uppercase tracking-wider">
-                {group.category}
-              </span>
-              <div className="divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3 py-1 font-mono text-xs">
-                {group.items.map((item: any, iIdx: number) => (
-                  <div
-                    key={iIdx}
-                    className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={13} className="text-[#00EC97] shrink-0" />
-                      <span className="text-slate-300">{item.label}</span>
-                    </div>
-
-                    {item.tx ? (
-                      <a
-                        href={`https://testnet.nearblocks.io/txns/${item.tx}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[#00EC97] hover:underline flex items-center gap-1 text-[11px] truncate max-w-[200px]"
-                        title={`Inspect transaction on NEARBlocks: ${item.tx}`}
-                      >
-                        <span>{item.tx.slice(0, 10)}...</span>
-                        <ExternalLink size={11} />
-                      </a>
-                    ) : (
-                      <span className="text-slate-400 text-[11px] truncate max-w-[280px]">
-                        {item.val}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Footer ───────────────────────────────────────────── */}
-        <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
-          <span className="text-[11px] font-mono text-[var(--text-muted)]">
-            Network: NEAR Testnet · DAO: zinipay-demo.sputnikv2.testnet
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-slate-200 transition-colors cursor-pointer"
-          >
-            Done
-          </button>
         </div>
       </div>
     </div>

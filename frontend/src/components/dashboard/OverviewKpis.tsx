@@ -5,8 +5,6 @@ import {
   Clock,
   ShieldAlert,
   ExternalLink,
-  Shield,
-  Lock,
 } from 'lucide-react';
 import { TreasuryBalanceResult } from '../../lib/nearRpc';
 import { Proposal } from '../../lib/types';
@@ -22,6 +20,22 @@ export interface BlockedAttackItem {
   isAdminAction?: boolean;
 }
 
+export interface SettledPayoutItem {
+  proposalId: number;
+  deployment: 'first' | 'current';
+  codeHash: string;
+  deploymentLabel: string;
+  recipient: string;
+  amountNear: string;
+  amountYocto?: string;
+  deliverable: string;
+  status: string;
+  source: string;
+  txHash: string;
+  explorerUrl: string;
+  timestamp: string;
+}
+
 interface OverviewKpisProps {
   treasuryState: TreasuryBalanceResult;
   isLoadingOnChain: boolean;
@@ -29,6 +43,7 @@ interface OverviewKpisProps {
   proposals: Proposal[];
   network: 'testnet' | 'mainnet';
   blockedAttacks: BlockedAttackItem[];
+  settledPayouts?: SettledPayoutItem[];
   onSelectAttack?: (attack: BlockedAttackItem) => void;
 }
 
@@ -39,6 +54,7 @@ export function OverviewKpis({
   proposals,
   network,
   blockedAttacks,
+  settledPayouts = [],
   onSelectAttack,
 }: OverviewKpisProps) {
   const [hoveredAttack, setHoveredAttack] = useState<BlockedAttackItem | null>(null);
@@ -50,12 +66,45 @@ export function OverviewKpis({
     treasuryState.status === 'success' && treasuryState.balance !== undefined;
   const balanceNear = hasLiveBalance ? treasuryState.balance! : null;
 
-  // 2. Payouts Settled (Reconciled with chain: Proposals #5 and #6 through zinipay-policy2.testnet)
-  // Proposal #5: 0.10 NEAR (tx 4B1Excqiga..., Oct 30)
-  // Proposal #6: 0.10 NEAR (tx 2nWMVtQ4z2..., Nov 2)
-  // Total on-chain settled payouts: 2 payouts, 0.20 NEAR
-  const settledCount = 2;
-  const settledSumNear = 0.20;
+  // 2. Payouts Settled: Loaded dynamically from verified.json (settledPayouts)
+  // Both #5 and #6 are on-chain Sputnik DAO proposals to zinipay-policy2.testnet
+  const defaultPayouts: SettledPayoutItem[] = [
+    {
+      proposalId: 5,
+      deployment: 'first',
+      codeHash: 'Eft7wVX8qfH5P1t8X9hJ2mZ3gQ4rK6FM7KZuACtzeFuH',
+      deploymentLabel: 'First deployment (code hash Eft7wVX8...)',
+      recipient: 'zinipay-recipient2.testnet',
+      amountNear: '0.10',
+      deliverable: 'kellycryptos/ZiniPay#1',
+      status: 'Approved',
+      source: 'Sputnik DAO v2 Proposal #5 on-chain execution (zinipay-demo.sputnikv2.testnet)',
+      txHash: '4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
+      timestamp: '2026-10-30T09:46:25.754Z',
+    },
+    {
+      proposalId: 6,
+      deployment: 'current',
+      codeHash: '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt',
+      deploymentLabel: 'Current deployment (code hash 4aAns5Je...)',
+      recipient: 'zinipay-recipient2.testnet',
+      amountNear: '0.10',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      status: 'Approved',
+      source: 'Sputnik DAO v2 Proposal #6 on-chain execution (zinipay-demo.sputnikv2.testnet)',
+      txHash: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+      timestamp: '2026-11-02T14:47:50.588Z',
+    },
+  ];
+
+  const payoutsList = settledPayouts.length > 0 ? settledPayouts : defaultPayouts;
+  const settledCount = payoutsList.length;
+  const settledSumNear = payoutsList.reduce(
+    (acc, p) => acc + (parseFloat(p.amountNear) || 0),
+    0
+  );
 
   // 3. Active Requests (Proposals inProgress on Sputnik DAO)
   const activeCount = proposals.filter((p) => p.status === 'pending_quorum').length;
@@ -137,41 +186,46 @@ export function OverviewKpis({
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-[var(--text-muted)]">
-            <a
-              href="https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#00EC97] transition-colors"
-              title="Proposal #5 Payout (0.10N) on NEARBlocks"
-            >
-              #5
-            </a>
-            <span>·</span>
-            <a
-              href="https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#00EC97] transition-colors"
-              title="Proposal #6 Payout (0.10N) on NEARBlocks"
-            >
-              #6
-            </a>
+            {payoutsList.map((p, idx) => (
+              <React.Fragment key={p.proposalId}>
+                {idx > 0 && <span>·</span>}
+                <a
+                  href={p.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-[#00EC97] transition-colors underline-offset-2 hover:underline"
+                  title={`Proposal #${p.proposalId} Payout (${p.amountNear}N)\n${p.deploymentLabel}\nTx: ${p.txHash}`}
+                >
+                  #{p.proposalId}
+                </a>
+              </React.Fragment>
+            ))}
             <ExternalLink size={10} className="text-slate-500" />
           </div>
         </div>
 
-        <div className="my-3">
+        <div className="my-2.5">
           <div className="flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold text-white tracking-tight">
               {settledSumNear.toFixed(2)}
             </span>
             <span className="font-mono text-sm text-[#00EC97] font-semibold">NEAR</span>
           </div>
+          {/* Distinct deployment labels for Proposal #5 and Proposal #6 */}
+          <div className="flex flex-col gap-0.5 mt-1 text-[9px] font-mono text-slate-400">
+            {payoutsList.map((p) => (
+              <span key={p.proposalId} className="truncate" title={p.deploymentLabel}>
+                • #{p.proposalId} ({p.amountNear}N): {p.deploymentLabel}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Real Data Footer: Reconciled with on-chain Proposals #5 & #6 */}
+        {/* Real Data Footer: Citing Sputnik DAO Proposals as Source */}
         <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-          <span>Proposals #5 (0.10N) & #6 (0.10N)</span>
+          <span title="Source: Sputnik DAO v2 Proposals #5 & #6 on-chain execution (zinipay-demo.sputnikv2.testnet)">
+            Source: Sputnik DAO v2 Proposals #5 &amp; #6
+          </span>
           <span className="text-emerald-400 font-semibold">2/2 Council Quorum</span>
         </div>
       </div>
