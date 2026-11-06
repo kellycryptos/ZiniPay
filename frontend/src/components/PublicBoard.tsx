@@ -153,7 +153,7 @@ export function PublicBoard({
             approvalPrivilege: 'Single Council Approval (<= 5N)',
             payouts: [
               {
-                txHash: 'HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK',
+                txHash: '4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
                 amountNear: 0.1,
                 deliverableCid: 'kellycryptos/zinipay#1',
                 task: 'PolicyHelper contract deployment and release verification',

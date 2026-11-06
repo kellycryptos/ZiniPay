@@ -65,29 +65,30 @@ export function KanbanBoard({
     };
   });
 
-  // If live on-chain proposals list is empty or doesn't have Proposal #6, include verified Proposal #6
+    // Map settled proposals from verified.json if not already in mappedProposals
   const hasApproved = mappedProposals.some((p) => p.status === 'approved_paid');
+  const settledCards: BoardProposalItem[] = (settledPayouts || []).map((p) => ({
+    type: 'proposal' as const,
+    id: p.proposalId,
+    title: `Proposal #${p.proposalId} (${p.deploymentLabel})`,
+    recipient: p.recipient,
+    amountNear: p.amountNear,
+    tier: 'Silver' as const,
+    prUrl: p.deliverable?.includes('/')
+      ? `https://github.com/${p.deliverable.replace('#', '/pull/')}`
+      : undefined,
+    prTitle: p.deliverable || `Proposal #${p.proposalId}`,
+    proofCid: p.deliverable || `Proposal #${p.proposalId}`,
+    status: 'approved_paid' as const,
+    votes: { approve: 2, reject: 0, required: 2 },
+    explorerUrl: p.explorerUrl,
+    txHash: p.txHash,
+    simulated: false,
+  }));
+
   const allProposals = hasApproved
     ? mappedProposals
-    : [
-        ...mappedProposals,
-        {
-          type: 'proposal' as const,
-          id: 6,
-          title: 'Case-variant anti-replay security fix & multi-sig payout',
-          recipient: 'zinipay-recipient2.testnet',
-          amountNear: '0.10',
-          tier: 'Silver' as const,
-          prUrl: 'https://github.com/kellycryptos/ZiniPay/pull/2',
-          prTitle: 'kellycryptos/ZiniPay#2',
-          proofCid: 'kellycryptos/ZiniPay#2',
-          status: 'approved_paid' as const,
-          votes: { approve: 2, reject: 0, required: 2 },
-          explorerUrl: 'https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
-          txHash: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
-          simulated: false,
-        },
-      ];
+    : [...mappedProposals, ...settledCards];
 
   // Map blocked attacks from verified.json
   const mappedAttacks: BoardAttackItem[] = blockedAttacks.map((att, idx) => ({

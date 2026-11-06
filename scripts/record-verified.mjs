@@ -113,6 +113,61 @@ async function getPolicyContractView(contractId, methodName, args = {}, network 
   return null;
 }
 
+
+async function getHistoricalCodeHashAtTx(txHash, senderId, contractId) {
+  const rpcUrl = 'https://archival-rpc.testnet.near.org';
+  const txRes = await axios.post(rpcUrl, {
+    jsonrpc: '2.0',
+    id: 'archival-tx',
+    method: 'EXPERIMENTAL_tx_status',
+    params: [txHash, senderId],
+  }, { timeout: 15000 });
+
+  const blockHash = txRes.data?.result?.transaction_outcome?.block_hash;
+  if (!blockHash) {
+    throw new Error(`Failed to retrieve block_hash for tx ${txHash} from archival RPC`);
+  }
+
+  const acctRes = await axios.post(rpcUrl, {
+    jsonrpc: '2.0',
+    id: 'archival-view-account',
+    method: 'query',
+    params: {
+      request_type: 'view_account',
+      block_id: blockHash,
+      account_id: contractId,
+    },
+  }, { timeout: 15000 });
+
+  const codeHash = acctRes.data?.result?.code_hash;
+  if (!codeHash) {
+    throw new Error(`Failed to retrieve code_hash for ${contractId} at block ${blockHash}`);
+  }
+  return codeHash;
+}
+
+async function getCurrentCodeHash(contractId) {
+  const rpcUrls = ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
+  for (const rpcUrl of rpcUrls) {
+    try {
+      const res = await axios.post(rpcUrl, {
+        jsonrpc: '2.0',
+        id: 'view-account',
+        method: 'query',
+        params: {
+          request_type: 'view_account',
+          finality: 'final',
+          account_id: contractId,
+        },
+      }, { timeout: 6000 });
+      if (res.data?.result?.code_hash) {
+        return res.data.result.code_hash;
+      }
+    } catch {}
+  }
+  throw new Error(`Failed to retrieve current code_hash for ${contractId}`);
+}
+
 async function main() {
   if (!fs.existsSync(inputFile)) {
     console.error(`❌ Input file not found: ${inputFile}`);
@@ -509,24 +564,42 @@ async function main() {
     'PolicyHelper contract ownership was transferred on-chain to Sputnik DAO (zinipay-demo.sputnikv2.testnet) in transaction BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX on November 2, 2026. All administrative and recovery actions (unburn_cid, reset_cooldown, update_reputation) now strictly require a council-voted Sputnik DAO FunctionCall proposal.',
   ];
 
-  // 4b. Query confirmed on-chain payout proposals (#5 and #6) from Sputnik DAO
-  console.log(`Verifying on-chain Sputnik DAO payout proposals (#5 and #6)...`);
+  // 4b. Query confirmed on-chain payout proposals (#5 and #6) from Sputnik DAO and archival code hashes
+  console.log('Verifying on-chain Sputnik DAO payout proposals (#5 and #6)...');
   const onChainProp5 = await getOnChainProposal(5);
   const onChainProp6 = await getOnChainProposal(6);
 
+  console.log('Querying historical code hash for Proposal #5 at block of payout tx via Archival RPC...');
+  const prop5HistoricalHash = await getHistoricalCodeHashAtTx(
+    '4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
+    'zinipay-c2.testnet',
+    'zinipay-policy2.testnet'
+  );
+  if (prop5HistoricalHash !== 'Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy') {
+    throw new Error(`Integrity check failed: Proposal #5 historical code hash ${prop5HistoricalHash} did not match expected Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy`);
+  }
+  console.log(`✓ Archival RPC verified Proposal #5 code hash at payout block: ${prop5HistoricalHash}`);
+
+  console.log('Querying current contract code hash via FastNear RPC...');
+  const currentContractCodeHash = await getCurrentCodeHash('zinipay-policy2.testnet');
+  if (currentContractCodeHash !== '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt') {
+    throw new Error(`Integrity check failed: Current contract code hash ${currentContractCodeHash} did not match expected 4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt`);
+  }
+  console.log(`✓ RPC verified Proposal #6 / current contract code hash: ${currentContractCodeHash}`);
+
   if (onChainProp5?.status === 'Approved') {
-    console.log(`✓ Verified Proposal #5 on Sputnik DAO: Status "${onChainProp5.status}" (Oct 30 deployment, code hash Eft7wVX8...)`);
+    console.log(`✓ Verified Proposal #5 on Sputnik DAO: Status "${onChainProp5.status}" (Oct 30 deployment, code hash ${prop5HistoricalHash.slice(0, 8)}...)`);
   }
   if (onChainProp6?.status === 'Approved') {
-    console.log(`✓ Verified Proposal #6 on Sputnik DAO: Status "${onChainProp6.status}" (Nov 2 deployment, code hash 4aAns5Je...)`);
+    console.log(`✓ Verified Proposal #6 on Sputnik DAO: Status "${onChainProp6.status}" (Nov 2 deployment, code hash ${currentContractCodeHash.slice(0, 8)}...)`);
   }
 
   const settledPayouts = [
     {
       proposalId: 5,
       deployment: 'first',
-      codeHash: 'Eft7wVX8qfH5P1t8X9hJ2mZ3gQ4rK6FM7KZuACtzeFuH',
-      deploymentLabel: 'First deployment (code hash Eft7wVX8...)',
+      codeHash: prop5HistoricalHash,
+      deploymentLabel: `First deployment (code hash ${prop5HistoricalHash.slice(0, 8)}...)`,
       recipient: 'zinipay-recipient2.testnet',
       amountNear: '0.10',
       amountYocto: '100000000000000000000000',
@@ -540,8 +613,8 @@ async function main() {
     {
       proposalId: 6,
       deployment: 'current',
-      codeHash: '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt',
-      deploymentLabel: 'Current deployment (code hash 4aAns5Je...)',
+      codeHash: currentContractCodeHash,
+      deploymentLabel: `Current deployment (code hash ${currentContractCodeHash.slice(0, 8)}...)`,
       recipient: 'zinipay-recipient2.testnet',
       amountNear: '0.10',
       amountYocto: '100000000000000000000000',

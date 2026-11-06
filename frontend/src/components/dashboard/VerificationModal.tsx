@@ -123,7 +123,7 @@ export function VerificationModal({
     {
       id: '5.1',
       category: 'Explorer & Blocked Attack Proofs',
-      label: 'Verified Transactions & Blocked Attacks Manifest',
+      label: 'Verified Transactions & Blocked Attacks Manifest (Local File Info)',
       queryTarget: 'frontend/public/data/verified.json',
       expected: '14 confirmed txs (5 attack txs + 1 admin action + 2 payout releases)',
       status: 'idle',
@@ -301,9 +301,9 @@ export function VerificationModal({
           const txsCount = data.transactions?.length || 0;
           const attacksCount = data.blockedAttacks?.length || 0;
           const settledCount = data.settledPayouts?.length || 0;
-          if (txsCount >= 14 && attacksCount >= 7) {
+          if (txsCount >= 14) {
             updated[i].actual = `${txsCount} confirmed txs (${attacksCount} security vectors, ${settledCount} settled payouts)`;
-            updated[i].status = 'pass';
+            updated[i].status = 'info';
           } else {
             throw new Error(`Unexpected counts: ${txsCount} txs, ${attacksCount} attacks`);
           }

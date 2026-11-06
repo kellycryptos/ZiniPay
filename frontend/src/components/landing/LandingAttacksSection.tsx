@@ -11,42 +11,10 @@ interface BlockedAttackItem {
   blockedBy: string;
 }
 
-const FALLBACK_BLOCKED_ATTACKS: BlockedAttackItem[] = [
-  {
-    vector: 'Stolen Deliverable / Author Mismatch',
-    status: 'BLOCKED',
-    rejectionReason: 'PR author does not match recipient handle (kellycryptos, zinipay-recipient2.testnet)',
-    blockedBy: 'DeliberationEngine (Artifact Verification & Recipient Binding)',
-  },
-  {
-    vector: 'Replay Deliverable CID',
-    status: 'BLOCKED',
-    rejectionReason: 'CID already used — duplicate release attempt blocked',
-    txHash: 'Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ',
-    explorerUrl: 'https://testnet.nearblocks.io/txns/Bzet7f4ASdxJzoJ3JG3XNdgq24K5BGBoGcoeK9Tm49MZ',
-    blockedBy: 'PolicyHelper (On-Chain)',
-  },
-  {
-    vector: 'Over-Cap Treasury Spend',
-    status: 'BLOCKED',
-    rejectionReason: 'Amount 16000000000000000000000000 exceeds effective tier cap 15000000000000000000000000 for recipient zinipay-recipient2.testnet',
-    txHash: 'ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB',
-    explorerUrl: 'https://testnet.nearblocks.io/txns/ArgK3E9z9SaZjL1oL135NishyKRoiGR5DrDg6iahCGMB',
-    blockedBy: 'PolicyHelper (On-Chain)',
-  },
-  {
-    vector: 'Unauthorized Release Caller',
-    status: 'BLOCKED',
-    rejectionReason: 'Only owner or designated DAO can call this',
-    txHash: '7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D',
-    explorerUrl: 'https://testnet.nearblocks.io/txns/7TUXWbphreoBpwj6YbuJrHRMhsmBgcVDgHt3JxMZUC5D',
-    blockedBy: 'PolicyHelper (On-Chain)',
-  },
-];
-
 export function LandingAttacksSection() {
-  const [attacks, setAttacks] = useState<BlockedAttackItem[]>(FALLBACK_BLOCKED_ATTACKS);
+  const [attacks, setAttacks] = useState<BlockedAttackItem[]>([]);
   const [isTestnetVerified, setIsTestnetVerified] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetch('/data/verified.json')
@@ -58,7 +26,8 @@ export function LandingAttacksSection() {
           setIsTestnetVerified(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -78,7 +47,15 @@ export function LandingAttacksSection() {
 
         {/* Tickets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-          {attacks.map((att, idx) => {
+          {isLoading ? (
+            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[#475569] bg-white rounded-2xl border border-[#E2DDD5]">
+              Loading verified attack proofs from verified.json...
+            </div>
+          ) : attacks.length === 0 ? (
+            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[#475569] bg-white rounded-2xl border border-[#E2DDD5]">
+              Not loaded: attack proofs manifest unavailable.
+            </div>
+          ) : attacks.map((att, idx) => {
             const contractMessage = att.rejectionReason || att.reason || 'Transaction rejected fail-closed';
             const explorerUrl = att.explorerUrl || (att.txHash ? `https://testnet.nearblocks.io/txns/${att.txHash}` : null);
 

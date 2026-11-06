@@ -39,135 +39,40 @@ export function ActivityFeed({
   const explorerBase =
     network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 
-  // Build items list from verified transactions in verified.json
-  const defaultItems: ActivityFeedItem[] = [
-    {
-      id: 'tx-14',
-      timestamp: 'Nov 2, 2026 · 14:55 UTC',
-      title: 'Council 2 VoteApprove & Execution (Admin Proposal #7)',
-      description: 'Sputnik DAO v2 council 2-of-2 quorum reached. FunctionCall executed update_reputation on PolicyHelper.',
-      badge: 'Approved',
-      txHash: '3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw',
-    },
-    {
-      id: 'tx-13',
-      timestamp: 'Nov 2, 2026 · 14:54 UTC',
-      title: 'Council 1 VoteApprove (Admin Proposal #7)',
-      description: 'Council member zinipay-c1.testnet voted Approve on Sputnik DAO proposal #7.',
-      badge: 'Approved',
-      txHash: 'Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8',
-    },
-    {
-      id: 'tx-12',
-      timestamp: 'Nov 2, 2026 · 14:54 UTC',
-      title: 'DAO Proposal #7 Creation (Admin: update_reputation)',
-      description: 'Council member dispatched proposal #7 to update recipient reputation through DAO multi-sig.',
-      badge: 'Pending',
-      txHash: '73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix',
-    },
-    {
-      id: 'tx-11',
-      timestamp: 'Nov 2, 2026 · 14:53 UTC',
-      title: 'Blocked Admin: Former Owner Unburn Rejected',
-      description: 'Original deployer attempted unburn_cid after ownership transfer. Transaction rejected with WasmTrap.',
-      badge: 'Rejected',
-      txHash: 'EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
-    },
-    {
-      id: 'tx-10',
-      timestamp: 'Nov 2, 2026 · 14:52 UTC',
-      title: 'PolicyHelper Contract Ownership Transferred to Sputnik DAO',
-      description: 'Full contract ownership transferred to zinipay-demo.sputnikv2.testnet on NEAR testnet.',
-      badge: 'Settled',
-      txHash: 'BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX',
-    },
-    {
-      id: 'tx-9',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Blocked Attack 5: Cooldown Violation',
-      description: 'Payout requested within 60-second cooldown window. Blocked on-chain: 16 seconds remaining.',
-      badge: 'Rejected',
-      txHash: '2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
-    },
-    {
-      id: 'tx-8',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Blocked Attack 4: Case-Variant CID Replay',
-      description: 'Attempted release using uppercase deliverable KELLYCRYPTOS/ZINIPAY#2. Canonicalizer trap blocked.',
-      badge: 'Replay Blocked',
-      txHash: 'EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
-    },
-    {
-      id: 'tx-7',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Blocked Attack 3: Unauthorized Caller',
-      description: 'Agent caller agentzinipaytestnet.testnet attempted direct release(). Blocked: Only owner/DAO permitted.',
-      badge: 'Rejected',
-      txHash: '2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
-    },
-    {
-      id: 'tx-6',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Blocked Attack 2: Over-Cap Spend (16 NEAR)',
-      description: 'Attempted 16.0 NEAR release exceeding effective Silver tier cap (15.0 NEAR). Contract panic trap.',
-      badge: 'Rejected',
-      txHash: 'EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
-    },
-    {
-      id: 'tx-5',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Blocked Attack 1: Replay Deliverable CID',
-      description: 'Attempted replay of deliverable kellycryptos/ZiniPay#2. Blocked: CID already used.',
-      badge: 'Replay Blocked',
-      txHash: '9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
-    },
-    {
-      id: 'tx-4',
-      timestamp: 'Nov 2, 2026 · 14:48 UTC',
-      title: 'Council Promotion to Silver Tier (25 pts)',
-      description: 'Contributor reputation updated to Silver tier (score >= 20), unlocking 1.5x cap scale.',
-      badge: 'Settled',
-      txHash: 'DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf',
-    },
-    {
-      id: 'tx-3',
-      timestamp: 'Nov 2, 2026 · 14:47 UTC',
-      title: 'Council 2 VoteApprove & Execution (Proposal #6)',
-      description: 'Sputnik DAO 2-of-2 human quorum achieved. 0.10 NEAR transferred on-chain to zinipay-recipient2.testnet.',
-      badge: 'Settled',
-      txHash: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
-    },
-    {
-      id: 'tx-2',
-      timestamp: 'Nov 2, 2026 · 14:47 UTC',
-      title: 'Council 1 VoteApprove (Proposal #6)',
-      description: 'Council member zinipay-c1.testnet approved proposal #6 on Sputnik DAO v2.',
-      badge: 'Approved',
-      txHash: '22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD',
-    },
-    {
-      id: 'tx-1',
-      timestamp: 'Nov 2, 2026 · 14:47 UTC',
-      title: 'Proposal #6 Creation (Agent Dispatched)',
-      description: 'Agent dispatched Sputnik DAO proposal #6 for 0.10 NEAR payout to zinipay-recipient2.testnet.',
-      badge: 'Pending',
-      txHash: 'HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK',
-      explorerUrl: 'https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK',
-    },
-  ];
+  // Map verified transactions dynamically from verified.json
+  const mappedVerified: ActivityFeedItem[] = (verifiedTxs || []).map((tx: any) => {
+    let badge: ActivityFeedItem['badge'] = 'Settled';
+    if (tx.kind === 'blocked_attack') {
+      badge = tx.label?.toLowerCase().includes('replay') ? 'Replay Blocked' : 'Rejected';
+    } else if (tx.kind === 'proposal_creation' || tx.kind === 'admin_proposal_creation') {
+      badge = 'Pending';
+    } else if (tx.label?.includes('VoteApprove') || tx.label?.includes('Approval')) {
+      badge = 'Approved';
+    } else if (tx.kind === 'payout' || tx.kind === 'admin_execution') {
+      badge = 'Settled';
+    }
+
+    const formattedTime = tx.timestamp
+      ? new Date(tx.timestamp).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'UTC',
+        }) + ' UTC'
+      : 'Nov 2, 2026';
+
+    return {
+      id: `tx-${tx.index}`,
+      timestamp: formattedTime,
+      title: tx.label,
+      description: tx.description || (tx.kind === 'blocked_attack' ? 'Invariant violation blocked on-chain.' : `Confirmed on NEAR Testnet via Sputnik DAO v2.`),
+      badge,
+      txHash: tx.txHash,
+      explorerUrl: tx.explorerUrl || (tx.txHash ? `${explorerBase}/txns/${tx.txHash}` : undefined),
+    };
+  }).reverse();
 
   // Merge any live user action activities to the top
   const combinedItems: ActivityFeedItem[] = [
@@ -184,7 +89,7 @@ export function ActivityFeed({
       txHash: act.txHash,
       explorerUrl: act.txHash ? `${explorerBase}/txns/${act.txHash}` : undefined,
     })),
-    ...defaultItems,
+    ...mappedVerified,
   ];
 
   // Filtering

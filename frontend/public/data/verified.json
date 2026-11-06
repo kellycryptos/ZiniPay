@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T07:13:04.540Z",
+  "generatedAt": "2026-11-06T07:26:00.991Z",
   "network": "testnet",
   "sourceLog": "e2e-output.txt",
   "viaPolicyContract": true,
@@ -7,7 +7,7 @@
     {
       "proposalId": 5,
       "deployment": "first",
-      "codeHash": "Eft7wVX8qfH5P1t8X9hJ2mZ3gQ4rK6FM7KZuACtzeFuH",
+      "codeHash": "Eft7wVX8nQ2NjxWNR3xThoXBhCXpzXZa6qHcjcYLeWCy",
       "deploymentLabel": "First deployment (code hash Eft7wVX8...)",
       "recipient": "zinipay-recipient2.testnet",
       "amountNear": "0.10",

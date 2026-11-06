@@ -107,6 +107,7 @@ export function DashboardShell({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [verificationModalOpen, setVerificationModalOpen] = useState<boolean>(false);
   const [settledPayouts, setSettledPayouts] = useState<SettledPayoutItem[]>([]);
+  const [verifiedTxs, setVerifiedTxs] = useState<any[]>([]);
 
   useEffect(() => {
     fetch('/data/verified.json')
@@ -114,6 +115,9 @@ export function DashboardShell({
       .then((data) => {
         if (data?.settledPayouts) {
           setSettledPayouts(data.settledPayouts);
+        }
+        if (data?.transactions) {
+          setVerifiedTxs(data.transactions);
         }
       })
       .catch((err) => {
@@ -342,7 +346,7 @@ export function DashboardShell({
               {!sidebarCollapsed && <span className="flex-1 text-left">Verification</span>}
               {!sidebarCollapsed && (
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-[#00EC97] border border-emerald-500/30">
-                  10 Live
+                  11 Checks
                 </span>
               )}
             </button>
@@ -637,7 +641,7 @@ export function DashboardShell({
 
               {/* Activity Feed */}
               <ActivityFeed
-                verifiedTxs={[]}
+                verifiedTxs={verifiedTxs}
                 liveActivities={activities}
                 network={network}
               />
@@ -682,7 +686,7 @@ export function DashboardShell({
           {currentView === 'activity' && (
             <div className="w-full max-w-5xl mx-auto">
               <ActivityFeed
-                verifiedTxs={[]}
+                verifiedTxs={verifiedTxs}
                 liveActivities={activities}
                 network={network}
               />
@@ -955,14 +959,14 @@ export function DashboardShell({
                     onClick={() => setVerificationModalOpen(true)}
                     className="text-xs font-mono text-[#00EC97] hover:underline"
                   >
-                    View In-Browser Checks (10)
+                    View In-Browser Checks (11)
                   </button>
                 </div>
                 <div className="p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs text-[#00EC97]">
                   npm run verify:testnet
                 </div>
                 <p className="text-xs text-slate-400">
-                  Run the 10 live in-browser RPC checks above, or execute <code className="text-[#00EC97]">npm run verify:testnet</code> for the complete 24 on-chain checks (including panic text assertions and attack vectors).
+                  Run the 11 in-browser checks above (9 live on-chain + 2 info), or execute <code className="text-[#00EC97]">npm run verify:testnet</code> for the complete 24 on-chain checks (including panic text assertions and attack vectors).
                 </p>
               </div>
             </div>
