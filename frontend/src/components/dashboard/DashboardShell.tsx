@@ -873,50 +873,6 @@ export function DashboardShell({
                 </div>
               </div>
 
-              {/* Contributor 2: kellycryptos.testnet */}
-              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
-                    <span className="font-mono text-sm font-bold text-white">
-                      kellycryptos.testnet
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
-                      Bronze Tier
-                    </span>
-                  </div>
-
-                  <a
-                    href="https://testnet.nearblocks.io/address/kellycryptos.testnet"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-mono text-[#00EC97] hover:underline flex items-center gap-1"
-                  >
-                    <span>NEARBlocks</span>
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Reputation Score</span>
-                    <span className="text-base font-bold text-white">0 pts</span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">get_reputation() on-chain</span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Effective Cap</span>
-                    <span className="text-base font-bold text-white">10 NEAR</span>
-                    <span className="text-[10px] text-emerald-400 block mt-0.5">Base tier cap</span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Recorded Payouts</span>
-                    <span className="text-base font-bold text-white">0.00 NEAR</span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">No disbursements</span>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

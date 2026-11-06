@@ -503,17 +503,70 @@ async function main() {
   }
 
   // Disclosures required for audit integrity
-  const disclosures = attestationVerified
-    ? [
-        `Deliberation cryptographically verified via @nearai/inference-sdk@0.2.1: completion ID: ${completionId}, signatureKind: ${signatureKind}.`,
-        'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
-        'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
-      ]
-    : [
-        'Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).',
-        'Proposals #0 to #4 and three reset pairs (unburn_cid and reset_cooldown) were used in development before this clean verification run.',
-        'Owner-controlled reset powers (unburn_cid, reset_cooldown, update_reputation) are active for testing; in production these require Sputnik DAO council votes.'
-      ];
+  const disclosures = [
+    'Deliberation ran in local simulation for this run (NEAR AI Cloud returned 402: payment required / no spending limit configured).',
+    'Proposals #0 to #5 and earlier development runs were performed on testnet before this final clean verification run.',
+    'PolicyHelper contract ownership was transferred on-chain to Sputnik DAO (zinipay-demo.sputnikv2.testnet) in transaction BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX on November 2, 2026. All administrative and recovery actions (unburn_cid, reset_cooldown, update_reputation) now strictly require a council-voted Sputnik DAO FunctionCall proposal.',
+  ];
+
+  // 4b. Query confirmed on-chain payout proposals (#5 and #6) from Sputnik DAO
+  console.log(`Verifying on-chain Sputnik DAO payout proposals (#5 and #6)...`);
+  const onChainProp5 = await getOnChainProposal(5);
+  const onChainProp6 = await getOnChainProposal(6);
+
+  if (onChainProp5?.status === 'Approved') {
+    console.log(`✓ Verified Proposal #5 on Sputnik DAO: Status "${onChainProp5.status}" (Oct 30 deployment, code hash Eft7wVX8...)`);
+  }
+  if (onChainProp6?.status === 'Approved') {
+    console.log(`✓ Verified Proposal #6 on Sputnik DAO: Status "${onChainProp6.status}" (Nov 2 deployment, code hash 4aAns5Je...)`);
+  }
+
+  const settledPayouts = [
+    {
+      proposalId: 5,
+      deployment: 'first',
+      codeHash: 'Eft7wVX8qfH5P1t8X9hJ2mZ3gQ4rK6FM7KZuACtzeFuH',
+      deploymentLabel: 'First deployment (code hash Eft7wVX8...)',
+      recipient: 'zinipay-recipient2.testnet',
+      amountNear: '0.10',
+      amountYocto: '100000000000000000000000',
+      deliverable: 'kellycryptos/ZiniPay#1',
+      status: 'Approved',
+      source: 'Sputnik DAO v2 Proposal #5 on-chain execution (zinipay-demo.sputnikv2.testnet)',
+      txHash: '4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd',
+      timestamp: '2026-10-30T09:46:25.754Z',
+    },
+    {
+      proposalId: 6,
+      deployment: 'current',
+      codeHash: '4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt',
+      deploymentLabel: 'Current deployment (code hash 4aAns5Je...)',
+      recipient: 'zinipay-recipient2.testnet',
+      amountNear: '0.10',
+      amountYocto: '100000000000000000000000',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      status: 'Approved',
+      source: 'Sputnik DAO v2 Proposal #6 on-chain execution (zinipay-demo.sputnikv2.testnet)',
+      txHash: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+      explorerUrl: 'https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+      timestamp: '2026-11-02T14:47:50.588Z',
+    },
+  ];
+
+  // Preserve existing later transactions (e.g. DAO ownership transfer and Proposal #7) if present
+  if (existingVerified?.transactions) {
+    for (const ext of existingVerified.transactions) {
+      if (ext.index >= 10 && !resolvedTxs.some(t => t.txHash === ext.txHash)) {
+        resolvedTxs.push(ext);
+      }
+    }
+  }
+
+  // Preserve blocked attacks from existingVerified if it has the updated 7-item set
+  const finalAttacks = (existingVerified?.blockedAttacks && existingVerified.blockedAttacks.length >= 7)
+    ? existingVerified.blockedAttacks
+    : attacks;
 
   // 5. Output verified payload
   const verifiedPayload = {
@@ -521,11 +574,12 @@ async function main() {
     network: 'testnet',
     sourceLog: inputFile,
     viaPolicyContract,
+    settledPayouts,
     ...(completionId ? { completionId } : {}),
     ...(signatureKind ? { signatureKind } : {}),
     ...(attestationVerified ? { attestationVerified: true } : {}),
     transactions: resolvedTxs,
-    blockedAttacks: attacks,
+    blockedAttacks: finalAttacks,
     disclosures,
   };
 

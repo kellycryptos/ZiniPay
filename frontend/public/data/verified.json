@@ -1,8 +1,40 @@
 {
-  "generatedAt": "2026-11-02T14:50:07.925Z",
+  "generatedAt": "2026-11-06T06:29:11.092Z",
   "network": "testnet",
   "sourceLog": "e2e-output.txt",
   "viaPolicyContract": true,
+  "settledPayouts": [
+    {
+      "proposalId": 5,
+      "deployment": "first",
+      "codeHash": "Eft7wVX8qfH5P1t8X9hJ2mZ3gQ4rK6FM7KZuACtzeFuH",
+      "deploymentLabel": "First deployment (code hash Eft7wVX8...)",
+      "recipient": "zinipay-recipient2.testnet",
+      "amountNear": "0.10",
+      "amountYocto": "100000000000000000000000",
+      "deliverable": "kellycryptos/ZiniPay#1",
+      "status": "Approved",
+      "source": "Sputnik DAO v2 Proposal #5 on-chain execution (zinipay-demo.sputnikv2.testnet)",
+      "txHash": "4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd",
+      "timestamp": "2026-10-30T09:46:25.754Z"
+    },
+    {
+      "proposalId": 6,
+      "deployment": "current",
+      "codeHash": "4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt",
+      "deploymentLabel": "Current deployment (code hash 4aAns5Je...)",
+      "recipient": "zinipay-recipient2.testnet",
+      "amountNear": "0.10",
+      "amountYocto": "100000000000000000000000",
+      "deliverable": "kellycryptos/ZiniPay#2",
+      "status": "Approved",
+      "source": "Sputnik DAO v2 Proposal #6 on-chain execution (zinipay-demo.sputnikv2.testnet)",
+      "txHash": "2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d",
+      "explorerUrl": "https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d",
+      "timestamp": "2026-11-02T14:47:50.588Z"
+    }
+  ],
   "transactions": [
     {
       "index": 1,

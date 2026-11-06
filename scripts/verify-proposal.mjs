@@ -263,7 +263,8 @@ async function verifyProposal() {
   if (fs.existsSync(verifiedPath)) {
     try {
       const verified = JSON.parse(fs.readFileSync(verifiedPath, 'utf8'));
-      const payoutTx = verified.transactions?.find(t => t.proposalId === proposalId && (t.kind === 'payout' || t.label?.includes('Council 2')));
+      const payoutTx = verified.transactions?.find(t => t.proposalId === proposalId && (t.kind === 'payout' || t.label?.includes('Council 2')))
+        || verified.settledPayouts?.find(p => p.proposalId === proposalId);
       if (payoutTx?.txHash) {
         payoutTxHash = payoutTx.txHash;
       }
