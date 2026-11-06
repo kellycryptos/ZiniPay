@@ -1,112 +1,94 @@
-import React from 'react';
-import { ArrowRight, Github } from 'lucide-react';
+import React, { useState } from 'react';
+import { AppHeader } from '../navigation/AppHeader';
+import { UniversalFooter } from '../navigation/UniversalFooter';
 import { LandingHero } from './LandingHero';
-import { LandingReleaseGate } from './LandingReleaseGate';
-import { LandingTaglineSection } from './LandingTaglineSection';
+import { LandingHowItWorks } from './LandingHowItWorks';
+import { LandingFeaturesSection } from './LandingFeaturesSection';
 import { LandingVerifiedSection } from './LandingVerifiedSection';
 import { LandingAttacksSection } from './LandingAttacksSection';
-import { LandingHowItWorks } from './LandingHowItWorks';
-import { LandingTechStack } from './LandingTechStack';
-import { LandingFooter } from './LandingFooter';
+import { LandingRealVsSimulated } from './LandingRealVsSimulated';
+import { LandingTracksSection } from './LandingTracksSection';
+import { LandingFaqSection } from './LandingFaqSection';
+import { VerificationModal } from '../dashboard/VerificationModal';
 
-interface LandingPageProps {
+export interface LandingPageProps {
   onNavigateToApp: () => void;
   onNavigateToBoard?: () => void;
+  onNavigateDocs?: () => void;
+  network?: 'testnet' | 'mainnet';
 }
 
-export function LandingPage({ onNavigateToApp, onNavigateToBoard }: LandingPageProps) {
+export function LandingPage({
+  onNavigateToApp,
+  onNavigateToBoard,
+  onNavigateDocs,
+  network = 'testnet',
+}: LandingPageProps) {
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+
+  const handleOpenVerify = () => setVerificationModalOpen(true);
+  const handleCloseVerify = () => setVerificationModalOpen(false);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 selection:bg-[var(--color-passed)] selection:text-black">
-      {/* Landing Top Navigation */}
-      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/90 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <img
-              src="/brand/logo-mark.svg"
-              alt="ZiniPay Logo"
-              className="w-8 h-8 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-strong)] p-1 shrink-0"
-            />
-            <div>
-              <span className="font-bold text-base tracking-tight text-white font-sans">
-                ZiniPay
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-mono text-[var(--text-muted)] border-l border-[var(--border-subtle)] pl-2">
-                Constrained Agent Layer
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 selection:bg-[var(--color-passed)] selection:text-black font-sans">
+      {/* ── Keyless Verification Suite Modal ──────────────────── */}
+      <VerificationModal
+        isOpen={verificationModalOpen}
+        onClose={handleCloseVerify}
+        network={network}
+      />
 
-          {/* Nav Actions */}
-          <div className="flex items-center gap-4">
-            {onNavigateToBoard && (
-              <button
-                type="button"
-                onClick={onNavigateToBoard}
-                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <span>Public Board</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]"></span>
-              </button>
-            )}
+      {/* ── Universal Header ──────────────────────────────────── */}
+      <AppHeader
+        currentPath="/"
+        onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onNavigateBoard={onNavigateToBoard || onNavigateToApp}
+        onNavigateDocs={onNavigateDocs}
+        onOpenVerifyModal={handleOpenVerify}
+        network={network}
+      />
 
-            <a
-              href="https://github.com/zinipay/zinipay/tree/main/docs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-colors"
-            >
-              Docs
-            </a>
-
-            <a
-              href="https://github.com/zinipay/zinipay"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[var(--text-secondary)] hover:text-white transition-colors p-1"
-              title="Git Repository"
-            >
-              <Github size={16} />
-            </a>
-
-            <button
-              type="button"
-              onClick={onNavigateToApp}
-              className="btn-primary text-xs py-2 px-4 shadow-sm cursor-pointer"
-            >
-              <span>Open Dashboard</span>
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Landing Sections in Alternating Rhythm (Dark -> Paper -> Dark -> Paper) */}
+      {/* ── Main Landing Sections in Exact Mandated Order ─────── */}
       <main className="flex-1 flex flex-col">
-        {/* 1. Hero (Dark Desk) */}
-        <LandingHero onNavigateToApp={onNavigateToApp} onNavigateToBoard={onNavigateToBoard} />
+        {/* Section 1: Hero ("Let AI agents ask for money. Never let them take it.") */}
+        <LandingHero
+          onNavigateToApp={onNavigateToApp}
+          onNavigateToBoard={onNavigateToBoard}
+          onOpenVerifyModal={handleOpenVerify}
+        />
 
-        {/* 2. Three-Way Release Gate (Paper Desk) */}
-        <LandingReleaseGate />
+        {/* Section 2: Problem & Solution in Plain Language (Agent proposes, PolicyHelper enforces, Humans approve) */}
+        <LandingHowItWorks onNavigateToApp={onNavigateToApp} />
 
-        {/* 3. Word-by-Word Tagline Reveal (Dark Desk) */}
-        <LandingTaglineSection />
+        {/* Section 3: Feature Cards (On-chain reputation, tier caps, public board, fail-closed policy, live verify) */}
+        <LandingFeaturesSection />
 
-        {/* 4. Attacks That Fail — Refused Tickets (Paper Desk) */}
-        <LandingAttacksSection />
-
-        {/* 5. Verified on Testnet — Ticket-Stub Strip (Dark Desk) */}
+        {/* Section 4: Proof Strip (Real counts read from verified.json linking to explorer) & Verified Run Ledger */}
         <LandingVerifiedSection />
 
-        {/* 6. How It Works in 4 Steps (Paper Desk) */}
-        <LandingHowItWorks />
+        {/* Section 5: Attacks Blocked (Replay, case-variant, over-cap, unauthorized, cooldown with real panic text) */}
+        <LandingAttacksSection />
 
-        {/* 7. Core Infrastructure & Integrations (Dark Desk) */}
-        <LandingTechStack />
+        {/* Section 6: What is Real and What is Simulated (Plain 2-column table) */}
+        <LandingRealVsSimulated />
+
+        {/* Section 7: Hackathon Tracks (Social Money & AI Security with evidence links) */}
+        <LandingTracksSection onNavigateToApp={onNavigateToApp} />
+
+        {/* Section 8: FAQ (5 Questions) & Final Call to Action */}
+        <LandingFaqSection
+          onNavigateToApp={onNavigateToApp}
+          onOpenVerifyModal={handleOpenVerify}
+        />
       </main>
 
-      {/* 8. Footer with GitHub link */}
-      <LandingFooter onNavigateToApp={onNavigateToApp} />
+      {/* ── Universal Footer ──────────────────────────────────── */}
+      <UniversalFooter
+        onNavigateBoard={onNavigateToBoard || onNavigateToApp}
+        onNavigateDocs={onNavigateDocs}
+        onOpenVerifyModal={handleOpenVerify}
+        network={network}
+      />
     </div>
   );
 }

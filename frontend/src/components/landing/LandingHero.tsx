@@ -19,6 +19,7 @@ import { Proposal } from '../../lib/types';
 interface LandingHeroProps {
   onNavigateToApp: () => void;
   onNavigateToBoard?: () => void;
+  onOpenVerifyModal?: () => void;
 }
 
 const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
@@ -62,7 +63,7 @@ const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
   },
 };
 
-export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroProps) {
+export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyModal }: LandingHeroProps) {
   const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
   const [isRealRun, setIsRealRun] = useState<boolean>(false);
   const [isApprovedRun, setIsApprovedRun] = useState<boolean>(false);
@@ -215,29 +216,29 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard }: LandingHeroP
               onClick={onNavigateToApp}
               className="btn-primary cursor-pointer text-xs sm:text-sm py-2.5 px-5 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2 group font-semibold tracking-wide"
             >
-              <span>Open Dashboard</span>
+              <span>Launch app</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            {onNavigateToBoard && (
+            {onOpenVerifyModal && (
               <button
                 type="button"
-                onClick={onNavigateToBoard}
-                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-1.5 text-[#00EC97] hover:text-white border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
+                onClick={onOpenVerifyModal}
+                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[#00EC97] hover:text-white border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
               >
-                <Coins size={14} />
-                <span>Public Board</span>
+                <Terminal size={15} />
+                <span>Verify in 2 minutes</span>
               </button>
             )}
 
             <a
-              href="https://github.com/zinipay/zinipay"
+              href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-slate-200 hover:text-white border border-white/[0.08]"
+              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-slate-300 hover:text-white border border-white/[0.08]"
             >
               <Github size={16} />
-              <span>View Contracts & Code</span>
+              <span>GitHub</span>
             </a>
           </div>
 

@@ -29,6 +29,8 @@ import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
 import { OverviewKpis, BlockedAttackItem, SettledPayoutItem } from './OverviewKpis';
 import { PolicyCard } from './PolicyCard';
+import { ContributorsView } from './ContributorsView';
+import { UniversalFooter } from '../navigation/UniversalFooter';
 import { KanbanBoard } from './KanbanBoard';
 import { ActivityFeed } from './ActivityFeed';
 import { RpcDownBanner } from './RpcDownBanner';
@@ -822,79 +824,12 @@ export function DashboardShell({
 
           {/* VIEW: CONTRIBUTORS */}
           {currentView === 'contributors' && (
-            <div className="w-full max-w-5xl mx-auto flex flex-col gap-5 font-sans">
-              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
-                    <Users size={18} />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-white">Contributors & Reputation</h2>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      Accounts verified on-chain and recorded in Sputnik DAO proposals.
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                  Full Registry Coming in Stage 2
-                </span>
-              </div>
-
-              {/* Contributor 1: zinipay-recipient2.testnet */}
-              <div className="p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                    <span className="font-mono text-sm font-bold text-white">
-                      zinipay-recipient2.testnet
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700">
-                      Silver Tier
-                    </span>
-                  </div>
-
-                  <a
-                    href="https://testnet.nearblocks.io/address/zinipay-recipient2.testnet"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-mono text-[#00EC97] hover:underline flex items-center gap-1"
-                  >
-                    <span>NEARBlocks</span>
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono text-xs">
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Reputation Score</span>
-                    <span className="text-base font-bold text-white">30 pts</span>
-                    <span className="text-[10px] text-emerald-400 block mt-0.5">get_reputation() on-chain</span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Effective Cap</span>
-                    <span className="text-base font-bold text-white">15 NEAR</span>
-                    <span className="text-[10px] text-emerald-400 block mt-0.5">get_effective_cap() on-chain</span>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block uppercase">Recorded Payouts</span>
-                    <span className="text-base font-bold text-white">0.20 NEAR</span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">Proposals #5 & #6</span>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-emerald-500/20 text-xs text-slate-300">
-                  <p>
-                    <span className="font-semibold text-white">Approval Schedule (Advisory):</span> Fast-track single vote (≤ 5 NEAR) · Full 2-of-2 council quorum (&gt; 5 NEAR).
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                    Source: Verified via PolicyHelper contract query and Sputnik DAO v2 proposal execution.
-                  </p>
-                </div>
-              </div>
-
-            </div>
+            <ContributorsView
+              policyContractId={policyContractId}
+              daoContract={daoContract}
+              network={network}
+              settledPayouts={settledPayouts}
+            />
           )}
 
           {/* VIEW: DOCS */}
@@ -912,8 +847,8 @@ export function DashboardShell({
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
-                  Full Documentation Coming in Stage 3
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20">
+                  Live Testnet Architecture
                 </span>
               </div>
 
@@ -971,6 +906,15 @@ export function DashboardShell({
               </div>
             </div>
           )}
+
+          {/* Universal Footer */}
+          <div className="mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
+            <UniversalFooter
+              onOpenVerifyModal={() => setVerificationModalOpen(true)}
+              onNavigateDocs={() => setCurrentView('docs')}
+              network={network}
+            />
+          </div>
         </main>
       </div>
     </div>
