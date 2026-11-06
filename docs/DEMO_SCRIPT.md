@@ -49,7 +49,7 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
     --dry-run
   ```
   - **Voiceover**:
-    > *"Now let's look at the agent layer in the terminal. In these dry runs, the GitHub PR verification and on-chain policy queries are 100% real, while the agent model evaluation runs in local simulation because NEAR AI Cloud credit was not configured.
+    > *"Now let's look at the agent layer in the terminal. In these dry runs, the GitHub PR verification and on-chain policy queries are real, while the agent model evaluation runs in local simulation because NEAR AI Cloud credit was not configured.
     >
     > When a contributor submits work, the agent runs our evaluation pipeline:
     > In Gate 1, policy clearance reads the contract state directly on-chain: it confirms the deliverable proof is attached, verifies it stays under the recipient's Silver tier cap (15 NEAR max), and confirms zero-replay against `zinipay-policy2.testnet`.

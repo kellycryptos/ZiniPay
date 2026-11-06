@@ -45,12 +45,12 @@ npm test --prefix agent
 # Step 3: Run keyless testnet verification suite (~15s)
 npm run verify:testnet
 ```
-**See**: `25 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
+**See**: `24 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
 - Active Sputnik DAO v2 council with 2-of-2 multi-sig quorum (`zinipay-c1.testnet`, `zinipay-c2.testnet`).
 - Agent proposer isolation: `agentzinipaytestnet.testnet` holds `Requestor` role only (0 council seats, 0 voting keys).
 - Active Rust `PolicyHelper` contract bound strictly to DAO treasury.
 - Contributor reputation score (Silver tier: 30 pts) and deliverable CID burn status (`cid_used: true`).
-- Check 4.5: Social Money Tiered Approval Resolution (Silver tier qualifies for 1-vote fast-track for <= 5 NEAR, full quorum for > 5 NEAR).
+- Check 4.5: Social Money Tiered Approval Resolution (advisory client-side schedule; Sputnik DAO enforces 2-of-2 council quorum for all payouts).
 - 14 confirmed on-chain transaction receipts (proposal creation, council approvals, promotion, and 5 blocked attack transactions reverted with exact contract panic messages).
 
 ```bash
@@ -60,9 +60,9 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 **See**: Publicly readable contributor track record:
 - Named Account: `zinipay-recipient2.testnet`
 - On-Chain Score: `30 pts (verified on zinipay-policy2.testnet)`
-- Reputation Tier: `Silver (1.5x spend cap multiplier | 1.1x reward multiplier)`
-- Completed Tasks: `2` verified tasks under policy
-- Total Value Paid: `0.2000 NEAR`
+- Reputation Tier: `Silver (1.5x spend cap multiplier)`
+- Completed Tasks: `2` verified tasks under policy (local cache: `zinipay-reputation.json`)
+- Total Value Paid: `0.2000 NEAR` (local cache / verified receipts)
 - Tiered Approval Schedule:
   - Small Payout (&le; 1 NEAR): `SingleCouncil` (1 council member approval, fast-tracked)
   - Medium Payout (&le; 5 NEAR): `SingleCouncil` (1 council member approval)
@@ -186,7 +186,7 @@ ZiniPay extends standard DAO tooling with four Social Money capabilities designe
 1. **Reputation Tied to Named Accounts**:
    - Every contributor's earned track record is indexed against their human-readable NEAR named account (e.g. `zinipay-recipient2.testnet`).
    - Records completed tasks, total NEAR earned under policy, rejections, and verified settlement receipts.
-   - Scores are queryable directly on-chain via `PolicyHelper::get_contributor_record` and `PolicyHelper::get_approval_tier` as well as via public RPC / indexer.
+   - Scores are queryable directly on-chain via `PolicyHelper::get_reputation` and `PolicyHelper::get_effective_cap`. Note: `get_contributor_record` and `get_approval_tier` exist in `main` source code only and are not deployed on-chain; approval schedules and aggregated contributor records are resolved client-side.
 
 2. **Tiered Governance Approvals**:
    - Replaces all-or-nothing multi-sig bottlenecks with a merit-based governance spectrum:
@@ -473,7 +473,7 @@ On NEAR Protocol, Access Keys are split into `FullAccess` and `FunctionCall` per
 
 Because Sputnik DAO v2 requires attaching a `proposal_bond` (1 NEAR) to prevent proposal queue spam:
 - The agent runs on a dedicated funded account (`agentzinipaytestnet.testnet`) with a small operating balance (2–5 NEAR) used strictly to attach proposal bonds.
-- The agent holds **zero signing keys or permissions on the DAO treasury contract itself**. Even if the agent's private key is compromised, the attacker can only spend the agent's small bond float; treasury funds remain 100% protected behind the 2-of-2 human council multi-sig.
+- The agent holds **zero signing keys or permissions on the DAO treasury contract itself**. Even if the agent's private key is compromised, the attacker can only spend the agent's small bond float; treasury funds remain protected behind the 2-of-2 human council multi-sig.
 
 ### What Breaks Without NEAR?
 1. **Without NEAR Cross-Contract Callbacks (`Promise::then`)**: Atomic state rollbacks on failed transfers would require complex, manual off-chain reconciliation.
@@ -577,12 +577,20 @@ Key friction points analyzed include:
 
 Based on verified on-chain state queries directly on NEAR Testnet (`test.rpc.fastnear.com`):
 
-1. **Contract Ownership Transferred to DAO**: The `PolicyHelper` smart contract (`zinipay-policy2.testnet`) has had its ownership transferred directly to the Sputnik DAO multi-sig (`zinipay-demo.sputnikv2.testnet`) via tx [`BmUTUzULrC...`](https://testnet.nearblocks.io/txns/BmUTUzULrCHQ3r46h8Gtzg8nJc4uD3C8aZJj9sJj3v4). Former deployer keys cannot modify policy rules or unburn CIDs (`assert_owner_or_dao()` blocks them on-chain).
-2. **Public Proposal Creation & Spam Costs**: The Sputnik DAO policy defines the `all` role as `Everyone` with permission `*:AddProposal`. Proposals are public, meaning any account can submit a proposal. The on-chain `proposal_bond` is **1.0 NEAR** (`1000000000000000000000000` yoctoNEAR), which is the sole economic spam deterrent preventing proposal flooding.
-3. **Mandatory 2-of-2 Council Quorum**: While `PolicyHelper::get_approval_tier` and `agent/src/reputation.ts` provide advisory recommendations for fast-track micro-clearance (e.g., SingleCouncil for Silver <= 5 NEAR), **these are client-side and UI advisory hints**. Sputnik DAO's live on-chain policy requires a strict 2-of-2 council quorum (`zinipay-c1.testnet` and `zinipay-c2.testnet`) to approve and execute any `FunctionCall` proposal executing `PolicyHelper::release`.
-4. **Off-Chain Reputation Cache**: `zinipay-reputation.json` is a local read cache utilized by the agent runner for offline simulations and CLI previews. The canonical source of truth for contributor reputation and tier multiplier checks is permanently stored on-chain in `PolicyHelper::reputation_scores`.
-5. **Serverless Rate Limiting is Best-Effort**: The in-memory sliding window rate limiter on Vercel endpoints (`frontend/api/deliberate.ts`) is ephemeral and scoped to warm serverless containers. Hard protection against runaway LLM inference credit exhaustion relies on spending caps and quota cutoffs configured directly on the AI provider dashboard.
-6. **AI-Assisted Engineering Disclosure**: In full accordance with hackathon rules and transparency standards, AI tooling (Claude, Antigravity) was utilized for code generation, adversarial edge-case analysis, test automation, and UI implementation under human architectural direction and verification.
+1. **Contract Ownership Transferred to Sputnik DAO**: The `PolicyHelper` smart contract (`zinipay-policy2.testnet`) has had its ownership transferred directly to the Sputnik DAO multi-sig (`zinipay-demo.sputnikv2.testnet`) via tx [`BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX`](https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX). Former deployer keys cannot modify policy rules or unburn CIDs (`assert_owner_or_dao()` blocks them on-chain); all administrative recovery requires a council multi-sig proposal.
+2. **`burn_cid`, `get_approval_tier`, and `get_contributor_record` in Main Source But Not Deployed**: The `burn_cid` recovery method, `get_approval_tier` advisory view, and `get_contributor_record` exist in `contracts/policy-helper/src/lib.rs` on `main`, but are not present in the deployed contract bytecode at `zinipay-policy2.testnet` (which matches commit `6fb2426`). All tier schedules and contributor record aggregations are resolved client-side.
+3. **`get_approval_tier` Advisory Only (Not Enforced On-Chain)**: While `get_approval_tier` in `main` and `agent/src/reputation.ts` provide advisory recommendations for fast-track micro-clearance (e.g., SingleCouncil for Silver <= 5 NEAR), **these are client-side and UI advisory hints**. Sputnik DAO's live on-chain policy requires a strict 2-of-2 council quorum (`zinipay-c1.testnet` and `zinipay-c2.testnet`) to approve and execute any `FunctionCall` proposal executing `PolicyHelper::release`.
+4. **`migrate_canonicalize_cids` Public & Harmless**: The `migrate_canonicalize_cids` method is callable by any account without access control; it is strictly idempotent and harmless because it only iterates existing burned CIDs in contract storage and inserts their canonical lowercase form.
+5. **60-Second Cooldown as Demo Setting**: On-chain `cooldown_seconds` on `zinipay-policy2.testnet` is set to **60 seconds** as a demo setting (rather than 24 hours) to allow judges and automated verification suites to test sequential operations without waiting a full day.
+6. **Past `reset_cooldown` Call**: `reset_cooldown` was called once by the then-owner (`zinipay-c1.testnet`) on Oct 30 in tx [`HS4zxxCJ71iKPHXD6bEX8GPk8WTbPbUrAZC5611tMmKH`](https://testnet.nearblocks.io/txns/HS4zxxCJ71iKPHXD6bEX8GPk8WTbPbUrAZC5611tMmKH) during early testnet integration.
+7. **Reputation Ceilings & DAO-Governed Tier Promotions**: Routine +5 reputation rewards upon bounty settlement stop at the Bronze ceiling (19 pts). Contributor promotions to Silver (>= 20 pts) and Gold (>= 60 pts) can only occur via council action or Sputnik DAO proposal to prevent contributor reputation farming. On testnet:
+   - **Initial Promotion to 25 pts**: First performed during the Oct 30 development run (Proposal #5 cycle) in tx [`Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB`](https://testnet.nearblocks.io/txns/Dfz77EFjDZK7pCNU6uDfm1Go9pkyfuHaCiUTuNeLZEtB), and subsequently confirmed in the clean Nov 2 verification run (Proposal #6 cycle, recorded as Transaction #4 in `verified.json`) in tx [`DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf`](https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf), both signed by then-owner `zinipay-c1.testnet`.
+   - **DAO Multi-Sig Promotion to 30 pts**: Executed on Nov 2 after contract ownership moved to Sputnik DAO. Created via Proposal #7 (tx [`73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix`](https://testnet.nearblocks.io/txns/73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix)) and executed with 2-of-2 council quorum approval in tx [`3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw`](https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw), setting the contributor's final on-chain score to 30.
+8. **Agent Rolling 24h Cap is Agent-Side Only**: The rolling 24-hour aggregate spend limit is enforced locally by the agent's `PolicyEngine`; the smart contract enforces per-proposal tier caps and cooldowns, but does not maintain a 24-hour rolling aggregate window on-chain.
+9. **Public Proposal Creation & Spam Costs**: The Sputnik DAO policy defines the `all` role as `Everyone` with permission `*:AddProposal`. Proposals are public, meaning any account can submit a proposal. The on-chain `proposal_bond` is **1.0 NEAR** (`1000000000000000000000000` yoctoNEAR), which is the sole economic spam deterrent preventing proposal flooding.
+10. **Off-Chain Reputation Cache**: `zinipay-reputation.json` is a local read cache utilized by the agent runner for offline simulations and CLI previews. The canonical source of truth for contributor reputation and tier multiplier checks is permanently stored on-chain in `PolicyHelper::reputation_scores`.
+11. **Serverless Rate Limiting is Best-Effort**: The in-memory sliding window rate limiter on Vercel endpoints (`frontend/api/deliberate.ts`) is ephemeral and scoped to warm serverless containers. Hard protection against runaway LLM inference credit exhaustion relies on spending caps and quota cutoffs configured directly on the AI provider dashboard.
+12. **AI-Assisted Engineering Disclosure**: In full accordance with hackathon rules and transparency standards, AI tooling (Claude, Antigravity) was utilized for code generation, adversarial edge-case analysis, test automation, and UI implementation under human architectural direction and verification.
 
 ---
 

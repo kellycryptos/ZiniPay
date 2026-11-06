@@ -32,24 +32,22 @@ export function logAttackEvent(
 
   const line = JSON.stringify(fullEntry) + '\n';
 
-  // Candidate paths depending on current working directory
+  // Candidate paths depending on current working directory.
+  // Simulated / dry-run attempts route to a separate git-ignored file so local dry-runs never dirty git trees.
+  const fileName = fullEntry.simulated ? 'attack_events_simulated.jsonl' : 'attack_events.jsonl';
   const possiblePaths = [
-    path.resolve(process.cwd(), 'frontend', 'public', 'data', 'attack_events.jsonl'),
-    path.resolve(process.cwd(), '..', 'frontend', 'public', 'data', 'attack_events.jsonl'),
-    path.resolve(process.cwd(), 'attack_events.jsonl'),
+    path.resolve(process.cwd(), '..', 'frontend', 'public', 'data', fileName),
+    path.resolve(process.cwd(), 'frontend', 'public', 'data', fileName),
+    path.resolve(process.cwd(), fileName),
   ];
 
-  for (const p of possiblePaths) {
-    try {
-      const dir = path.dirname(p);
-      if (fs.existsSync(dir) || dir.includes('frontend')) {
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        fs.appendFileSync(p, line, 'utf8');
-        break;
-      }
-    } catch {
-      // Ignore write errors to optional fallback paths
-    }
+  const targetPath = possiblePaths.find((p) => fs.existsSync(path.dirname(p))) || possiblePaths[1];
+  try {
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(targetPath, line, 'utf8');
+  } catch {
+    // Ignore write errors to optional fallback paths
   }
 
   return fullEntry;

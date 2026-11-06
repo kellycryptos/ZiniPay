@@ -97,6 +97,14 @@ async function viewAccount(accountId) {
   });
 }
 
+async function viewCode(accountId) {
+  return rpcPost('query', {
+    request_type: 'view_code',
+    finality: 'final',
+    account_id: accountId,
+  });
+}
+
 async function callViewMethod(contractId, methodName, args = {}) {
   const res = await rpcPost('query', {
     request_type: 'call_function',
@@ -232,7 +240,41 @@ async function main() {
   const policyAcct = await viewAccount(POLICY_ID);
   const codeHashMatch = EXPECTED_CODE_HASHES.includes(policyAcct?.code_hash);
   report('3.1', `PolicyHelper Active (${POLICY_ID})`, !!policyAcct);
-  console.log(`  ℹ [INFO] 3.2: deployed hash ${policyAcct?.code_hash || 'unknown'}, source believed to match commit 8e8ef52, not independently reproduced`);
+
+  let deployedExports = [];
+  try {
+    const codeRes = await viewCode(POLICY_ID);
+    if (codeRes?.code_base64) {
+      const bytes = Buffer.from(codeRes.code_base64, 'base64');
+      const mod = new WebAssembly.Module(bytes);
+      deployedExports = WebAssembly.Module.exports(mod)
+        .map((e) => e.name)
+        .filter((n) => !n.startsWith('__') && n !== 'memory')
+        .sort();
+    }
+  } catch {}
+
+  let sourceMethods = [];
+  try {
+    const srcPath = path.join(process.cwd(), 'contracts', 'policy-helper', 'src', 'lib.rs');
+    if (fs.existsSync(srcPath)) {
+      const src = fs.readFileSync(srcPath, 'utf8');
+      sourceMethods = [...src.matchAll(/pub fn ([a-zA-Z0-9_]+)/g)]
+        .map((m) => m[1])
+        .filter((m) => m !== 'canonical_cid')
+        .sort();
+    }
+  } catch {}
+
+  const missingFromDeployed = sourceMethods.filter((m) => !deployedExports.includes(m));
+
+  console.log(`  ℹ [INFO] 3.2: deployed hash ${policyAcct?.code_hash || 'unknown'}, deployed source matches contracts/policy-helper/src/lib.rs at commit 6fb2426 by exported method names (file unchanged through 7715103), not independently reproduced`);
+  if (deployedExports.length > 0) {
+    console.log(`      Deployed WASM exports (${deployedExports.length}): ${deployedExports.join(', ')}`);
+    console.log(`      Source pub methods   (${sourceMethods.length}): ${sourceMethods.join(', ')}`);
+    console.log(`      Source methods in local main but not deployed on-chain (${missingFromDeployed.length}): ${missingFromDeployed.join(', ')}`);
+    console.log(`      Note: burn_cid, get_approval_tier, and get_contributor_record are in main but not deployed on-chain; approval schedules and records must be computed client-side.`);
+  }
 
   // ── 4. PolicyHelper On-Chain Methods ──────────────────────────────────────
   console.log('\n4. PolicyHelper Policy & State Verification:');
@@ -249,15 +291,17 @@ async function main() {
   report('4.3', 'Silver Tier Spend Cap Scaled to 15 NEAR', capNear === 15, `Effective Cap: ${capNear} NEAR (1.5x base 10N)`);
 
   const cidUsed = await callViewMethod(POLICY_ID, 'cid_used', { cid: 'kellycryptos/ZiniPay#1' });
-  report('4.4', 'CID Anti-Replay: Proposal #5 Deliverable is Burned', cidUsed === true, `cid_used('kellycryptos/ZiniPay#1'): ${cidUsed}`);
-
-  // 4.5: Social Money Track: Tiered Approval Resolution
-  const isSilver = repScore >= 20 && repScore < 60;
+  const cid2Used = await callViewMethod(POLICY_ID, 'cid_used', { cid: 'kellycryptos/zinipay#2' });
   report(
-    '4.5',
-    'Social Money Tiered Approval (Silver Fast-Track <= 5N)',
-    isSilver,
-    `Tier: Silver (Score: ${repScore}) | Fast-Track: 1 Council Vote (<= 5N) | Full Quorum: 2 Votes (> 5N)`
+    '4.4',
+    'CID Anti-Replay: Proposal Deliverables are Burned',
+    cidUsed === true && cid2Used === true,
+    `cid_used('kellycryptos/ZiniPay#1'): ${cidUsed}\n      cid_used('kellycryptos/zinipay#2'): ${cid2Used}`
+  );
+
+  // 4.5: Social Money Track: Advisory Tiered Approval Schedule
+  console.log(
+    `  ℹ [INFO] 4.5: Approval schedule is advisory, computed client-side from agent/src/reputation.ts, not enforced on chain. Every payout requires Sputnik DAO 2-of-2 council quorum vote; get_approval_tier is not deployed on-chain.`
   );
 
   // ── 5. Transaction & Attack Proofs in verified.json ───────────────────────
@@ -308,18 +352,20 @@ async function main() {
           expectedMsg = 'CID already used — duplicate release attempt blocked';
         } else if (tx.label.includes('Over-Cap')) {
           expectedMsg = 'exceeds effective tier cap';
-        } else if (tx.label.includes('Unauthorized')) {
+        } else if (tx.label.includes('Unauthorized') || tx.label.includes('Former Owner') || tx.label.includes('Unburn')) {
           expectedMsg = 'Only owner or designated DAO can call this';
+        } else if (tx.label.includes('Cooldown')) {
+          expectedMsg = 'Cooldown not elapsed';
         }
 
-        const msgMatched = expectedMsg ? logs.some(l => l.includes(expectedMsg)) : true;
+        const msgMatched = expectedMsg ? logs.some(l => l.includes(expectedMsg)) : false;
         const passedAttackCheck = exists && hasFailure && msgMatched;
 
         report(
           `5.Tx-${tx.index}`,
           `${tx.label}`,
           passedAttackCheck,
-          `Tx: ${tx.txHash.slice(0, 10)}... (status.Failure: ${hasFailure}, msg: "${expectedMsg ? expectedMsg.slice(0, 28) + '...' : 'verified'}")`
+          `Tx: ${tx.txHash.slice(0, 10)}... (status.Failure: ${hasFailure}, msg: "${msgMatched ? (expectedMsg.length > 28 ? expectedMsg.slice(0, 28) + '...' : expectedMsg) : 'UNMATCHED'}")`
         );
       } else {
         const isSuccess = typeof status?.status?.SuccessValue === 'string';
