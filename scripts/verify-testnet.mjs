@@ -26,6 +26,7 @@ const VIEW_RPC_ENDPOINTS = [
 const TX_RPC_ENDPOINTS = [
   'https://archival-rpc.testnet.near.org',
   'https://rpc.testnet.near.org',
+  'https://test.rpc.fastnear.com',
 ];
 
 const DAO_ID = 'zinipay-demo.sputnikv2.testnet';
@@ -128,14 +129,57 @@ async function callViewMethod(contractId, methodName, args = {}) {
 }
 
 async function queryTxStatus(txHash, senderId) {
-  // Query NEAR archival RPC for historical testnet execution receipts (allow 9s for archival queries)
-  const result = await rpcPost('EXPERIMENTAL_tx_status', [txHash, senderId], TX_RPC_ENDPOINTS, 9000);
-  if (result) return result;
+  // Query multiple RPC endpoints (including archival) with up to 3 retries and short backoff
+  for (const endpoint of TX_RPC_ENDPOINTS) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: `tx-${txHash.slice(0, 8)}-${attempt}`,
+            method: 'EXPERIMENTAL_tx_status',
+            params: [txHash, senderId],
+          }),
+          signal: AbortSignal.timeout(9000),
+        }).then((r) => r.json());
+
+        if (res?.result && res.result.transaction) {
+          return res.result;
+        }
+
+        // Try standard 'tx' method fallback if EXPERIMENTAL_tx_status was not handled
+        if (!res?.result) {
+          const txRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: `tx-std-${txHash.slice(0, 8)}-${attempt}`,
+              method: 'tx',
+              params: [txHash, senderId],
+            }),
+            signal: AbortSignal.timeout(9000),
+          }).then((r) => r.json());
+
+          if (txRes?.result && txRes.result.transaction) {
+            return txRes.result;
+          }
+        }
+      } catch {
+        // timeout or transient network issue
+      }
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 400 * attempt));
+      }
+    }
+  }
 
   // Fallback to NearBlocks public testnet API if available
   try {
     const nbRes = await fetch(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, {
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(5000),
     }).then((r) => r.json());
     if (nbRes?.txns?.[0]) {
       const nbTx = nbRes.txns[0];
