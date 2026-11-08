@@ -144,7 +144,7 @@ export function LandingVerifiedSection() {
               <span className="text-3xl font-bold text-[var(--text-primary)] font-mono">0.20</span>
               <span className="text-xs text-[#00EC97] font-mono">NEAR</span>
             </div>
-            <span className="text-[10px] text-[var(--text-secondary)] font-mono">Proposals #5 &amp; #6</span>
+            <span className="text-[10px] text-[var(--text-secondary)] font-mono whitespace-nowrap">Proposals #5&nbsp;&amp;&nbsp;#6</span>
           </a>
 
           <a

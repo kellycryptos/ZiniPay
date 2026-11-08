@@ -111,7 +111,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 - Named Account: `zinipay-recipient2.testnet`
 - On-Chain Score: `30 pts (verified on zinipay-policy2.testnet)`
 - Reputation Tier: `Silver (1.5x spend cap multiplier)`
-- Completed Tasks: `2` verified tasks under policy (local cache: `zinipay-reputation.json`)
+- Completed Tasks: `2` verified tasks under policy (local off-chain cache: `zinipay-reputation.json`)
 - Total Value Paid: `0.2000 NEAR` (local cache / verified receipts)
 - Tiered Approval Schedule:
   - Small Payout (&le; 1 NEAR): `SingleCouncil` (1 council member approval, fast-tracked)
@@ -128,7 +128,7 @@ npm run demo:social-money
 **See**: Complete automated walkthrough:
 1. Contributor starting state (Named account: `alice-contributor.testnet`, Bronze tier, 0 pts).
 2. Create request: Deliberate deliverable proof and calculate initial approval requirement (Full DAO quorum).
-3. Payout settlement: Multi-sig quorum reached → atomic release updates score (+25 pts), completed tasks (+1), and total paid (+2.5N), promoting contributor to Silver tier.
+3. Payout settlement: Multi-sig quorum reached → atomic release updates score (+5 pts on-chain, capped at Bronze ceiling 19; Silver/Gold requires DAO action), completed tasks (+1), and total paid (+2.5N). Council promotes contributor to Silver tier via DAO action.
 4. Tiered outcomes under updated reputation:
    - Micro bounty (0.8N): Single council member fast-track.
    - Medium milestone (4.0N): Single council member approval.
@@ -287,7 +287,7 @@ ZiniPay extends standard DAO tooling with four Social Money capabilities designe
        │            └─ Callback on_release_done verifies transfer or triggers rollback
        ▼
 [7. Reputation] ──── Post-Settlement Reputation Indexing & Public Board
-                    ├─ Contributor score updated (+10 pts per successful payout)
+                    ├─ Contributor score updated (+5 pts auto on-chain, capped at Bronze ceiling 19; Silver/Gold via DAO action)
                     ├─ Completed tasks count incremented & total NEAR earned updated
                     ├─ Settlement receipt logged with explorer links
                     └─ Public Activity Board (/board) surfaces updated track record
@@ -385,7 +385,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 
 [2/3] Querying Public Contributor Track Record...
   ✓ Track Record Verified:
-      Completed Tasks:  2
+      Completed Tasks:  2 (local off-chain cache: zinipay-reputation.json)
       Total NEAR Paid:  0.2000 NEAR
       Rejections Count: 0
       Track Record:     100.0% completion rate (2 of 2)
@@ -403,7 +403,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 
 Run an end-to-end automated simulation demonstrating the entire Social Money lifecycle:
 1. **Create Request**: Agent evaluates deliverable & queries on-chain tier cap.
-2. **Reputation Update**: Payout settles, adding +10 pts and updating completed tasks.
+2. **Reputation Update**: Payout settles, adding +5 pts on-chain (up to 19 Bronze ceiling; Silver/Gold requires DAO action).
 3. **Tiered Outcome**: Subsequent larger payout automatically unlocks the upgraded tier (SingleCouncil fast-track), while replay attempts trigger instant penalty & rollback.
 
 ```bash

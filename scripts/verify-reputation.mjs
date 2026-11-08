@@ -160,7 +160,7 @@ async function main() {
   console.log('════════════════════════════════════════════════════════════════════');
   console.log(`  • On-Chain Score:       ${score} pts ${onChainScore !== null ? `(verified on ${POLICY_ID})` : '(ledger fallback)'}`);
   console.log(`  • Reputation Tier:      ${tierInfo.tier} (${tierInfo.capMult}x spend cap multiplier | ${tierInfo.multiplier}x reward multiplier)`);
-  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks}`);
+  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks} (local off-chain cache: zinipay-reputation.json)`);
   console.log(`  • Total Value Paid:     ${ledgerEntry.totalPaidNear.toFixed(4)} NEAR`);
   console.log(`  • Proposals Approved:   ${ledgerEntry.approvedProposals}`);
   console.log(`  • Deliverable Rejections: ${ledgerEntry.rejectionsCount}`);

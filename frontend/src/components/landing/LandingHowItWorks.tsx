@@ -7,7 +7,7 @@ export function LandingHowItWorks({ onNavigateToApp }: { onNavigateToApp?: () =>
       num: '01',
       title: 'Agent Proposes',
       actor: 'Keyless Proposer Agent',
-      desc: 'The agent inspects the deliverable artifact (merged GitHub PR or IPFS CID), verifies author identity bindings, and drafts a constrained FunctionCall proposal. The agent holds 0 voting keys and cannot execute transfers.',
+      desc: 'The agent inspects the deliverable (merged GitHub PR or IPFS CID) and drafts a proposal. The PR link is claimed in the description (not checked on-chain); the one-time deliverable CID is passed to PolicyHelper where anti-replay is enforced. The agent holds 0 voting keys and cannot execute transfers.',
       icon: Send,
       badge: 'Requestor Role (0 Council Seats)',
     },

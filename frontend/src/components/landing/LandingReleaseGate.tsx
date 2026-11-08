@@ -165,7 +165,7 @@ export function LandingReleaseGate() {
       step: '01',
       name: 'Gate 01 · Deliverable Proof',
       tag: 'PROOF OF WORK',
-      caption: 'Verifies merged GitHub PR commit hash and IPFS CID before any proposal can be created.',
+      caption: 'PR link is claimed in proposal and not checked on-chain. One-time CID uniqueness is permanently enforced by PolicyHelper.',
       illustration: StampIllustration,
       status: gate1HasAgentRun ? 'Run on testnet' : 'Implemented and unit tested',
       isTestnetRun: gate1HasAgentRun,
