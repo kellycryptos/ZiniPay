@@ -142,36 +142,17 @@ async function queryTxStatus(txHash, senderId) {
             method: 'EXPERIMENTAL_tx_status',
             params: [txHash, senderId],
           }),
-          signal: AbortSignal.timeout(9000),
+          signal: AbortSignal.timeout(6000),
         }).then((r) => r.json());
 
         if (res?.result && res.result.transaction) {
           return res.result;
         }
-
-        // Try standard 'tx' method fallback if EXPERIMENTAL_tx_status was not handled
-        if (!res?.result) {
-          const txRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: `tx-std-${txHash.slice(0, 8)}-${attempt}`,
-              method: 'tx',
-              params: [txHash, senderId],
-            }),
-            signal: AbortSignal.timeout(9000),
-          }).then((r) => r.json());
-
-          if (txRes?.result && txRes.result.transaction) {
-            return txRes.result;
-          }
-        }
       } catch {
         // timeout or transient network issue
       }
       if (attempt < 3) {
-        await new Promise((r) => setTimeout(r, 400 * attempt));
+        await new Promise((r) => setTimeout(r, 300 * attempt));
       }
     }
   }
@@ -179,7 +160,7 @@ async function queryTxStatus(txHash, senderId) {
   // Fallback to NearBlocks public testnet API if available
   try {
     const nbRes = await fetch(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(4000),
     }).then((r) => r.json());
     if (nbRes?.txns?.[0]) {
       const nbTx = nbRes.txns[0];
