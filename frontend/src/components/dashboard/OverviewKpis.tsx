@@ -83,17 +83,17 @@ export function OverviewKpis({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full font-sans">
       {/* ── CARD 1: Treasury Balance ──────────────────────────── */}
       <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97] shrink-0">
               <Coins size={16} />
             </div>
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] truncate">
                 Treasury Balance
               </p>
               <p
-                className="text-[10px] text-[var(--text-secondary)] font-mono truncate max-w-[140px]"
+                className="text-[10px] text-[var(--text-secondary)] font-mono truncate"
                 title={daoContract}
               >
                 {daoContract}
@@ -104,7 +104,7 @@ export function OverviewKpis({
             href={`${explorerBase}/address/${daoContract}`}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] text-[var(--text-muted)] hover:text-[#00EC97] flex items-center gap-1 font-mono transition-colors"
+            className="text-[10px] text-[var(--text-muted)] hover:text-[#00EC97] flex items-center gap-1 font-mono transition-colors shrink-0"
             title="Inspect Sputnik DAO v2 on NEARBlocks"
           >
             <span>Explorer</span>
@@ -207,11 +207,11 @@ export function OverviewKpis({
         </div>
 
         {/* Real Data Footer: Citing Sputnik DAO Proposals as Source */}
-        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
-          <span title="Source: Sputnik DAO v2 Proposals #5 & #6 on-chain execution (zinipay-demo.sputnikv2.testnet)">
-            Source: Sputnik DAO v2 Proposals #5 &amp; #6
+        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)] gap-2">
+          <span className="truncate" title="Source: Sputnik DAO v2 Proposals #5 & #6 on-chain execution (zinipay-demo.sputnikv2.testnet)">
+            Proposals <span className="whitespace-nowrap">#5 &amp; #6</span>
           </span>
-          <span className="text-emerald-400 font-semibold">{isLoaded ? '2/2 Council Quorum' : '—'}</span>
+          <span className="text-emerald-400 font-semibold shrink-0">{isLoaded ? '2/2 Quorum' : '—'}</span>
         </div>
       </div>
 

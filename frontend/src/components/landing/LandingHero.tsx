@@ -259,8 +259,8 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <span className="font-mono text-[10px] text-cyan-400 font-bold">01</span>
                   <FileCheck size={14} className="text-cyan-300" />
                 </div>
-                <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Deliverable Proof</div>
-                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">PR & CID Hash</div>
+                <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Deliverable CID</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5" title="PR link is claimed in proposal (not checked on-chain). One-time CID uniqueness is enforced by PolicyHelper.">PR claimed · CID enforced</div>
               </div>
 
               {/* Gate 2 */}
