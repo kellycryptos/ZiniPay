@@ -201,7 +201,7 @@ export function ContributorsView({
               <span className="text-xs text-[#00EC97] font-semibold">NEAR</span>
             </div>
             <span className="text-[10px] text-slate-400 block">
-              Proposals #5 &amp; #6 on Sputnik DAO
+              Proposals <span className="whitespace-nowrap">#5 &amp; #6</span> on Sputnik DAO
             </span>
           </div>
         </div>
