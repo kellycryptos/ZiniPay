@@ -31,15 +31,15 @@ export function LandingAttacksSection() {
   }, []);
 
   return (
-    <section className="py-20 border-b border-[#E5E1D8] bg-[#F7F5F0] text-[#0F172A] relative overflow-hidden">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] relative overflow-hidden transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5E1D8] pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
           <div>
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0F172A] tracking-tight">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] tracking-tight">
               Attacks That Fail
             </h2>
-            <p className="text-sm sm:text-base text-[#334155] mt-1.5 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 max-w-2xl leading-relaxed">
               Attacks are intercepted fail-closed. Invariant violations produce immutable refusal receipts on NEAR.
             </p>
           </div>
@@ -48,11 +48,11 @@ export function LandingAttacksSection() {
         {/* Tickets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
           {isLoading ? (
-            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[#475569] bg-white rounded-2xl border border-[#E2DDD5]">
+            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[var(--text-secondary)] bg-white rounded-2xl border border-[var(--border-subtle)]">
               Loading verified attack proofs from verified.json...
             </div>
           ) : attacks.length === 0 ? (
-            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[#475569] bg-white rounded-2xl border border-[#E2DDD5]">
+            <div className="col-span-1 md:col-span-2 p-8 text-center font-mono text-sm text-[var(--text-secondary)] bg-white rounded-2xl border border-[var(--border-subtle)]">
               Not loaded: attack proofs manifest unavailable.
             </div>
           ) : attacks.map((att, idx) => {
@@ -62,7 +62,7 @@ export function LandingAttacksSection() {
             return (
               <div
                 key={idx}
-                className="bg-white border border-[#E2DDD5] rounded-2xl shadow-sm relative flex flex-col justify-between overflow-hidden"
+                className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl shadow-sm relative flex flex-col justify-between overflow-hidden"
               >
                 <div className="p-6 pb-4">
                   {/* Top Bar: Vector & Interceptor */}
@@ -70,27 +70,27 @@ export function LandingAttacksSection() {
                     <span className="font-mono text-xs font-semibold text-[#B91C1C]">
                       BLOCKED
                     </span>
-                    <span className="font-mono text-[11px] text-[#475569] bg-[#F1ECE1] px-2.5 py-0.5 rounded border border-[#E2DDD5]">
+                    <span className="font-mono text-[11px] text-[var(--text-secondary)] bg-[var(--bg-panel-alt)] px-2.5 py-0.5 rounded border border-[var(--border-subtle)]">
                       {att.blockedBy}
                     </span>
                   </div>
 
                   {/* Vector Name */}
-                  <h3 className="font-display text-lg sm:text-xl font-bold text-[#0F172A] tracking-tight mb-3">
+                  <h3 className="font-display text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight mb-3">
                     {att.vector}
                   </h3>
 
                   {/* Exact Contract Revert Message in Monospace */}
-                  <div className="mt-2 p-3.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-start gap-2.5 font-mono text-xs text-[#991B1B]">
+                  <div className="mt-2 p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 font-mono text-xs text-red-600 dark:text-red-400">
                     <AlertTriangle size={15} className="shrink-0 mt-0.5 text-[#B91C1C]" />
-                    <p className="font-mono text-xs break-all leading-relaxed text-[#7F1D1D] font-medium selection:bg-[#B91C1C] selection:text-white">
+                    <p className="font-mono text-xs break-all leading-relaxed text-red-700 dark:text-red-300 font-medium selection:bg-red-500 selection:text-white">
                       "{contractMessage}"
                     </p>
                   </div>
                 </div>
 
                 {/* Footer Strip with On-Chain Link */}
-                <div className="px-6 pb-4 pt-3 flex items-center justify-between border-t border-[#F1ECE1] text-xs font-mono">
+                <div className="px-6 pb-4 pt-3 flex items-center justify-between border-t border-[var(--border-subtle)] text-xs font-mono">
                   {explorerUrl ? (
                     <a
                       href={explorerUrl}
@@ -104,11 +104,11 @@ export function LandingAttacksSection() {
                       <ExternalLink size={12} />
                     </a>
                   ) : (
-                    <span className="text-[#475569] text-[11px]">
+                    <span className="text-[var(--text-secondary)] text-[11px]">
                       Pre-Proposal Intercept
                     </span>
                   )}
-                  <span className="text-[10px] text-[#475569] uppercase font-medium">Zero Gas Drained</span>
+                  <span className="text-[10px] text-[var(--text-secondary)] uppercase font-medium">Zero Gas Drained</span>
                 </div>
               </div>
             );

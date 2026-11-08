@@ -61,7 +61,7 @@ export function LandingVerifiedSection() {
   }, []);
 
   return (
-    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-slate-100 relative overflow-hidden font-sans">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] relative overflow-hidden font-sans transition-colors duration-200">
       {/* Background radial atmosphere */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[var(--color-passed)]/[0.03] blur-[120px] rounded-full pointer-events-none"
@@ -75,7 +75,7 @@ export function LandingVerifiedSection() {
             <span className="text-[11px] font-mono uppercase tracking-wider text-[#00EC97] font-semibold">
               Live Proof Ledger
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mt-1">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] tracking-tight mt-1">
               Verified Testnet Run
             </h2>
             <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-1.5 max-w-2xl leading-relaxed">
@@ -86,7 +86,7 @@ export function LandingVerifiedSection() {
           <button
             type="button"
             onClick={fetchVerifiedEntries}
-            className="p-2 sm:px-3 sm:py-2 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[#1C212E] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] transition-colors self-start sm:self-auto flex items-center gap-2 font-mono text-xs cursor-pointer shadow-sm"
+            className="p-2 sm:px-3 sm:py-2 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--bg-panel)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] transition-colors self-start sm:self-auto flex items-center gap-2 font-mono text-xs cursor-pointer shadow-sm"
             title="Sync verified records"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -100,68 +100,68 @@ export function LandingVerifiedSection() {
             href="https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-xl bg-[#141720] border border-white/10 hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
+            className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
           >
-            <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+            <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs font-mono">
               <span className="uppercase text-[10px]">Confirmed Ledger</span>
               <ExternalLink size={12} className="group-hover:text-[#00EC97] transition-colors" />
             </div>
             <div className="my-2 flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-white font-mono">{txs.length > 0 ? txs.length : 14}</span>
+              <span className="text-3xl font-bold text-[var(--text-primary)] font-mono">{txs.length > 0 ? txs.length : 14}</span>
               <span className="text-xs text-[#00EC97] font-mono">Receipts</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Live on NEAR Testnet</span>
+            <span className="text-[10px] text-[var(--text-secondary)] font-mono">Live on NEAR Testnet</span>
           </a>
 
           <a
             href="https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-xl bg-[#141720] border border-white/10 hover:border-red-500/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
+            className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-red-500/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
           >
-            <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+            <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs font-mono">
               <span className="uppercase text-[10px]">Blocked Attacks</span>
               <ExternalLink size={12} className="group-hover:text-red-400 transition-colors" />
             </div>
             <div className="my-2 flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-white font-mono">5</span>
+              <span className="text-3xl font-bold text-[var(--text-primary)] font-mono">5</span>
               <span className="text-xs text-red-400 font-mono">Reverted</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Contract Panic Traps</span>
+            <span className="text-[10px] text-[var(--text-secondary)] font-mono">Contract Panic Traps</span>
           </a>
 
           <a
             href="https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-xl bg-[#141720] border border-white/10 hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
+            className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
           >
-            <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+            <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs font-mono">
               <span className="uppercase text-[10px]">Settled Payouts</span>
               <ExternalLink size={12} className="group-hover:text-[#00EC97] transition-colors" />
             </div>
             <div className="my-2 flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-white font-mono">0.20</span>
+              <span className="text-3xl font-bold text-[var(--text-primary)] font-mono">0.20</span>
               <span className="text-xs text-[#00EC97] font-mono">NEAR</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Proposals #5 &amp; #6</span>
+            <span className="text-[10px] text-[var(--text-secondary)] font-mono">Proposals #5 &amp; #6</span>
           </a>
 
           <a
             href="https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-xl bg-[#141720] border border-white/10 hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
+            className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[#00EC97]/40 transition-all flex flex-col justify-between group cursor-pointer shadow-lg"
           >
-            <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+            <div className="flex items-center justify-between text-[var(--text-secondary)] text-xs font-mono">
               <span className="uppercase text-[10px]">Council Quorum</span>
               <ExternalLink size={12} className="group-hover:text-[#00EC97] transition-colors" />
             </div>
             <div className="my-2 flex items-baseline gap-1.5">
-              <span className="text-3xl font-bold text-white font-mono">2 / 2</span>
+              <span className="text-3xl font-bold text-[var(--text-primary)] font-mono">2 / 2</span>
               <span className="text-xs text-[#00EC97] font-mono">Humans</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Sputnik DAO v2</span>
+            <span className="text-[10px] text-[var(--text-secondary)] font-mono">Sputnik DAO v2</span>
           </a>
         </div>
 
@@ -193,7 +193,7 @@ export function LandingVerifiedSection() {
             <div className="relative rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-panel)] overflow-hidden shadow-2xl">
               {/* Header banner */}
               <div className="px-5 py-3.5 bg-[var(--bg-panel-header)] border-b border-[var(--border-subtle)] flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-2 text-slate-300">
+                <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                   <Ticket size={15} className="text-[var(--color-passed)]" />
                   <span className="font-bold tracking-wider text-[11px]">
                     VERIFIED TRANSACTIONS ({txs.length})
@@ -234,7 +234,7 @@ export function LandingVerifiedSection() {
 
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-white text-sm tracking-tight font-sans">
+                            <span className="font-semibold text-[var(--text-primary)] text-sm tracking-tight font-sans">
                               {label}
                             </span>
                             {formattedTime && (
@@ -244,7 +244,7 @@ export function LandingVerifiedSection() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 font-mono text-xs">
-                            <span className="text-slate-300 select-all font-mono" title={tx.txHash}>
+                            <span className="text-[var(--text-secondary)] select-all font-mono" title={tx.txHash}>
                               {shortHash}
                             </span>
                           </div>
@@ -262,7 +262,7 @@ export function LandingVerifiedSection() {
                           href={explorerLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--bg-canvas)] hover:bg-[#171B26] border border-[var(--border-subtle)] hover:border-[var(--color-passed-border)] text-xs font-mono text-[var(--color-passed)] font-semibold transition-all"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] hover:border-[var(--color-passed-border)] text-xs font-mono text-[var(--color-passed)] font-semibold transition-all"
                         >
                           <span>Explorer</span>
                           <ExternalLink size={12} />
@@ -281,7 +281,7 @@ export function LandingVerifiedSection() {
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-pending)]" />
                   <span>Operational Verification Context &amp; Disclosures</span>
                 </div>
-                <div className="flex flex-col gap-2 text-slate-300 leading-relaxed text-[11px]">
+                <div className="flex flex-col gap-2 text-[var(--text-secondary)] leading-relaxed text-[11px]">
                   {disclosures.map((disc, idx) => (
                     <div key={idx} className="flex items-start gap-2">
                       <span className="text-[var(--color-pending)] shrink-0 font-bold">•</span>

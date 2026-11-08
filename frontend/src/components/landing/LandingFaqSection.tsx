@@ -34,17 +34,17 @@ export function LandingFaqSection({
   ];
 
   return (
-    <section className="py-20 border-b border-white/[0.08] bg-[#0E1015] text-slate-100 font-sans">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-6 flex flex-col gap-12">
         {/* Section Header */}
         <div className="flex flex-col items-center text-center gap-3">
           <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[#00EC97]">
             <HelpCircle size={20} />
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight">
             Frequently Asked Questions
           </h2>
-          <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
+          <p className="text-sm text-[var(--text-secondary)] max-w-xl leading-relaxed">
             Concrete answers on agent boundaries, council authority, and fail-closed security.
           </p>
         </div>
@@ -56,23 +56,23 @@ export function LandingFaqSection({
             return (
               <div
                 key={idx}
-                className="border border-white/10 rounded-xl overflow-hidden bg-[#141720] transition-colors"
+                className="border border-[var(--border-subtle)] rounded-xl overflow-hidden bg-[var(--bg-panel)] transition-colors shadow-sm"
               >
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-[var(--bg-panel-alt)]/50 transition-colors cursor-pointer"
                 >
-                  <span className="font-semibold text-white text-sm sm:text-base pr-4">
+                  <span className="font-semibold text-[var(--text-primary)] text-sm sm:text-base pr-4">
                     {faq.q}
                   </span>
-                  <div className="text-slate-400 shrink-0">
+                  <div className="text-[var(--text-muted)] shrink-0">
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-white/[0.06]">
+                  <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-subtle)]">
                     {faq.a}
                   </div>
                 )}
@@ -82,12 +82,12 @@ export function LandingFaqSection({
         </div>
 
         {/* Final Call to Action Block */}
-        <div className="mt-6 p-8 rounded-2xl bg-gradient-to-b from-[#161922] to-[#111318] border border-white/10 flex flex-col items-center text-center gap-5 shadow-2xl">
+        <div className="mt-6 p-8 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col items-center text-center gap-5 shadow-xl">
           <div className="flex flex-col items-center gap-2">
-            <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <h3 className="font-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               Ready to verify ZiniPay on-chain?
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-md">
               Audit live testnet proposals, test keyless in-browser verification, or inspect the open-source contracts.
             </p>
           </div>
@@ -107,7 +107,7 @@ export function LandingFaqSection({
               <button
                 type="button"
                 onClick={onOpenVerifyModal}
-                className="px-5 py-2.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 text-white font-mono text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2"
+                className="px-5 py-2.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-mono text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2"
               >
                 <Terminal size={15} className="text-[#00EC97]" />
                 <span>Verify In-Browser</span>
@@ -117,7 +117,7 @@ export function LandingFaqSection({
               href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white font-medium text-xs sm:text-sm transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium text-xs sm:text-sm transition-all flex items-center gap-2"
             >
               <Github size={16} />
               <span>GitHub</span>

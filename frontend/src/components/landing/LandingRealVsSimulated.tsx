@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Cpu } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 
 export function LandingRealVsSimulated() {
   const realItems = [
@@ -57,18 +57,18 @@ export function LandingRealVsSimulated() {
   ];
 
   return (
-    <section className="py-20 border-b border-white/[0.08] bg-[#0E1015] text-slate-100 font-sans">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/[0.08] pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
           <div>
             <span className="text-[11px] font-mono uppercase tracking-wider text-[#00EC97] font-semibold">
               Integrity &amp; Honesty Disclosures
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight mt-1">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight mt-1">
               What Is Real vs. What Is Simulated
             </h2>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
               We separate verified on-chain deployments from offline simulations and advisory schedules. Zero unproven claims.
             </p>
           </div>
@@ -77,16 +77,16 @@ export function LandingRealVsSimulated() {
         {/* 2-Column Comparison Table */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Column 1: What is Real (On-Chain) */}
-          <div className="p-6 rounded-2xl bg-[#141720] border border-emerald-500/20 flex flex-col gap-5 shadow-lg">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-white/[0.08]">
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-emerald-500/20 flex flex-col gap-5 shadow-lg">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-subtle)]">
               <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[#00EC97]">
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">
+                <h3 className="font-bold text-[var(--text-primary)] text-base">
                   Live on NEAR Testnet (On-Chain)
                 </h3>
-                <p className="text-xs text-emerald-400 font-mono">
+                <p className="text-xs text-emerald-500 font-mono">
                   Verified with public RPC receipts and explorer hashes
                 </p>
               </div>
@@ -96,7 +96,7 @@ export function LandingRealVsSimulated() {
               {realItems.map((item, idx) => (
                 <div key={idx} className="flex flex-col gap-1 text-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-white flex items-center gap-1.5">
+                    <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
                       <CheckCircle2 size={13} className="text-[#00EC97] shrink-0" />
                       {item.title}
                     </span>
@@ -110,7 +110,7 @@ export function LandingRealVsSimulated() {
                       <ExternalLink size={10} />
                     </a>
                   </div>
-                  <p className="text-slate-300 leading-relaxed pl-5">
+                  <p className="text-[var(--text-secondary)] leading-relaxed pl-5">
                     {item.desc}
                   </p>
                 </div>
@@ -119,16 +119,16 @@ export function LandingRealVsSimulated() {
           </div>
 
           {/* Column 2: What is Simulated / Quoted */}
-          <div className="p-6 rounded-2xl bg-[#141720] border border-amber-500/20 flex flex-col gap-5 shadow-lg">
-            <div className="flex items-center gap-2.5 pb-3 border-b border-white/[0.08]">
-              <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+          <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-amber-500/20 flex flex-col gap-5 shadow-lg">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-subtle)]">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500">
                 <AlertCircle size={18} />
               </div>
               <div>
-                <h3 className="font-bold text-white text-base">
+                <h3 className="font-bold text-[var(--text-primary)] text-base">
                   Simulated / Advisory / Quote-Only
                 </h3>
-                <p className="text-xs text-amber-400 font-mono">
+                <p className="text-xs text-amber-500 font-mono">
                   Transparent disclosures on unmocked external boundaries
                 </p>
               </div>
@@ -138,21 +138,21 @@ export function LandingRealVsSimulated() {
               {simulatedItems.map((item, idx) => (
                 <div key={idx} className="flex flex-col gap-1 text-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-white flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                       {item.title}
                     </span>
                     <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-amber-300 hover:underline font-mono text-[11px] flex items-center gap-1 shrink-0"
+                      className="text-amber-500 hover:underline font-mono text-[11px] flex items-center gap-1 shrink-0"
                     >
                       <span>{item.linkLabel}</span>
                       <ExternalLink size={10} />
                     </a>
                   </div>
-                  <p className="text-slate-300 leading-relaxed pl-4">
+                  <p className="text-[var(--text-secondary)] leading-relaxed pl-4">
                     {item.desc}
                   </p>
                 </div>

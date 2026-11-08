@@ -30,7 +30,7 @@ export function LandingPage({
   const handleCloseVerify = () => setVerificationModalOpen(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 selection:bg-[var(--color-passed)] selection:text-black font-sans">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-[var(--color-passed)] selection:text-black font-sans transition-colors duration-200">
       {/* ── Keyless Verification Suite Modal ──────────────────── */}
       <VerificationModal
         isOpen={verificationModalOpen}

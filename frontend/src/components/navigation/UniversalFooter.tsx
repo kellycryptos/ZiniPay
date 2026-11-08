@@ -96,38 +96,38 @@ export function UniversalFooter({
     network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 
   return (
-    <footer className="border-t border-white/[0.08] bg-[#0A0A0C] text-slate-400 font-sans">
+    <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] font-sans transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col gap-10">
         {/* Top Section: Brand, Pitch & Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/[0.08]">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-[var(--border-subtle)]">
           {/* Col 1: Brand & Description */}
           <div className="md:col-span-2 flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <img
                 src="/brand/logo-mark.svg"
                 alt="ZiniPay Logo"
-                className="w-7 h-7 rounded-lg bg-[#161922] border border-white/10 p-1 shrink-0"
+                className="w-7 h-7 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0"
               />
-              <span className="font-sans text-base font-bold text-white tracking-tight">
+              <span className="font-sans text-base font-bold text-[var(--text-primary)] tracking-tight">
                 ZiniPay
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20">
                 NEAR Testnet
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-md">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed max-w-md">
               A constrained agent layer for community treasuries on NEAR. The agent proposes payouts, a Rust contract enforces spend caps and anti-replay guards, and human councils approve via Sputnik DAO v2 multi-sig.
             </p>
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mt-1">
-              <span>Built at <strong className="text-white">NEAR HACKATHON</strong></span>
+            <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)] mt-1">
+              <span>Built at <strong className="text-[var(--text-primary)]">NEAR HACKATHON</strong></span>
               <span>•</span>
-              <span>Open source under <strong className="text-white">MIT License</strong></span>
+              <span>Open source under <strong className="text-[var(--text-primary)]">MIT License</strong></span>
             </div>
           </div>
 
           {/* Col 2: Explorer & On-Chain Addresses */}
           <div className="flex flex-col gap-2.5 text-xs font-mono">
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+            <span className="text-[11px] uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
               On-Chain Deployments
             </span>
             <a
@@ -161,14 +161,14 @@ export function UniversalFooter({
 
           {/* Col 3: Navigation & Code */}
           <div className="flex flex-col gap-2.5 text-xs">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
               Resources
             </span>
             {onNavigateBoard && (
               <button
                 type="button"
                 onClick={onNavigateBoard}
-                className="text-left text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="text-left text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 Dashboard (/board)
               </button>
@@ -177,7 +177,7 @@ export function UniversalFooter({
               <button
                 type="button"
                 onClick={onNavigateDocs}
-                className="text-left text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="text-left text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 Architecture &amp; Docs
               </button>
@@ -186,7 +186,7 @@ export function UniversalFooter({
               href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <Github size={14} />
               <span>GitHub Repository</span>
@@ -205,32 +205,32 @@ export function UniversalFooter({
         </div>
 
         {/* Middle Section: 60-Second Judge Verification Command Box */}
-        <div className="p-4 rounded-xl bg-black/60 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-[#00EC97] shrink-0">
               <Terminal size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white">60-Second Zero-Config Judge Verification</span>
+                <span className="text-xs font-bold text-[var(--text-primary)]">60-Second Zero-Config Judge Verification</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-[#00EC97]">
                   24 Checks
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
                 Executes complete testnet state audit, panic text assertions, and proposal receipts keylessly via public RPC.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <code className="px-3 py-1.5 rounded-lg bg-[#0A0A0C] border border-white/10 font-mono text-xs text-[#00EC97] select-all flex-1 sm:flex-initial">
+            <code className="px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] font-mono text-xs text-[#00EC97] select-all flex-1 sm:flex-initial">
               npm run verify:testnet
             </code>
             <button
               type="button"
               onClick={copyCommand}
-              className="p-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              className="p-2 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0"
               title="Copy verification command"
             >
               {copied ? <Check size={14} className="text-[#00EC97]" /> : <Copy size={14} />}
@@ -239,11 +239,11 @@ export function UniversalFooter({
         </div>
 
         {/* Sponsor Track & Evidence Matrix Accordion ("The Receipt Box") */}
-        <div className="border border-white/10 rounded-xl overflow-hidden bg-[#111318]">
+        <div className="border border-[var(--border-subtle)] rounded-xl overflow-hidden bg-[var(--bg-panel)]">
           <button
             type="button"
             onClick={() => setMatrixExpanded(!matrixExpanded)}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors cursor-pointer"
+            className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--bg-panel-alt)] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <Shield size={16} className="text-[#00EC97]" />
@@ -254,30 +254,30 @@ export function UniversalFooter({
                 5 Sponsor Capabilities Verified
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] font-mono">
               <span>{matrixExpanded ? 'Collapse' : 'Expand Matrix'}</span>
               {matrixExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </div>
           </button>
 
           {matrixExpanded && (
-            <div className="border-t border-white/10 p-4 overflow-x-auto">
+            <div className="border-t border-[var(--border-subtle)] p-4 overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr className="border-b border-white/10 text-slate-400 text-[11px] uppercase">
+                  <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)] text-[11px] uppercase">
                     <th className="pb-2 font-semibold">Sponsor &amp; Capability</th>
                     <th className="pb-2 font-semibold">Source Permalinks</th>
                     <th className="pb-2 font-semibold">On-Chain Evidence / Receipt</th>
                     <th className="pb-2 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06]">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {VERIFICATION_MATRIX.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-white/[0.02]">
+                    <tr key={idx} className="hover:bg-[var(--bg-panel-alt)]">
                       <td className="py-2.5 pr-4">
-                        <span className="text-white font-semibold block">{item.sponsor}</span>
-                        <span className="text-[11px] text-slate-400 block">{item.capability}</span>
-                        <span className="text-[10px] text-slate-400 block font-mono">{item.methods}</span>
+                        <span className="text-[var(--text-primary)] font-semibold block">{item.sponsor}</span>
+                        <span className="text-[11px] text-[var(--text-secondary)] block">{item.capability}</span>
+                        <span className="text-[10px] text-[var(--text-secondary)] block font-mono">{item.methods}</span>
                       </td>
                       <td className="py-2.5 pr-4">
                         <a
@@ -296,15 +296,15 @@ export function UniversalFooter({
                             href={item.proofUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-slate-300 hover:text-white flex items-center gap-1 hover:underline"
+                            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1 hover:underline"
                           >
                             <span>{item.proofLabel}</span>
                             <ExternalLink size={10} />
                           </a>
                         ) : (
-                          <span className="text-slate-300">{item.proofLabel}</span>
+                          <span className="text-[var(--text-secondary)]">{item.proofLabel}</span>
                         )}
-                        <span className="text-[10px] text-slate-400 block truncate max-w-xs">{item.txHash}</span>
+                        <span className="text-[10px] text-[var(--text-secondary)] block truncate max-w-xs">{item.txHash}</span>
                       </td>
                       <td className="py-2.5 text-right font-semibold">
                         <span className="inline-flex items-center gap-1 text-[#00EC97]">
@@ -321,7 +321,7 @@ export function UniversalFooter({
         </div>
 
         {/* Bottom Disclaimers & Licensing */}
-        <div className="pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
+        <div className="pt-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[var(--text-secondary)]">
           <p>
             © 2026 ZiniPay Contributors. MIT License. Built for NEAR HACKATHON.
           </p>

@@ -30,38 +30,38 @@ export function LandingHowItWorks({ onNavigateToApp }: { onNavigateToApp?: () =>
   ];
 
   return (
-    <section className="py-20 border-b border-[#E5E1D8] bg-[#F7F5F0] text-[#0F172A] font-sans">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-12">
         {/* Section Header: Problem & Solution in Plain Language */}
-        <div className="flex flex-col gap-6 border-b border-[#E5E1D8] pb-8">
+        <div className="flex flex-col gap-6 border-b border-[var(--border-subtle)] pb-8">
           <div>
             <span className="text-[11px] font-mono uppercase tracking-wider text-[#0D7A5F] font-bold">
               Architecture &amp; Core Mechanism
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#0F172A] tracking-tight mt-1">
+            <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] tracking-tight mt-1">
               Agents Propose. Contracts Enforce. Humans Approve.
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             {/* The Problem */}
-            <div className="p-5 rounded-2xl bg-[#FEE2E2]/60 border border-[#FECACA] flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-[#991B1B] font-bold">
+            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold">
                 <AlertTriangle size={18} />
                 <span>The Problem: Autonomous Agent Drain</span>
               </div>
-              <p className="text-[#7F1D1D] leading-relaxed text-xs sm:text-sm">
+              <p className="text-red-700 dark:text-red-300 leading-relaxed text-xs sm:text-sm">
                 Autonomous agents are vulnerable to prompt injection, hallucinated deliverables, and compromised keys. Granting an AI direct withdrawal keys or unconstrained spending limits turns any smart contract into an automated drain target.
               </p>
             </div>
 
             {/* The Solution */}
-            <div className="p-5 rounded-2xl bg-[#DCFCE7]/60 border border-[#BBF7D0] flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-[#166534] font-bold">
+            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-[#00EC97] font-bold">
                 <CheckCircle2 size={18} />
                 <span>The Solution: Decoupled Multi-Sig Invariants</span>
               </div>
-              <p className="text-[#14532D] leading-relaxed text-xs sm:text-sm">
+              <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed text-xs sm:text-sm">
                 ZiniPay eliminates agent custody. The agent can only draft proposals; a Rust contract enforces spend caps and anti-replay guards on-chain; and elected humans retain final multi-sig veto and approval on Sputnik DAO v2.
               </p>
             </div>
@@ -75,14 +75,14 @@ export function LandingHowItWorks({ onNavigateToApp }: { onNavigateToApp?: () =>
             return (
               <div
                 key={st.num}
-                className="bg-white border border-[#E2DDD5] rounded-2xl p-6 shadow-sm flex flex-col justify-between"
+                className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-sm flex flex-col justify-between"
               >
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between pb-3 border-b border-[#F1ECE1]">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                     <span className="font-mono text-2xl font-bold text-[#0D7A5F]">
                       {st.num}
                     </span>
-                    <span className="font-mono text-[10px] text-[#475569] bg-[#F8F6F1] px-2 py-0.5 rounded border border-[#EAE5DA] font-semibold">
+                    <span className="font-mono text-[10px] text-[var(--text-secondary)] bg-[var(--bg-panel-alt)] px-2 py-0.5 rounded border border-[var(--border-subtle)] font-semibold">
                       {st.badge}
                     </span>
                   </div>
@@ -91,17 +91,17 @@ export function LandingHowItWorks({ onNavigateToApp }: { onNavigateToApp?: () =>
                     <span className="text-[11px] font-mono text-[#0D7A5F] font-semibold uppercase">
                       {st.actor}
                     </span>
-                    <h3 className="font-display text-lg font-bold text-[#0F172A] tracking-tight">
+                    <h3 className="font-display text-lg font-bold text-[var(--text-primary)] tracking-tight">
                       {st.title}
                     </h3>
                   </div>
 
-                  <p className="text-xs text-[#334155] leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                     {st.desc}
                   </p>
                 </div>
 
-                <div className="mt-6 pt-3.5 border-t border-[#F1ECE1] flex items-center justify-between text-xs font-mono text-[#0D7A5F]">
+                <div className="mt-6 pt-3.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs font-mono text-[#0D7A5F]">
                   <div className="flex items-center gap-1.5 font-semibold">
                     <Icon size={14} />
                     <span>Step {st.num}</span>

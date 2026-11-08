@@ -189,23 +189,23 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
         {/* Left Column: Outcome, Value Proposition, Action CTAs & Three-Way Gate Preview */}
         <div className="flex-1 flex flex-col gap-6 text-left w-full">
           {/* Status Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-white/[0.08] text-xs font-mono text-slate-300 w-fit backdrop-blur-md">
+          <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] w-fit backdrop-blur-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-passed)] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-passed)]" />
             </span>
-            <span className="font-medium text-white">NEAR Protocol</span>
+            <span className="font-medium text-[var(--text-primary)]">NEAR Protocol</span>
             <span className="text-[var(--text-muted)]">·</span>
             <span className="text-[var(--color-passed)]">Sputnik DAO v2</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-bold tracking-tight text-white leading-[1.12] max-w-xl text-balance">
+          <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-bold tracking-tight text-[var(--text-primary)] leading-[1.12] max-w-xl text-balance">
             Constrained agent payouts for community treasuries.
           </h1>
 
           {/* Concise mechanism statement */}
-          <p className="text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-prose">
+          <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-prose">
             Autonomous agents verify deliverables, smart contracts enforce spend caps on-chain, and human councils hold the multi-sig quorum.
           </p>
 
@@ -235,7 +235,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
               href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-slate-300 hover:text-white border border-white/[0.08]"
+              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
             >
               <Github size={16} />
               <span>GitHub</span>
@@ -259,8 +259,8 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <span className="font-mono text-[10px] text-cyan-400 font-bold">01</span>
                   <FileCheck size={14} className="text-cyan-300" />
                 </div>
-                <div className="text-xs font-semibold text-white tracking-tight">Deliverable Proof</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">PR & CID Hash</div>
+                <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Deliverable Proof</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">PR & CID Hash</div>
               </div>
 
               {/* Gate 2 */}
@@ -277,8 +277,8 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <span className="font-mono text-[10px] text-[var(--color-passed)] font-bold">02</span>
                   <ShieldAlert size={14} className="text-[var(--color-passed)]" />
                 </div>
-                <div className="text-xs font-semibold text-white tracking-tight">Spend Limits</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">Tier Cap & Rules</div>
+                <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Spend Limits</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">Tier Cap & Rules</div>
               </div>
 
               {/* Gate 3 */}
@@ -295,8 +295,8 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <span className="font-mono text-[10px] text-amber-400 font-bold">03</span>
                   <Users size={14} className="text-amber-300" />
                 </div>
-                <div className="text-xs font-semibold text-white tracking-tight">Council Quorum</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">2-of-2 Multi-Sig</div>
+                <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Council Quorum</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">2-of-2 Multi-Sig</div>
               </div>
             </div>
           </div>
@@ -311,7 +311,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
           />
 
           {/* Elevated Cockpit Chassis */}
-          <div className="relative rounded-2xl bg-[var(--bg-panel)] border border-white/[0.08] p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-1 ring-white/[0.04]">
+          <div className="relative rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-1 ring-black/[0.04] dark:ring-white/[0.04]">
             {/* Cockpit Window Controls Header */}
             <div className="flex items-center justify-between pb-3 px-1 border-b border-[var(--border-subtle)] mb-3 text-xs">
               <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]/80 inline-block" />
                   <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]/80 inline-block" />
                 </div>
-                <span className="ml-1.5 font-mono text-[11px] font-semibold tracking-wider text-slate-300 uppercase">
+                <span className="ml-1.5 font-mono text-[11px] font-semibold tracking-wider text-[var(--text-secondary)] uppercase">
                   Release Receipt
                 </span>
               </div>
@@ -365,9 +365,9 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
             {/* Telemetry Footer Strip */}
             <div className="mt-3 pt-2.5 px-1 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5">
-                <span className="text-white font-medium">PolicyHelper</span>
+                <span className="text-[var(--text-primary)] font-medium">PolicyHelper</span>
                 <span>·</span>
-                <span className="truncate max-w-[130px] sm:max-w-[170px] text-slate-400">
+                <span className="truncate max-w-[130px] sm:max-w-[170px] text-[var(--text-secondary)]">
                   {policyContractId || 'Configured on chain'}
                 </span>
               </div>

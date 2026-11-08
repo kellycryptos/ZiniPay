@@ -36,18 +36,18 @@ export function LandingFeaturesSection() {
   ];
 
   return (
-    <section className="py-20 border-b border-white/[0.08] bg-[#0A0A0C] text-slate-100 font-sans">
+    <section className="py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200">
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/[0.08] pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
           <div>
             <span className="text-[11px] font-mono uppercase tracking-wider text-[#00EC97] font-semibold">
               Core Capabilities
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight mt-1">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight mt-1">
               Engineered for Provable Safety
             </h2>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl leading-relaxed">
               Every mechanism combines off-chain agent inspection with on-chain Rust constraints and human council quorum.
             </p>
           </div>
@@ -60,23 +60,23 @@ export function LandingFeaturesSection() {
             return (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-[#12141A] border border-white/10 hover:border-[#00EC97]/30 transition-all flex flex-col justify-between shadow-lg"
+                className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[#00EC97]/30 transition-all flex flex-col justify-between shadow-lg"
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[#00EC97]">
                       <Icon size={18} />
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.05] border border-white/10 text-slate-400">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
                       {feat.badge}
                     </span>
                   </div>
 
-                  <h3 className="font-display text-lg font-bold text-white tracking-tight">
+                  <h3 className="font-display text-lg font-bold text-[var(--text-primary)] tracking-tight">
                     {feat.title}
                   </h3>
 
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                     {feat.desc}
                   </p>
                 </div>

@@ -6,11 +6,14 @@ import { Buffer } from 'buffer';
 (window as any).process = (window as any).process || { env: {} };
 
 import App from './App.tsx';
+import { ThemeProvider } from './lib/theme.tsx';
 import './index.css';
 import '@near-wallet-selector/modal-ui/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );
