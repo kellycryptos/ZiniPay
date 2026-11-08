@@ -210,9 +210,9 @@ function printCliInspection(mode: 'demo' | 'inspect' = 'inspect') {
       gate3: { name: 'Council Quorum', quorum: '2-of-2 Sputnik DAO v2 Human Multi-Sig' },
     },
     reputationTiers: {
-      Bronze: { score: '0-24 pts', capMultiplier: 1.0, quorum: 'FullDaoQuorum' },
-      Silver: { score: '25-49 pts', capMultiplier: 1.5, quorum: 'SingleCouncil <= 5N' },
-      Gold: { score: '50+ pts', capMultiplier: 2.0, quorum: 'AutoApprove <= 2N' },
+      Bronze: { score: '0-19 pts', capMultiplier: 1.0, quorum: 'FullDaoQuorum' },
+      Silver: { score: '20-59 pts', capMultiplier: 1.5, quorum: 'SingleCouncil <= 5N' },
+      Gold: { score: '60+ pts', capMultiplier: 2.0, quorum: 'AutoApprove <= 2N' },
     },
     sponsorVerification: [
       {

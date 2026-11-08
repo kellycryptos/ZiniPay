@@ -157,7 +157,7 @@ export function PolicyCard({
                   10 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(1.0x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
-                  1 vote (≤ 2.5N) · 2 votes (&gt; 2.5N)
+                  2 votes (all amounts ≤ 10N) · FullDaoQuorum
                 </td>
                 <td className="py-3 px-3">
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
@@ -173,12 +173,12 @@ export function PolicyCard({
                   <span className="w-2 h-2 rounded-full bg-slate-300" />
                   Silver
                 </td>
-                <td className="py-3 px-3 font-mono">20 – 49 pts</td>
+                <td className="py-3 px-3 font-mono">20 – 59 pts</td>
                 <td className="py-3 px-3 font-mono font-bold text-white">
                   15 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(1.5x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
-                  1 vote (≤ 5.0N) · 2 votes (&gt; 5.0N)
+                  1 vote (≤ 5N) · 2 votes (&gt; 5N)
                 </td>
                 <td className="py-3 px-3">
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
@@ -194,12 +194,12 @@ export function PolicyCard({
                   <span className="w-2 h-2 rounded-full bg-yellow-400" />
                   Gold
                 </td>
-                <td className="py-3 px-3 font-mono">50+ pts</td>
+                <td className="py-3 px-3 font-mono">60+ pts</td>
                 <td className="py-3 px-3 font-mono font-bold text-white">
                   20 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(2.0x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
-                  1 vote (≤ 10.0N) · 2 votes (&gt; 10.0N)
+                  AutoApprove (≤ 2N) · 1 vote (≤ 8N) · 2 votes (&gt; 8N)
                 </td>
                 <td className="py-3 px-3">
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">

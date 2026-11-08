@@ -84,11 +84,11 @@ export function ContributorsView({
 
   // Compute tier and effective cap based on contract formula:
   // Bronze: score < 20 -> 10 NEAR (1.0x)
-  // Silver: score >= 20 && score < 50 -> 15 NEAR (1.5x)
-  // Gold: score >= 50 -> 20 NEAR (2.0x)
+  // Silver: score >= 20 && score < 60 -> 15 NEAR (1.5x)
+  // Gold: score >= 60 -> 20 NEAR (2.0x)
   const score = liveScore ?? 30;
-  const tier = score >= 50 ? 'Gold' : score >= 20 ? 'Silver' : 'Bronze';
-  const capNear = score >= 50 ? 20 : score >= 20 ? 15 : 10;
+  const tier = score >= 60 ? 'Gold' : score >= 20 ? 'Silver' : 'Bronze';
+  const capNear = score >= 60 ? 20 : score >= 20 ? 15 : 10;
 
   return (
     <div className="w-full max-w-5xl mx-auto flex flex-col gap-6 font-sans">
