@@ -236,8 +236,8 @@ export function ReleaseReceiptCard({
           <span className="font-mono text-xs text-[var(--text-receipt)] truncate" title={proposal.proofCid}>
             {proposal.proofCid ? (proposal.proofCid.includes('/') ? proposal.proofCid.split('/').pop() : `${proposal.proofCid.slice(0, 12)}...`) : 'Not attached'}
           </span>
-          <span className="text-[10px] text-emerald-700 font-mono flex items-center gap-1">
-            <Check size={10} /> Verified
+          <span className="text-[10px] text-amber-700 font-mono flex items-center gap-1 font-medium">
+            Model review: simulated
           </span>
         </div>
 

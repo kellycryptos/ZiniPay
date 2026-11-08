@@ -61,7 +61,7 @@ export function VerificationModal({
       category: 'Sputnik DAO v2 Governance',
       label: 'Agent Isolation (0 Voting Rights)',
       queryTarget: 'zinipay-demo.sputnikv2.testnet::get_policy()',
-      expected: 'agentzinipaytestnet.testnet has proposal-only rights, 0 council seats',
+      expected: 'agent in voting/wildcard roles (*:*, *:Vote*): false | proposal creation (*:AddProposal): true',
       status: 'idle',
     },
     {
@@ -208,16 +208,23 @@ export function VerificationModal({
           }
         } else if (updated[i].id === '1.3') {
           const policy = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_policy');
-          const councilRole = policy.roles?.find((r: any) => r.name === 'council');
-          const signers = councilRole?.kind?.Group || [];
-          const agentInCouncil = signers.includes('agentzinipaytestnet.testnet');
-          const requestorRole = policy.roles?.find((r: any) => r.name === 'Requestor');
-          const permissions = requestorRole?.permissions || [];
-          if (!agentInCouncil && permissions.includes('*:AddProposal')) {
-            updated[i].actual = 'agent holds Requestor role with proposal rights, 0 voting keys';
+          const isVotingOrWildcard = (p: string) =>
+            p === '*:*' || p === '*' || p.includes('Vote');
+          const votingRoles = policy?.roles?.filter((r: any) =>
+            r.permissions?.some(isVotingOrWildcard)
+          ) || [];
+          const agentInVotingRole = votingRoles.some((r: any) =>
+            r.kind === 'Everyone' || (r.kind?.Group && r.kind.Group.includes('agentzinipaytestnet.testnet'))
+          );
+          const hasProposerPermission = policy?.roles?.some((r: any) =>
+            (r.permissions?.includes('*:AddProposal') || r.permissions?.includes('*:*') || r.permissions?.includes('*')) &&
+            (r.kind === 'Everyone' || (r.kind?.Group && r.kind.Group.includes('agentzinipaytestnet.testnet')))
+          );
+          if (!agentInVotingRole && hasProposerPermission) {
+            updated[i].actual = 'agent in voting/wildcard roles (*:*, *:Vote*): false | proposal creation (*:AddProposal): true';
             updated[i].status = 'pass';
           } else {
-            throw new Error('Agent policy isolation violation');
+            throw new Error(`Agent policy isolation check failed: votingRole=${agentInVotingRole}, canPropose=${hasProposerPermission}`);
           }
         } else if (updated[i].id === '2.1') {
           const p6 = await callViewMethod('zinipay-demo.sputnikv2.testnet', 'get_proposal', { id: 6 });

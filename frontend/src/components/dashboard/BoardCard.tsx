@@ -100,9 +100,9 @@ export function BoardCard({
               {isAttack ? card.id : `#ZP-${card.id}`}
             </span>
 
-            {card.simulated && (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                [SIMULATION]
+            {!isAttack && (
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Model review: simulated
               </span>
             )}
           </div>

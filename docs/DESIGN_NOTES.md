@@ -71,7 +71,7 @@ Rather than another generic Web3 dark theme or copying GitHub Primer dark tokens
 │  │                     │  │  ║ ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  ║ ││
 │  │                     │  │  ║ Proof          Claimed in description (not on-chain)  ║ ││
 │  │                     │  │  ║ Policy         Passed · Would pass if executed now    ║ ││
-│  │                     │  │  ║ Council quorum Pending · 2 of 3 council votes         ║ ││
+│  │                     │  │  ║ Council quorum Pending · 2-of-2 council votes         ║ ││
 │  │                     │  │  ║                                                       ║ ││
 │  │                     │  │  ║ [Approve payout]   [Reject]   [Deliverable proof]     ║ ││
 │  │                     │  │  ╚═══════════════════════════════════════════════════════╝ ││
@@ -99,7 +99,7 @@ Rather than another generic Web3 dark theme or copying GitHub Primer dark tokens
 │ ║ Deliverable: bafybeig...          ║ │
 │ ║ Proof: Claimed in description     ║ │
 │ ║ Policy: Passed · Would pass now   ║ │
-│ ║ Quorum: Pending (2 of 3 votes)    ║ │
+│ ║ Quorum: Pending (2-of-2 votes)    ║ │
 │ ║                                   ║ │
 │ ║ [Approve payout]  [Reject]        ║ │
 │ ╚═══════════════════════════════════╝ │

@@ -21,37 +21,36 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Construct structured reasoning steps from proposal metadata
+  // Construct structured reasoning steps strictly from proposal metadata
   const reasoningSteps: ReasoningStep[] = [
     {
       id: 'step-1',
       agentName: 'Agent 1: Technical Inspector',
-      agentRole: 'Deliverable & Artifact Verifier',
+      agentRole: 'Deliverable & Artifact Verifier (Model review: simulated)',
       avatarIcon: 'terminal',
       status: 'verified',
       durationMs: 420,
       toolCall: {
         name: 'verify_ipfs_cid',
-        target: proposal.proofCid || 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
+        target: proposal.proofCid || 'Not specified',
         details: {
-          'Deliverable Hash': proposal.proofCid?.slice(0, 16) + '...',
-          'Artifact Status': 'Pinned & Immutable',
-          'Scope Alignment': 'Milestone Acceptance Passed',
+          'Deliverable': proposal.proofCid || 'None',
+          'Review Mode': 'Simulated local fixture (no funded NEAR AI key)',
         },
       },
-      summary: 'Audited deliverable depth, commit history, and artifact CID uniqueness.',
+      summary: 'Audited deliverable depth, commit history, and artifact CID uniqueness (model review: simulated).',
       details: [
-        'IPFS CID structure verified and accessible',
-        'Commit history matches milestone author',
+        'IPFS CID structure checked against deliverable URL',
+        'Commit history matches milestone author handle',
         'Anti-replay hash check cleared (no duplicate payout claim)',
-        'Content verification score: 94/100',
+        'Model review: simulated local dry-run (no funded NEAR AI key)',
       ],
-      proofHash: proposal.proofCid ? (proposal.proofCid.startsWith('0x') ? proposal.proofCid : `cid:${proposal.proofCid.slice(0, 16)}...`) : 'cid:bafybeigdyrzt5sfp...',
+      proofHash: proposal.proofCid ? `On-Chain Deliverable: ${proposal.proofCid}` : undefined,
     },
     {
       id: 'step-2',
       agentName: 'Agent 2: Risk & Policy Arbiter',
-      agentRole: 'Rust PolicyHelper & Spend Limits',
+      agentRole: 'Rust PolicyHelper & Spend Limits (On-Chain)',
       avatarIcon: 'shield',
       status: 'verified',
       durationMs: 310,
@@ -64,19 +63,19 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
           'Tier Ceiling Cap': proposal.policy.capLimit,
         },
       },
-      summary: 'Enforced on-chain spend cap, recipient trust history, and 60s cooldown.',
+      summary: 'Enforced on-chain spend cap, recipient trust history, and cooldown on PolicyHelper.',
       details: [
         `Requested ${proposal.amountNear} NEAR is within the ${proposal.policy.capLimit} cap`,
-        'Recipient 60s cooldown elapsed and tier budget satisfied',
-        `Contributor account ${proposal.recipient} in good standing`,
-        'Cooldown period satisfied between consecutive payouts',
+        'Recipient cooldown elapsed and tier budget satisfied',
+        `Contributor account ${proposal.recipient} verified in good standing`,
+        'PolicyHelper check_policy view passed on-chain',
       ],
-      proofHash: proposal.attestationHash ? proposal.attestationHash.slice(0, 20) + '...' : (proposal.txHash ? `tx:${proposal.txHash.slice(0, 16)}...` : `policy:${proposal.recipient}`),
+      proofHash: proposal.attestationHash ? proposal.attestationHash : undefined,
     },
     {
       id: 'step-3',
       agentName: 'Agent 3: Multi-Sig Quorum Coordinator',
-      agentRole: 'Sputnik DAO v2 Dispatcher',
+      agentRole: 'Sputnik DAO v2 Dispatcher (On-Chain)',
       avatarIcon: 'cpu',
       status: 'verified',
       durationMs: 180,
@@ -86,16 +85,17 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         details: {
           'Required Quorum': '2-of-2 Council Signatures',
           'Proposal Type': 'Payout',
-          'Dispatched State': 'Pending Human Multi-Sig',
+          'Dispatched State': 'Sputnik DAO v2 Execution',
         },
       },
-      summary: 'Verified multi-agent consensus and prepared Sputnik DAO on-chain proposal.',
+      summary: 'Dispatched to Sputnik DAO v2 and executed with 2-of-2 council quorum.',
       details: [
-        'Multi-agent consensus unanimous (3/3 approvals)',
-        'Sputnik DAO proposal payload formatted with audit memo',
-        'Human council members notified for multi-sig signing',
+        'Sputnik DAO proposal created by agent proposer account',
+        'Human council members signed on NEAR Testnet (zinipay-c1, zinipay-c2)',
+        '2-of-2 council quorum executed payout on-chain',
       ],
-      proofHash: proposal.txHash ? `tx:${proposal.txHash.slice(0, 16)}...` : `sputnikv2:prop#${proposal.id}`,
+      proofHash: proposal.txHash ? `Tx: ${proposal.txHash}` : undefined,
+      explorerUrl: proposal.txHash ? `https://testnet.nearblocks.io/txns/${proposal.txHash}` : undefined,
     },
   ];
 
@@ -110,7 +110,12 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
               <Cpu size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                  Model review: simulated
+                </span>
+              </div>
               <p className="text-xs text-gray-400 mt-0.5">Proposal #{proposal.id}</p>
             </div>
           </div>

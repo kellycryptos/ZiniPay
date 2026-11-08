@@ -21,14 +21,14 @@ Never use generic web3 hype words:
 Use concrete, verifiable mechanism copy:
 - ✅ "Prevents agent runaway spending via Rust `PolicyHelper` spend caps and cooldowns."
 - ✅ "Validates merged PR commit hash and IPFS CID uniqueness before proposal creation."
-- ✅ "Requires 2-of-3 human council multi-sig quorum before any payout executes."
+- ✅ "Requires 2-of-2 human council multi-sig quorum before any payout executes."
 
 ### Mandatory Page Flow
 1. **Hero**: Outcome + Audience headline (`max-w-2xl`), technical subheadline, single primary CTA, live testnet proof signal, and the signature interactive `ReleaseReceiptCard`.
 2. **Three-Way Release Gate**: Interactive/visual pipeline showing:
    - Gate 1: Deliverable Verification (GitHub PR / IPFS CID)
    - Gate 2: Policy & Spend Limits (Tier cap, cooldown, CID anti-replay)
-   - Gate 3: Human Council Quorum (Sputnik DAO 2-of-3 multi-sig)
+   - Gate 3: Human Council Quorum (Sputnik DAO 2-of-2 multi-sig)
 3. **Tagline Reveal (Scroll-triggered)**: 2+ lines stating the core governance thesis with word-by-word scroll reveal.
 4. **Attacks That Fail**: Concrete attack vectors (Prompt Injection, Unbounded Drain, Replay Attack, Hallucinated Deliverable) and how ZiniPay's fail-closed architecture stops each.
 5. **Verified Testnet Receipts**: Real transaction hashes, block explorer links, and Sputnik DAO proposal IDs.
