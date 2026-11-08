@@ -75,34 +75,33 @@ export function BoardCard({
       onClick={onInspect}
       className={`relative w-full rounded-xl transition-all duration-200 cursor-pointer text-left select-none group ${
         isAttack
-          ? 'bg-[#181316] border border-red-500/30 hover:border-red-500/60 shadow-lg hover:shadow-red-950/30'
-          : 'bg-[#FCFCFE] text-[#0F172A] border border-[#E2E8F0] hover:border-[#CBD5E1] shadow-xl hover:-translate-y-0.5'
+          ? 'bg-[#181316] border border-red-500/30 hover:border-red-500/60 shadow-lg hover:shadow-red-950/30 text-slate-100'
+          : 'bg-[#12141A] border border-white/[0.08] hover:border-white/20 shadow-xl hover:-translate-y-0.5 text-slate-100'
       }`}
     >
-      {/* Paper Top Perforation Accent (for paper-on-dark-desk receipt look) */}
-      {!isAttack && (
-        <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-[#00EC97] rounded-t-xl opacity-90" />
-      )}
-      {isAttack && (
-        <div className="h-1.5 w-full bg-gradient-to-r from-red-600 to-rose-400 rounded-t-xl opacity-80" />
+      {/* Top Perforation Accent */}
+      {!isAttack ? (
+        <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-[#00EC97] rounded-t-xl opacity-90" />
+      ) : (
+        <div className="h-1 w-full bg-gradient-to-r from-red-600 to-rose-400 rounded-t-xl opacity-80" />
       )}
 
       <div className="p-4 flex flex-col gap-3 font-sans">
         {/* ── Top Bar: ID, Tier Badge & Explorer Link ─────────── */}
-        <div className="flex items-center justify-between gap-2 border-b pb-2.5 border-black/5 dark:border-white/10">
+        <div className="flex items-center justify-between gap-2 border-b pb-2.5 border-white/[0.08]">
           <div className="flex items-center gap-2">
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
                 isAttack
                   ? 'bg-red-950/80 text-red-300 border border-red-500/40'
-                  : 'bg-slate-100 text-slate-800 border border-slate-200'
+                  : 'bg-white/[0.06] text-slate-200 border border-white/[0.1]'
               }`}
             >
               {isAttack ? card.id : `#ZP-${card.id}`}
             </span>
 
             {card.simulated && (
-              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 [SIMULATION]
               </span>
             )}
@@ -111,14 +110,14 @@ export function BoardCard({
           <div className="flex items-center gap-2">
             {/* Tier Badge */}
             <span
-              className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold ${
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${
                 card.tier === 'Gold'
-                  ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300'
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                   : card.tier === 'Silver'
-                  ? 'bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-200'
+                  ? 'bg-slate-400/15 text-slate-200 border-slate-400/30'
                   : isAttack
-                  ? 'bg-red-900/40 text-red-300 border border-red-500/30'
-                  : 'bg-orange-100 text-orange-800 border border-orange-300 dark:bg-orange-950/60 dark:text-orange-300'
+                  ? 'bg-red-900/40 text-red-300 border-red-500/30'
+                  : 'bg-orange-500/15 text-orange-300 border-orange-500/30'
               }`}
             >
               {card.tier || 'Testnet'}
@@ -134,7 +133,7 @@ export function BoardCard({
                 className={`p-1 rounded transition-colors ${
                   isAttack
                     ? 'text-red-400 hover:text-white hover:bg-red-950/60'
-                    : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-[#00EC97] hover:bg-white/[0.06]'
                 }`}
                 title="Inspect on NEARBlocks"
               >
@@ -148,7 +147,7 @@ export function BoardCard({
         <div>
           <h3
             className={`font-semibold text-xs leading-snug line-clamp-2 ${
-              isAttack ? 'text-red-100' : 'text-slate-900'
+              isAttack ? 'text-red-100' : 'text-white'
             }`}
           >
             {isAttack ? card.vector : card.title}
@@ -160,23 +159,31 @@ export function BoardCard({
           className={`p-2.5 rounded-lg border flex items-center justify-between font-mono text-xs ${
             isAttack
               ? 'bg-red-950/30 border-red-500/20 text-red-200'
-              : 'bg-slate-50 border-slate-200 text-slate-800'
+              : 'bg-white/[0.03] border-white/[0.08] text-slate-200'
           }`}
         >
           <div className="flex items-center gap-1.5 truncate max-w-[170px]" title={card.recipient}>
-            <User size={12} className={isAttack ? 'text-red-400' : 'text-slate-500'} />
+            <User size={12} className={isAttack ? 'text-red-400' : 'text-slate-400'} />
             <span className="truncate">{card.recipient}</span>
           </div>
 
           <div className="font-bold text-sm shrink-0">
-            {card.amountNear ? `${card.amountNear} NEAR` : isAttack ? 'Unauthorized' : '0.10 NEAR'}
+            {card.amountNear ? (
+              <span className={isAttack ? 'text-red-300' : 'text-[#00EC97]'}>
+                {card.amountNear} NEAR
+              </span>
+            ) : isAttack ? (
+              <span className="text-red-400">Unauthorized</span>
+            ) : (
+              <span className="text-[#00EC97]">0.10 NEAR</span>
+            )}
           </div>
         </div>
 
         {/* ── PR Link / Deliverable Proof CID ─────────────────── */}
         <div className="flex items-center justify-between text-[11px] font-mono">
           <div className="flex items-center gap-1 text-[var(--text-secondary)] truncate max-w-[210px]">
-            <GitPullRequest size={12} className={isAttack ? 'text-red-400' : 'text-emerald-600'} />
+            <GitPullRequest size={12} className={isAttack ? 'text-red-400' : 'text-[#00EC97]'} />
             {card.prUrl ? (
               <a
                 href={card.prUrl}
@@ -184,14 +191,14 @@ export function BoardCard({
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className={`hover:underline truncate ${
-                  isAttack ? 'text-red-300' : 'text-emerald-700 font-medium'
+                  isAttack ? 'text-red-300' : 'text-[#00EC97] font-medium'
                 }`}
               >
                 {card.prTitle || 'GitHub PR'}
               </a>
             ) : (
-              <span className={`truncate ${isAttack ? 'text-red-300' : 'text-slate-600'}`}>
-                {isAttack ? card.deliverable || 'Deliverable' : card.proofCid.slice(0, 20) + '...'}
+              <span className={`truncate ${isAttack ? 'text-red-300' : 'text-slate-400'}`}>
+                {isAttack ? card.deliverable || 'Deliverable' : card.proofCid ? `${card.proofCid.slice(0, 20)}...` : 'Deliverable'}
               </span>
             )}
           </div>
@@ -213,26 +220,26 @@ export function BoardCard({
             </p>
           </div>
         ) : (
-          <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono">
+          <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between text-[11px] font-mono">
             {card.status === 'approved_paid' ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <CheckCircle2 size={11} className="text-emerald-600" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
+                <CheckCircle2 size={11} className="text-[#00EC97]" />
                 PAID ON-CHAIN (2/2 Council)
               </span>
             ) : card.status === 'awaiting_council' ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                <Clock size={11} className="text-amber-600" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                <Clock size={11} className="text-amber-400" />
                 AWAITING 2-OF-2 COUNCIL
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
-                <ShieldCheck size={11} className="text-blue-600" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/60 text-blue-300 border border-blue-500/30">
+                <ShieldCheck size={11} className="text-blue-400" />
                 PROPOSED BY AGENT
               </span>
             )}
 
             {card.votes && (
-              <span className="text-[10px] text-slate-500 font-bold">
+              <span className="text-[10px] text-slate-400 font-bold">
                 {card.votes.approve} / {card.votes.required} Votes
               </span>
             )}
@@ -242,20 +249,20 @@ export function BoardCard({
         {/* ── Council Vote Actions (if authorized council wallet) ── */}
         {!isAttack && canVote && card.status === 'awaiting_council' && (
           <div
-            className="pt-2 border-t border-slate-200 flex items-center gap-2"
+            className="pt-2 border-t border-white/[0.08] flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={onVoteApprove}
-              className="flex-1 py-1 px-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-[11px] font-semibold text-center transition-colors cursor-pointer"
+              className="flex-1 py-1 px-2 rounded bg-[#00EC97] hover:bg-[#00EC97]/90 text-black font-mono text-[11px] font-semibold text-center transition-colors cursor-pointer"
             >
               Vote Approve
             </button>
             <button
               type="button"
               onClick={onVoteReject}
-              className="py-1 px-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-mono text-[11px] font-semibold transition-colors cursor-pointer"
+              className="py-1 px-2 rounded bg-white/[0.08] hover:bg-white/[0.12] text-slate-200 font-mono text-[11px] font-semibold transition-colors cursor-pointer"
             >
               Reject
             </button>

@@ -46,7 +46,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         'Anti-replay hash check cleared (no duplicate payout claim)',
         'Content verification score: 94/100',
       ],
-      proofHash: '0x' + (proposal.proofCid ? proposal.proofCid.slice(-16) : '8f921ab04e22c9'),
+      proofHash: proposal.proofCid ? (proposal.proofCid.startsWith('0x') ? proposal.proofCid : `cid:${proposal.proofCid.slice(0, 16)}...`) : 'cid:bafybeigdyrzt5sfp...',
     },
     {
       id: 'step-2',
@@ -71,7 +71,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         `Contributor account ${proposal.recipient} in good standing`,
         'Cooldown period satisfied between consecutive payouts',
       ],
-      proofHash: '0x3c7e9124a919f201bc3',
+      proofHash: proposal.attestationHash ? proposal.attestationHash.slice(0, 20) + '...' : (proposal.txHash ? `tx:${proposal.txHash.slice(0, 16)}...` : `policy:${proposal.recipient}`),
     },
     {
       id: 'step-3',
@@ -95,7 +95,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         'Sputnik DAO proposal payload formatted with audit memo',
         'Human council members notified for multi-sig signing',
       ],
-      proofHash: '0x9924baef10382a472c',
+      proofHash: proposal.txHash ? `tx:${proposal.txHash.slice(0, 16)}...` : `sputnikv2:prop#${proposal.id}`,
     },
   ];
 

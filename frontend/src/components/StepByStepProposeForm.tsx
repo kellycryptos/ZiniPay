@@ -302,7 +302,7 @@ export function StepByStepProposeForm({
                 description: `ZiniPay Three-Way Match: ${task} | Deliverable: ${deliverable}`,
                 kind: {
                   FunctionCall: {
-                    receiver_id: daoContract,
+                    receiver_id: policyContractId || 'zinipay-policy2.testnet',
                     actions: [
                       {
                         method_name: 'release',
@@ -396,10 +396,13 @@ export function StepByStepProposeForm({
         recipientAddress: destinationChain === 'near' ? recipient : crossChainAddress,
         quoteEstimate: destinationChain !== 'near' ? `~${(Number(amount) * 4.6).toFixed(2)} USDC` : undefined,
       },
+      targetContract: policyContractId || 'zinipay-policy2.testnet',
+      targetMethod: 'release',
+      isZinipayRelease: true,
       votes: {
         approve: 1,
         reject: 0,
-        required: 3,
+        required: 2,
       },
     };
 

@@ -493,9 +493,51 @@ export async function fetchDaoProposals(
           ? 'ethereum'
           : 'near';
 
+        const targetToken = settlementType === 'cross_chain_intent' ? 'USDC' : 'NEAR';
+
+        // Parse tier from on-chain description
+        let parsedTier: 'Bronze' | 'Silver' | 'Gold' = 'Bronze';
+        if (/\[Tier:\s*Gold\]/i.test(p.description)) parsedTier = 'Gold';
+        else if (/\[Tier:\s*Silver\]/i.test(p.description)) parsedTier = 'Silver';
+        else if (/\[Tier:\s*Bronze\]/i.test(p.description)) parsedTier = 'Bronze';
+
+        // Derive clean human-readable title and summary (strip repetitive bracket tags from description)
+        let cleanTitle = '';
+        const prMatch = p.description.match(/GitHub PR #(\d+)/i);
+        if (prMatch) {
+          cleanTitle = `GitHub PR #${prMatch[1]} Release Payout`;
+        } else if (p.description.toLowerCase().includes('dao governance:')) {
+          cleanTitle = p.description.split('|')[0].trim();
+        } else {
+          const stripped = p.description
+            .replace(/\[SIMULATION\]/gi, '')
+            .replace(/\[Three-Way Match:[^\]]*\]/gi, '')
+            .replace(/\[Tier:[^\]]*\]/gi, '')
+            .replace(/\[Attestation[^\]]*\]/gi, '')
+            .replace(/Artifact verified:\s*/gi, '')
+            .trim();
+          cleanTitle = stripped.split('|')[0]?.trim() || `Proposal #${p.id}`;
+        }
+
+        let cleanSummary = p.description
+          .replace(/\[SIMULATION\]/gi, '')
+          .replace(/\[Three-Way Match:[^\]]*\]/gi, '')
+          .replace(/\[Tier:[^\]]*\]/gi, '')
+          .replace(/\[Attestation[^\]]*\]/gi, '')
+          .replace(/^\|\s*/, '')
+          .trim();
+        if (cleanSummary.length > 140) {
+          cleanSummary = cleanSummary.substring(0, 137) + '...';
+        }
+        if (!cleanSummary) {
+          cleanSummary = `Sputnik DAO proposal #${p.id} payout to ${recipient}`;
+        }
+
+        const repScore = parsedTier === 'Gold' ? 95 : parsedTier === 'Silver' ? 70 : 30;
+
         return {
           id: p.id,
-          title: p.description.split('|')[0]?.trim() || `Proposal #${p.id}`,
+          title: cleanTitle,
           proposer: p.proposer,
           recipient,
           amountNear,
@@ -507,27 +549,28 @@ export async function fetchDaoProposals(
           attestationHash,
           attestationStatus,
           attestationReason,
-          summary: p.description.substring(0, 140),
+          summary: cleanSummary,
           evidenceType,
           evidenceDetails: p.description,
           createdAt: new Date(Number(BigInt(p.submission_time) / 1_000_000n)).toLocaleDateString(),
           submissionTime: p.submission_time,
           status,
           rawStatus: p.status,
+          simulated: false,
           policy: {
             withinCap: true,
-            capLimit: '15.0 NEAR',
+            capLimit: parsedTier === 'Gold' ? '50.0 NEAR' : parsedTier === 'Silver' ? '15.0 NEAR' : '5.0 NEAR',
             cooldownElapsed: true,
             cooldownRemainingSecs: 0,
             cidUnique: true,
             reputationQualified: true,
-            reputationScore: 45,
-            tier: 'Silver' as const,
+            reputationScore: repScore,
+            tier: parsedTier,
           },
           settlement: {
             type: settlementType,
             targetChain,
-            targetToken: 'USDC',
+            targetToken,
             recipientAddress: recipient,
           },
           votes: {
