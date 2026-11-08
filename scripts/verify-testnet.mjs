@@ -74,16 +74,23 @@ function report(step, title, state, details = '') {
 
 async function rpcPost(method, params, endpoints = VIEW_RPC_ENDPOINTS, timeoutMs = 6000) {
   for (const url of endpoints) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 'verify-suite', method, params }),
-        signal: AbortSignal.timeout(timeoutMs),
-      }).then((r) => r.json());
-      if (res?.result) return res.result;
-    } catch {
-      // try next fallback
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 'verify-suite', method, params }),
+          signal: AbortSignal.timeout(timeoutMs),
+        }).then((r) => r.json());
+        if (res?.result) return res.result;
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        }
+      } catch {
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        }
+      }
     }
   }
   return null;

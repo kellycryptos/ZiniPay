@@ -21,7 +21,7 @@ export function LandingFaqSection({
     },
     {
       q: 'How does reputation affect payout limits?',
-      a: 'PolicyHelper stores an on-chain reputation score per account. This score scales the spend cap: Bronze (< 20 pts) is capped at 10 NEAR, Silver (20–49 pts) at 15 NEAR (1.5x multiplier), and Gold (≥ 50 pts) at 20 NEAR (2.0x multiplier). Payouts exceeding effective tier limits panic on-chain.',
+      a: 'PolicyHelper stores an on-chain reputation score per account. This score scales the spend cap: Bronze (0–19 pts) is capped at 10 NEAR, Silver (20–59 pts) at 15 NEAR (1.5x multiplier), and Gold (≥ 60 pts) at 20 NEAR (2.0x multiplier). Payouts exceeding effective tier limits panic on-chain.',
     },
     {
       q: 'Is ZiniPay integrated with Trezu?',

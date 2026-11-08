@@ -559,7 +559,7 @@ export async function fetchDaoProposals(
           simulated: false,
           policy: {
             withinCap: true,
-            capLimit: parsedTier === 'Gold' ? '50.0 NEAR' : parsedTier === 'Silver' ? '15.0 NEAR' : '5.0 NEAR',
+            capLimit: parsedTier === 'Gold' ? '20.0 NEAR' : parsedTier === 'Silver' ? '15.0 NEAR' : '10.0 NEAR',
             cooldownElapsed: true,
             cooldownRemainingSecs: 0,
             cidUnique: true,
