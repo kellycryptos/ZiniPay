@@ -577,6 +577,7 @@ export async function fetchDaoProposals(
             approve: approveCount,
             reject: rejectCount,
             required: 2,
+            voters: p.votes || {},
           },
         };
       }).reverse();

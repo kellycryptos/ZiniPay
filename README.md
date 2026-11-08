@@ -97,7 +97,7 @@ npm run verify:testnet
 ```
 **See**: `24 PASSED / 0 UNVERIFIED / 0 FAILED`. Queries public NEAR testnet RPCs to confirm:
 - Active Sputnik DAO v2 council with 2-of-2 multi-sig quorum (`zinipay-c1.testnet`, `zinipay-c2.testnet`).
-- Agent proposer isolation: `agentzinipaytestnet.testnet` holds `Requestor` role only (0 council seats, 0 voting keys).
+- Agent proposer isolation: `agentzinipaytestnet.testnet` holds proposal creation rights (`*:AddProposal`) with 0 council seats and 0 voting keys.
 - Active Rust `PolicyHelper` contract bound strictly to DAO treasury.
 - Contributor reputation score (Silver tier: 30 pts) and deliverable CID burn status (`cid_used: true`).
 - Check 4.5: Social Money Tiered Approval Resolution (advisory client-side schedule; Sputnik DAO enforces 2-of-2 council quorum for all payouts).
@@ -111,7 +111,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 - Named Account: `zinipay-recipient2.testnet`
 - On-Chain Score: `30 pts (verified on zinipay-policy2.testnet)`
 - Reputation Tier: `Silver (1.5x spend cap multiplier)`
-- Completed Tasks: `2` verified tasks under policy (local cache: `zinipay-reputation.json`)
+- Completed Tasks: `2` verified tasks under policy (off-chain local cache: `zinipay-reputation.json`)
 - Total Value Paid: `0.2000 NEAR` (local cache / verified receipts)
 - Tiered Approval Schedule:
   - Small Payout (&le; 1 NEAR): `SingleCouncil` (1 council member approval, fast-tracked)
@@ -128,7 +128,7 @@ npm run demo:social-money
 **See**: Complete automated walkthrough:
 1. Contributor starting state (Named account: `alice-contributor.testnet`, Bronze tier, 0 pts).
 2. Create request: Deliberate deliverable proof and calculate initial approval requirement (Full DAO quorum).
-3. Payout settlement: Multi-sig quorum reached → atomic release updates score (+25 pts), completed tasks (+1), and total paid (+2.5N), promoting contributor to Silver tier.
+3. Payout settlement: Multi-sig quorum reached → atomic release awards +5 pts on-chain (auto-increase stops at Bronze ceiling of 19 pts). Contributor promotions to Silver (20+) and Gold (60+) are governed strictly by council action via update_reputation to prevent automated reputation creep.
 4. Tiered outcomes under updated reputation:
    - Micro bounty (0.8N): Single council member fast-track.
    - Medium milestone (4.0N): Single council member approval.
@@ -287,7 +287,7 @@ ZiniPay extends standard DAO tooling with four Social Money capabilities designe
        │            └─ Callback on_release_done verifies transfer or triggers rollback
        ▼
 [7. Reputation] ──── Post-Settlement Reputation Indexing & Public Board
-                    ├─ Contributor score updated (+10 pts per successful payout)
+                    ├─ Contributor score updated (+5 pts per payout, auto-increase stops at 19; Silver/Gold require DAO council action)
                     ├─ Completed tasks count incremented & total NEAR earned updated
                     ├─ Settlement receipt logged with explorer links
                     └─ Public Activity Board (/board) surfaces updated track record
@@ -311,7 +311,7 @@ Communities utilizing [Trezu](https://trezu.app) as their multisig custody layer
 | **Over-Cap Payout** | Requesting payout exceeding contributor tier limit | Gate 2 (`PolicyHelper` Contract) | Reverts with: `"Amount ... exceeds effective tier cap ... for recipient ..."`. |
 | **Unauthorized Direct Call** | Malicious actor calls `PolicyHelper::release` directly | Gate 2 (`PolicyHelper` Contract) | Reverts with: `"Only owner or designated DAO can call this"`. |
 | **Prompt Injection** | Embedding injection commands in deliverable description | Gate 1 (Zod Schema Validation) | Parser strips unescaped payloads and enforces strict typed outputs; ignores instruction hijacking. |
-| **Agent Key Compromise** | Rogue agent attempts to self-approve payout | Gate 3 (Sputnik DAO Policy) | Impossible on-chain: agent holds `Requestor` role only; has zero voting permissions. |
+| **Agent Key Compromise** | Rogue agent attempts to self-approve payout | Gate 3 (Sputnik DAO Policy) | Impossible on-chain: agent holds proposal creation rights (`*:AddProposal`) only; has zero voting permissions (`*:*`, `*:Vote*`). |
 | **Transfer Failure** | Payout promise fails due to recipient account issue | Gate 2 (Contract Callback) | `on_release_done` detects failure, removes CID from `used_cids`, resets cooldown. |
 
 ---
@@ -385,7 +385,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 
 [2/3] Querying Public Contributor Track Record...
   ✓ Track Record Verified:
-      Completed Tasks:  2
+      Completed Tasks:  2 (off-chain local cache: zinipay-reputation.json)
       Total NEAR Paid:  0.2000 NEAR
       Rejections Count: 0
       Track Record:     100.0% completion rate (2 of 2)
@@ -403,7 +403,7 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 
 Run an end-to-end automated simulation demonstrating the entire Social Money lifecycle:
 1. **Create Request**: Agent evaluates deliverable & queries on-chain tier cap.
-2. **Reputation Update**: Payout settles, adding +10 pts and updating completed tasks.
+2. **Reputation Update**: Payout settles, adding +5 pts on-chain (auto-increase stops at 19 pts; Silver/Gold require DAO council action) and updating completed tasks in local cache.
 3. **Tiered Outcome**: Subsequent larger payout automatically unlocks the upgraded tier (SingleCouncil fast-track), while replay attempts trigger instant penalty & rollback.
 
 ```bash

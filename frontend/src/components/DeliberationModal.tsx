@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Cpu, ShieldCheck, CheckCircle2, AlertTriangle, ExternalLink, Terminal, Sparkles, Copy, Check } from 'lucide-react';
+import { X, Cpu, ShieldCheck, CheckCircle2, AlertTriangle, ExternalLink, Terminal, Sparkles, Copy, Check, Clock } from 'lucide-react';
 import { Proposal } from '../lib/types';
 import { AgentReasoningTree, ReasoningStep } from './ui/AgentReasoningTree';
 
@@ -20,6 +20,23 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const isApproved = proposal.status === 'approved' || proposal.status === 'settled' || proposal.rawStatus === 'Approved';
+  const approveCount = proposal.votes?.approve || 0;
+  const requiredCount = proposal.votes?.required || 2;
+  const votersMap = proposal.votes?.voters || {};
+  const actualVoters = Object.entries(votersMap)
+    .filter(([_, v]) => v === 'Approve')
+    .map(([k]) => k);
+
+  // For known settled historical proposals #5 and #6 from verified.json, council signers were zinipay-c1 and zinipay-c2
+  const signersText = actualVoters.length > 0
+    ? actualVoters.join(', ')
+    : isApproved && (proposal.id === 5 || proposal.id === 6)
+    ? 'zinipay-c1.testnet, zinipay-c2.testnet'
+    : actualVoters.length > 0
+    ? actualVoters.join(', ')
+    : 'None yet';
 
   // Construct structured reasoning steps strictly from proposal metadata
   const reasoningSteps: ReasoningStep[] = [
@@ -77,25 +94,36 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
       agentName: 'Agent 3: Multi-Sig Quorum Coordinator',
       agentRole: 'Sputnik DAO v2 Dispatcher (On-Chain)',
       avatarIcon: 'cpu',
-      status: 'verified',
+      status: isApproved ? 'verified' : 'running',
       durationMs: 180,
       toolCall: {
         name: 'sputnik_dao_add_proposal',
         target: `dao: zinipay-demo.sputnikv2.testnet (Proposal #${proposal.id})`,
         details: {
-          'Required Quorum': '2-of-2 Council Signatures',
-          'Proposal Type': 'Payout',
-          'Dispatched State': 'Sputnik DAO v2 Execution',
+          'Required Quorum': `${requiredCount}-of-${requiredCount} Council Signatures`,
+          'Current Approvals': `${approveCount}/${requiredCount}`,
+          'Council Signers': signersText,
+          'Proposal Status': isApproved ? 'Approved / Paid' : 'Awaiting council votes',
         },
       },
-      summary: 'Dispatched to Sputnik DAO v2 and executed with 2-of-2 council quorum.',
-      details: [
-        'Sputnik DAO proposal created by agent proposer account',
-        'Human council members signed on NEAR Testnet (zinipay-c1, zinipay-c2)',
-        '2-of-2 council quorum executed payout on-chain',
-      ],
-      proofHash: proposal.txHash ? `Tx: ${proposal.txHash}` : undefined,
-      explorerUrl: proposal.txHash ? `https://testnet.nearblocks.io/txns/${proposal.txHash}` : undefined,
+      summary: isApproved
+        ? `Dispatched to Sputnik DAO v2 and executed with 2-of-2 council quorum (${signersText}).`
+        : `Awaiting council votes on Sputnik DAO v2 (${approveCount}/${requiredCount} approvals).`,
+      details: isApproved
+        ? [
+            `Sputnik DAO proposal #${proposal.id} registered on-chain`,
+            `Human council signers confirmed: ${signersText}`,
+            '2-of-2 council quorum executed payout on-chain',
+          ]
+        : [
+            `Sputnik DAO proposal #${proposal.id} registered on-chain`,
+            `Awaiting council votes (${approveCount}/${requiredCount} approvals)`,
+            actualVoters.length > 0
+              ? `Recorded approving votes: ${actualVoters.join(', ')}`
+              : 'No council approvals recorded yet on this proposal',
+          ],
+      proofHash: isApproved && proposal.txHash ? `Tx: ${proposal.txHash}` : undefined,
+      explorerUrl: isApproved && proposal.txHash ? `https://testnet.nearblocks.io/txns/${proposal.txHash}` : undefined,
     },
   ];
 
@@ -156,26 +184,43 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
               {/* Integrated Reasoning Tree */}
               <AgentReasoningTree
                 steps={reasoningSteps}
-                overallStatus="verified"
-                consensusScore="3/3 Unanimous"
+                overallStatus={isApproved ? 'verified' : 'running'}
+                consensusScore={isApproved ? 'Approved by Council' : 'Awaiting Council Quorum'}
                 teeEnclaveVerified={true}
               />
 
-              {/* Consensus Result Summary */}
-              <div className="p-4 rounded-xl bg-near-green-subtle border border-near-green-border flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-near-green flex items-center gap-1.5 text-sm">
-                    <CheckCircle2 size={16} />
-                    Consensus Reached: 3/3 Pass
-                  </h4>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Proposal cleared on-chain spend caps for Sputnik DAO add_proposal submission.
-                  </p>
+              {/* Consensus / Quorum Result Summary */}
+              {isApproved ? (
+                <div className="p-4 rounded-xl bg-near-green-subtle border border-near-green-border flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-near-green flex items-center gap-1.5 text-sm">
+                      <CheckCircle2 size={16} />
+                      Quorum Approved: 2/2 Council Signatures
+                    </h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      Proposal cleared PolicyHelper spend caps and executed on-chain.
+                    </p>
+                  </div>
+                  <span className="text-near-green font-mono text-xs bg-near-green-subtle px-3 py-1 rounded-full border border-near-green-border font-bold">
+                    Executed
+                  </span>
                 </div>
-                <span className="text-near-green font-mono text-xs bg-near-green-subtle px-3 py-1 rounded-full border border-near-green-border font-bold">
-                  Quorum Ready
-                </span>
-              </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-amber-300 flex items-center gap-1.5 text-sm">
+                      <Clock size={16} />
+                      Awaiting Council Votes ({approveCount}/{requiredCount})
+                    </h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      Sputnik DAO proposal dispatched. Awaiting 2-of-2 human council quorum approvals.
+                    </p>
+                  </div>
+                  <span className="text-amber-300 font-mono text-xs bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30 font-bold">
+                    Pending Quorum
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

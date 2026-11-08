@@ -48,6 +48,7 @@ export type Proposal = {
     approve: number;
     reject: number;
     required: number;
+    voters?: Record<string, string>;
   };
 };
 
