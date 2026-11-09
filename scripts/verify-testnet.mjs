@@ -26,7 +26,6 @@ const VIEW_RPC_ENDPOINTS = [
 const TX_RPC_ENDPOINTS = [
   'https://archival-rpc.testnet.near.org',
   'https://rpc.testnet.near.org',
-  'https://test.rpc.fastnear.com',
 ];
 
 const DAO_ID = 'zinipay-demo.sputnikv2.testnet';
@@ -157,18 +156,19 @@ async function queryTxStatus(txHash, senderId) {
     }
   }
 
-  // Fallback to NearBlocks public testnet API if available
+  // Fallback to NearBlocks v3 public testnet API if available
   try {
-    const nbRes = await fetch(`https://api-testnet.nearblocks.io/v1/txns/${txHash}`, {
+    const nbRes = await fetch(`https://api-testnet.nearblocks.io/v3/txns/${txHash}`, {
       signal: AbortSignal.timeout(4000),
     }).then((r) => r.json());
-    if (nbRes?.txns?.[0]) {
-      const nbTx = nbRes.txns[0];
+    if (nbRes?.data?.transaction_hash) {
+      const d = nbRes.data;
+      const isSuccess = d.outcomes?.status === true || d.outcomes?.status_key === 'SUCCESS_VALUE';
       return {
-        transaction: { hash: nbTx.transaction_hash },
-        status: nbTx.outcomes?.status ? { SuccessValue: '' } : { Failure: {} },
-        receipts_outcome: [],
-        _source: 'nearblocks',
+        transaction: { hash: d.transaction_hash },
+        status: isSuccess ? { SuccessValue: '' } : { Failure: { ActionError: {} } },
+        receipts_outcome: isSuccess ? [] : [{ outcome: { status: { Failure: {} }, logs: [] } }],
+        _source: 'nearblocks-v3',
       };
     }
   } catch {
