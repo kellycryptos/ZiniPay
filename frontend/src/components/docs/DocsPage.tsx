@@ -211,7 +211,7 @@ export function DocsPage({
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6">
           <p className="text-sm text-slate-300 leading-relaxed">
-            The following diagram outlines the fail-closed sequence from milestone submission to on-chain settlement:
+            The following diagram outlines the fail-closed sequence from milestone proposal to on-chain settlement:
           </p>
 
           {/* Structured Architecture Flow Card */}
@@ -377,7 +377,7 @@ export function DocsPage({
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
           <p>
-            Any judge, evaluator, or AI reviewer can verify every on-chain claim in under 60 seconds from a clean git clone with <strong>no API keys, no private keys, and no <code className="text-[#00EC97] font-mono">.env</code> file</strong>:
+            Anyone can verify every on-chain claim in under 60 seconds from a clean git clone with <strong>no API keys, no private keys, and no <code className="text-[#00EC97] font-mono">.env</code> file</strong>:
           </p>
 
           <div className="flex flex-col gap-4">
@@ -387,7 +387,7 @@ export function DocsPage({
                 <span className="text-[#00EC97] font-bold">1. Run Full On-Chain Testnet Verification (24 Checks)</span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard('npm run verify:testnet', 'cmd1')}
+                  onClick={() => copyToClipboard('node scripts/verify-testnet.mjs', 'cmd1')}
                   className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd1' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -395,7 +395,7 @@ export function DocsPage({
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-black/60 border border-white/5 font-mono text-xs text-[#00EC97]">
-                npm run verify:testnet
+                node scripts/verify-testnet.mjs
               </div>
               <p className="text-xs text-slate-400 font-sans">
                 <strong>See:</strong> 24 PASSED checks verifying Sputnik DAO roles, PolicyHelper spend caps, recipient reputation (30 pts, Silver tier), deliverable burn status, and 14 on-chain transaction receipts with panic assertions.
@@ -408,7 +408,7 @@ export function DocsPage({
                 <span className="text-[#00EC97] font-bold">2. Verify Contributor Reputation State</span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard('npm run verify:reputation -- zinipay-recipient2.testnet', 'cmd2')}
+                  onClick={() => copyToClipboard('node scripts/verify-reputation.mjs -- zinipay-recipient2.testnet', 'cmd2')}
                   className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd2' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -416,7 +416,7 @@ export function DocsPage({
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-black/60 border border-white/5 font-mono text-xs text-[#00EC97]">
-                npm run verify:reputation -- zinipay-recipient2.testnet
+                node scripts/verify-reputation.mjs -- zinipay-recipient2.testnet
               </div>
               <p className="text-xs text-slate-400 font-sans">
                 <strong>See:</strong> Named account <code className="text-[var(--text-primary)]">zinipay-recipient2.testnet</code> with on-chain score 30 pts, Silver tier cap (15 NEAR), and settled receipts from Proposals #5 and #6.
@@ -429,7 +429,7 @@ export function DocsPage({
                 <span className="text-[#00EC97] font-bold">3. Verify Proposal #6 Cross-Reference</span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard('npm run verify:proposal -- 6', 'cmd3')}
+                  onClick={() => copyToClipboard('node scripts/verify-proposal.mjs -- 6', 'cmd3')}
                   className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd3' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -437,7 +437,7 @@ export function DocsPage({
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-black/60 border border-white/5 font-mono text-xs text-[#00EC97]">
-                npm run verify:proposal -- 6
+                node scripts/verify-proposal.mjs -- 6
               </div>
               <p className="text-xs text-slate-400 font-sans">
                 <strong>See:</strong> Cross-references Sputnik DAO Proposal #6 on-chain against PolicyHelper spend limits and deliverable burn registry.

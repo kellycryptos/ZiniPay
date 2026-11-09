@@ -11,6 +11,9 @@ import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/landing/LandingPage';
 import { DashboardShell } from './components/dashboard/DashboardShell';
 import { DocsPage } from './components/docs/DocsPage';
+import { VerificationPage } from './components/verification/VerificationPage';
+import { AppHeader } from './components/navigation/AppHeader';
+import { UniversalFooter } from './components/navigation/UniversalFooter';
 import { ProofModal } from './components/ProofModal';
 import { DeliberationModal } from './components/DeliberationModal';
 import { IntentsModal } from './components/IntentsModal';
@@ -312,6 +315,8 @@ export default function App() {
   };
 
   const isDashboardRoute = currentPath === '/board' || currentPath.startsWith('/app');
+  const isVerifyRoute = currentPath === '/verify' || currentPath.startsWith('/verify');
+  const isDocsRoute = currentPath === '/docs' || currentPath.startsWith('/docs');
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
@@ -431,11 +436,42 @@ export default function App() {
             showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
           }}
           onNavigateToLanding={() => navigate('/')}
+          onNavigateVerify={() => navigate('/verify')}
         />
+      ) : isVerifyRoute ? (
+        <VerificationPage
+          onNavigateHome={() => navigate('/')}
+          onNavigateBoard={() => navigate('/board')}
+          onNavigateDocs={() => navigate('/docs')}
+          network={network}
+        />
+      ) : isDocsRoute ? (
+        <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans">
+          <AppHeader
+            currentPath="/docs"
+            onNavigateHome={() => navigate('/')}
+            onNavigateBoard={() => navigate('/board')}
+            onNavigateDocs={() => navigate('/docs')}
+            onNavigateVerify={() => navigate('/verify')}
+            network={network}
+          />
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-12">
+            <DocsPage embedded={false} network={network} />
+          </main>
+          <UniversalFooter
+            onNavigateBoard={() => navigate('/board')}
+            onNavigateDocs={() => navigate('/docs')}
+            onNavigateVerify={() => navigate('/verify')}
+            network={network}
+          />
+        </div>
       ) : (
         <LandingPage
           onNavigateToApp={() => navigate('/board')}
           onNavigateToBoard={() => navigate('/board')}
+          onNavigateDocs={() => navigate('/docs')}
+          onNavigateVerify={() => navigate('/verify')}
+          network={network}
         />
       )}
     </div>

@@ -1,208 +1,114 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  ShieldCheck,
   ArrowRight,
-  Github,
-  Terminal,
-  FileCheck,
   ShieldAlert,
   Users,
-  Check,
-  CheckCircle2,
-  ExternalLink,
-  BookOpen,
-  Coins,
+  FileCheck,
 } from 'lucide-react';
 import { ReleaseReceiptCard } from '../ReleaseReceiptCard';
+
 import { Proposal } from '../../lib/types';
 
-interface LandingHeroProps {
+export interface LandingHeroProps {
   onNavigateToApp: () => void;
   onNavigateToBoard?: () => void;
   onOpenVerifyModal?: () => void;
 }
 
-export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyModal }: LandingHeroProps) {
-  const [heroProposal, setHeroProposal] = useState<Proposal | null>(null);
-  const [isRealRun, setIsRealRun] = useState<boolean>(false);
-  const [isApprovedRun, setIsApprovedRun] = useState<boolean>(false);
+export function LandingHero({
+  onNavigateToApp,
+}: LandingHeroProps) {
   const [hoveredGate, setHoveredGate] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetch('/data/verified.json')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) {
-          setHeroProposal(null);
-          setIsRealRun(false);
-          setIsApprovedRun(false);
-          return;
-        }
-
-        const txs: any[] = Array.isArray(data) ? data : data?.transactions || [];
-
-        // Select the payout entry strictly by kind === "payout" and status === "Approved"
-        const payoutTx = txs.find((t: any) => t.kind === 'payout' && t.status === 'Approved');
-
-        // Check that ALL required fields are present with NO fabricated fallbacks
-        const hasAllRequiredFields = Boolean(
-          payoutTx &&
-          typeof payoutTx.proposalId === 'number' &&
-          typeof payoutTx.recipient === 'string' &&
-          payoutTx.recipient.length > 0 &&
-          typeof payoutTx.amountNear === 'string' &&
-          payoutTx.amountNear.length > 0 &&
-          typeof payoutTx.amountYocto === 'string' &&
-          payoutTx.amountYocto.length > 0 &&
-          typeof payoutTx.txHash === 'string' &&
-          payoutTx.txHash.length > 0 &&
-          typeof payoutTx.proposer === 'string' &&
-          payoutTx.proposer.length > 0 &&
-          (payoutTx.prTitle || payoutTx.deliverable)
-        );
-
-        if (hasAllRequiredFields) {
-          const deliverableVal = payoutTx.deliverable ? payoutTx.deliverable : payoutTx.prTitle;
-          const titleVal = payoutTx.prTitle ? payoutTx.prTitle : payoutTx.deliverable;
-
-          // Deliberation summary: strictly reflects whether deliberation was simulated or live
-          const isSimulated = payoutTx.deliberationMode === 'simulated' || Boolean(payoutTx.simulated);
-          const summaryText = payoutTx.summary
-            ? payoutTx.summary
-            : isSimulated
-            ? 'Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.'
-            : 'Deliberation: live model consensus. Multi-sig human approval completed on Sputnik DAO.';
-
-          const realProposal: Proposal = {
-            id: payoutTx.proposalId,
-            title: titleVal,
-            proposer: payoutTx.proposer,
-            recipient: payoutTx.recipient,
-            amountNear: payoutTx.amountNear,
-            amountYocto: payoutTx.amountYocto,
-            txHash: payoutTx.txHash,
-            proofCid: deliverableVal,
-            summary: summaryText,
-            evidenceType: 'github_pr',
-            evidenceDetails: `Deliverable: ${deliverableVal} | Recipient: ${payoutTx.recipient} | Tx: ${payoutTx.txHash}`,
-            createdAt: payoutTx.timestamp ? new Date(payoutTx.timestamp).toLocaleString() : 'Recorded Testnet Run',
-            status: 'approved',
-            rawStatus: payoutTx.status,
-            simulated: isSimulated,
-            isZinipayRelease: true,
-            targetContract: payoutTx.targetContract ? payoutTx.targetContract : (import.meta.env.VITE_POLICY_CONTRACT_ID || ''),
-            targetMethod: 'release',
-            policy: payoutTx.policy || (payoutTx.tier || typeof payoutTx.reputationScore === 'number' ? {
-              tier: payoutTx.tier,
-              reputationScore: payoutTx.reputationScore,
-              capLimit: payoutTx.effectiveCapNear ? `${payoutTx.effectiveCapNear} NEAR` : undefined,
-            } : undefined as any),
-            settlement: {
-              type: 'native_near',
-              targetChain: 'near',
-              targetToken: 'NEAR',
-              recipientAddress: payoutTx.recipient,
-            },
-            votes: payoutTx.votes || undefined as any,
-          };
-
-          setHeroProposal(realProposal);
-          setIsRealRun(true);
-          setIsApprovedRun(true);
-        } else {
-          setHeroProposal(null);
-          setIsRealRun(false);
-          setIsApprovedRun(false);
-        }
-      })
-      .catch(() => {
-        setHeroProposal(null);
-        setIsRealRun(false);
-        setIsApprovedRun(false);
-      });
-  }, []);
-
-  const policyContractId = import.meta.env.VITE_POLICY_CONTRACT_ID || '';
-  const daoContractId = import.meta.env.VITE_DAO_CONTRACT_ID || '';
+  // Proposal #6 receipt card fixture from verified testnet run
+  const proposal6: Proposal = {
+    id: 6,
+    title: 'kellycryptos/ZiniPay#2',
+    proposer: 'agentzinipaytestnet.testnet',
+    recipient: 'zinipay-recipient2.testnet',
+    amountNear: '0.10',
+    amountYocto: '100000000000000000000000',
+    txHash: '2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+    proofCid: 'kellycryptos/ZiniPay#2',
+    summary: 'Deliberation: simulated (local dry-run / no model review). Multi-sig human approval completed on Sputnik DAO.',
+    evidenceType: 'github_pr',
+    evidenceDetails: 'Deliverable: kellycryptos/ZiniPay#2 | Recipient: zinipay-recipient2.testnet | Tx: 2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d',
+    createdAt: '2026-11-02 14:47:44',
+    status: 'settled',
+    rawStatus: 'Approved',
+    simulated: true,
+    isZinipayRelease: true,
+    targetContract: 'zinipay-policy2.testnet',
+    targetMethod: 'release',
+    policy: {
+      withinCap: true,
+      cooldownElapsed: true,
+      cooldownRemainingSecs: 0,
+      cidUnique: true,
+      reputationQualified: true,
+      tier: 'Bronze',
+      reputationScore: 25,
+      capLimit: '15.0 NEAR',
+    },
+    settlement: {
+      type: 'native_near',
+      targetChain: 'near',
+      targetToken: 'NEAR',
+      recipientAddress: 'zinipay-recipient2.testnet',
+    },
+    votes: {
+      approve: 2,
+      reject: 0,
+      required: 2,
+    },
+  };
 
   return (
-    <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] overflow-hidden">
-      {/* Top subtle multi-stop radial glow */}
+    <section className="relative overflow-hidden pt-8 pb-16 lg:py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] transition-colors duration-200">
+      {/* Background radial atmosphere */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(0,236,151,0.08)_0%,rgba(34,211,238,0.03)_40%,transparent_70%)] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-[var(--color-passed)]/[0.04] blur-[140px] rounded-full pointer-events-none"
         aria-hidden="true"
       />
 
-      {/* Blueprint grid with radial fade mask */}
-      <div
-        className="absolute inset-0 opacity-[0.035] pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(#FFFFFF 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-          maskImage: 'radial-gradient(ellipse 80% 65% at 50% 25%, black 20%, transparent 80%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 80% 65% at 50% 25%, black 20%, transparent 80%)',
-        }}
-      />
-
-      <div className="max-w-6xl mx-auto px-6 relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-14">
-        {/* Left Column: Outcome, Value Proposition, Action CTAs & Three-Way Gate Preview */}
-        <div className="flex-1 flex flex-col gap-6 text-left w-full">
-          {/* Status Eyebrow Pill */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center relative z-10">
+        {/* Left Column: Hero Narrative */}
+        <div className="lg:col-span-7 flex flex-col gap-6 text-left">
+          {/* Audience Eyebrow Pill */}
           <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] w-fit backdrop-blur-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-passed)] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-passed)]" />
             </span>
-            <span className="font-medium text-[var(--text-primary)]">NEAR Protocol</span>
+            <span className="font-semibold text-[var(--text-primary)]">For DAOs on NEAR Protocol</span>
             <span className="text-[var(--text-muted)]">·</span>
             <span className="text-[var(--color-passed)]">Sputnik DAO v2</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[50px] font-bold tracking-tight text-[var(--text-primary)] leading-[1.12] max-w-xl text-balance">
-            Constrained agent payouts for community treasuries.
+          <h1 className="text-3xl sm:text-5xl lg:text-[46px] font-bold tracking-tight text-[var(--text-primary)] leading-[1.15] max-w-xl text-balance">
+            An AI agent can propose treasury payouts. A smart contract limits it. Two humans approve.
           </h1>
 
           {/* Concise mechanism statement */}
           <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-prose">
-            Autonomous agents verify deliverables, smart contracts enforce spend caps on-chain, and human councils hold the multi-sig quorum.
+            ZiniPay is a testnet treasury governance layer. Autonomous agents can inspect deliverables and draft proposals, but a Rust smart contract enforces spend caps and one-time deliverables on-chain, and two human council members hold the multi-sig keys.
           </p>
 
-          {/* Action Row */}
-          <div className="flex flex-wrap items-center gap-3 pt-1">
+          {/* Action Row — Exactly ONE button: Open Dashboard */}
+          <div className="flex items-center pt-2">
             <button
               type="button"
               onClick={onNavigateToApp}
-              className="btn-primary cursor-pointer text-xs sm:text-sm py-2.5 px-5 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2 group font-semibold tracking-wide"
+              className="btn-primary cursor-pointer text-sm py-3 px-6 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2.5 group font-semibold tracking-wide"
             >
-              <span>Launch app</span>
+              <span>Open Dashboard</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
-
-            {onOpenVerifyModal && (
-              <button
-                type="button"
-                onClick={onOpenVerifyModal}
-                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[#00EC97] hover:text-[var(--text-primary)] border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
-              >
-                <Terminal size={15} />
-                <span>Verify in 2 minutes</span>
-              </button>
-            )}
-
-            <a
-              href="https://github.com/kellycryptos/ZiniPay"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]"
-            >
-              <Github size={16} />
-              <span>GitHub</span>
-            </a>
           </div>
 
           {/* Three-Way Gate Preview */}
-          <div className="mt-1 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)]">
+          <div className="mt-2 p-3.5 sm:p-4 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)]">
             <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
               {/* Gate 1 */}
               <div
@@ -219,7 +125,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <FileCheck size={14} className="text-cyan-300" />
                 </div>
                 <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Deliverable CID</div>
-                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5" title="PR link is claimed in proposal (not checked on-chain). One-time CID uniqueness is enforced by PolicyHelper.">PR claimed · CID enforced</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5" title="Deliverable CID or PR is burned in used_cids on-chain to stop replay attacks">One-time CID check</div>
               </div>
 
               {/* Gate 2 */}
@@ -237,7 +143,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   <ShieldAlert size={14} className="text-[var(--color-passed)]" />
                 </div>
                 <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Spend Limits</div>
-                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">Tier Cap & Rules</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">Tier caps &amp; cooldown</div>
               </div>
 
               {/* Gate 3 */}
@@ -246,102 +152,32 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                 onMouseLeave={() => setHoveredGate(null)}
                 className={`p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border transition-all duration-200 flex flex-col justify-between ${
                   hoveredGate === 3
-                    ? 'border-amber-400/60 shadow-[0_4px_16px_rgba(251,191,36,0.12)] -translate-y-0.5'
-                    : 'border-amber-500/20'
+                    ? 'border-indigo-400/60 shadow-[0_4px_16px_rgba(99,102,241,0.12)] -translate-y-0.5'
+                    : 'border-indigo-500/20'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-mono text-[10px] text-amber-400 font-bold">03</span>
-                  <Users size={14} className="text-amber-300" />
+                  <span className="font-mono text-[10px] text-indigo-400 font-bold">03</span>
+                  <Users size={14} className="text-indigo-300" />
                 </div>
                 <div className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Council Quorum</div>
-                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">2-of-2 Multi-Sig</div>
+                <div className="text-[10px] text-[var(--text-secondary)] truncate mt-0.5">2-of-2 human multi-sig</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Docked Signature Release Receipt Cockpit */}
-        <div className="w-full lg:w-[490px] shrink-0 relative">
-          {/* Subtle Ambient Backlight Glow Behind Chassis */}
-          <div
-            className="absolute -inset-1.5 bg-gradient-to-tr from-[var(--color-passed)]/15 via-cyan-500/10 to-transparent rounded-2xl blur-xl opacity-75 pointer-events-none"
-            aria-hidden="true"
-          />
-
-          {/* Elevated Cockpit Chassis */}
-          <div className="relative rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 sm:p-4 shadow-2xl backdrop-blur-xl ring-1 ring-black/[0.04] dark:ring-white/[0.04]">
-            {/* Cockpit Window Controls Header */}
-            <div className="flex items-center justify-between pb-3 px-1 border-b border-[var(--border-subtle)] mb-3 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5" aria-hidden="true">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]/80 inline-block" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]/80 inline-block" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#27C93F]/80 inline-block" />
-                </div>
-                <span className="ml-1.5 font-mono text-[11px] font-semibold tracking-wider text-[var(--text-secondary)] uppercase">
-                  Release Receipt
-                </span>
-              </div>
-
-              <div>
-                {isRealRun && heroProposal ? (
-                  <a
-                    href={
-                      heroProposal.txHash
-                        ? `https://testnet.nearblocks.io/txns/${heroProposal.txHash}`
-                        : 'https://testnet.nearblocks.io'
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--color-passed-bg)] border border-[var(--color-passed-border)] text-[10px] font-mono text-[var(--color-passed)] font-semibold hover:bg-[var(--color-passed-bg)]/80 transition-colors"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-passed)] animate-pulse" />
-                    <span>TESTNET VERIFIED</span>
-                    <ExternalLink size={10} />
-                  </a>
-                ) : (
-                  <span className="tag-neutral text-[10px] font-mono font-bold text-amber-300 border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
-                    VERIFIED ON-CHAIN
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Embedded Release Receipt Card with Rubber Stamp */}
-            {heroProposal ? (
-              <div className="rounded-xl overflow-hidden shadow-inner border border-black/[0.06]">
-                <ReleaseReceiptCard
-                  proposal={heroProposal}
-                  daoContractId={daoContractId}
-                  policyContractId={policyContractId}
-                  network="testnet"
-                  showActions={false}
-                  rubberStamp={isRealRun && isApprovedRun ? 'PAID' : false}
-                />
-              </div>
-            ) : (
-              <div className="rounded-xl p-8 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col items-center justify-center text-center gap-2">
-                <span className="text-xs text-[var(--text-secondary)] font-mono">
-                  Loading verified release receipt...
-                </span>
-              </div>
-            )}
-
-            {/* Telemetry Footer Strip */}
-            <div className="mt-3 pt-2.5 px-1 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[var(--text-primary)] font-medium">PolicyHelper</span>
-                <span>·</span>
-                <span className="truncate max-w-[130px] sm:max-w-[170px] text-[var(--text-secondary)]">
-                  {policyContractId || 'Configured on chain'}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[var(--color-passed)] font-medium">
-                <CheckCircle2 size={12} />
-                <span>3 of 3 Gates Passed</span>
-              </div>
-            </div>
+        {/* Right Column: Signature ReleaseReceiptCard */}
+        <div className="lg:col-span-5 flex justify-center">
+          <div className="w-full max-w-md">
+            <ReleaseReceiptCard
+              proposal={proposal6}
+              policyContractId="zinipay-policy2.testnet"
+              daoContractId="zinipay-demo.sputnikv2.testnet"
+              network="testnet"
+              showActions={false}
+              rubberStamp="PAID"
+            />
           </div>
         </div>
       </div>

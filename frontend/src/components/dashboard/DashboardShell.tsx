@@ -73,6 +73,7 @@ interface DashboardShellProps {
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
   onNavigateToLanding?: () => void;
+  onNavigateVerify?: () => void;
 }
 
 export function DashboardShell({
@@ -100,6 +101,7 @@ export function DashboardShell({
   onShowToast,
   onRefresh,
   onNavigateToLanding,
+  onNavigateVerify,
 }: DashboardShellProps) {
   // Navigation State
   const [currentView, setCurrentView] = useState<DashboardView>('overview');
@@ -353,23 +355,22 @@ export function DashboardShell({
               );
             })}
 
-            {/* Verification Suite Trigger */}
+            {/* Verification Trigger */}
             <button
               type="button"
               onClick={() => {
-                setVerificationModalOpen(true);
+                if (onNavigateVerify) {
+                  onNavigateVerify();
+                } else {
+                  setVerificationModalOpen(true);
+                }
                 setMobileMenuOpen(false);
               }}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.03] transition-colors cursor-pointer"
-              title="Keyless on-chain verification suite"
+              title="On-chain verification"
             >
-              <Terminal size={16} className="text-[#00EC97] shrink-0" />
+              <Shield size={16} className="text-[#00EC97] shrink-0" />
               {!sidebarCollapsed && <span className="flex-1 text-left">Verification</span>}
-              {!sidebarCollapsed && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-[#00EC97] border border-emerald-500/30">
-                  11 Checks
-                </span>
-              )}
             </button>
           </nav>
         </div>
@@ -507,14 +508,15 @@ export function DashboardShell({
               <RefreshCw size={14} className={isLoadingOnChain ? 'animate-spin' : ''} />
             </button>
 
-            {/* Verify On-Chain Button */}
+            {/* Verified On-Chain Link */}
             <button
               type="button"
-              onClick={() => setVerificationModalOpen(true)}
+              onClick={onNavigateVerify ? onNavigateVerify : () => setVerificationModalOpen(true)}
               className="px-3 py-1.5 rounded-lg bg-[#00EC97]/10 hover:bg-[#00EC97]/20 border border-[#00EC97]/30 text-xs font-mono text-[#00EC97] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Verified on-chain"
             >
-              <Terminal size={13} />
-              <span className="hidden sm:inline">Verify on-chain</span>
+              <Shield size={13} />
+              <span className="hidden sm:inline">Verified on-chain</span>
             </button>
 
             {/* Connect Wallet Trigger */}

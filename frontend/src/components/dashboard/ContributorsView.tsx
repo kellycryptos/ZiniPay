@@ -257,10 +257,10 @@ export function ContributorsView({
             <span>Advisory Approval Schedule ({tier} Tier)</span>
           </div>
           <p className="leading-relaxed text-slate-300">
-            Fast-track single council vote for micro-tasks (≤ 5 NEAR) · Full 2-of-2 council quorum for standard tasks (&gt; 5 NEAR).
+            Expedited single council vote for micro-tasks (≤ 5 NEAR) · Full 2-of-2 council quorum for standard tasks (&gt; 5 NEAR).
           </p>
           <p className="text-[10px] text-slate-400 mt-1 font-mono">
-            Note: On-chain Sputnik DAO v2 currently requires 2-of-2 council quorum for all release calls. The fast-track schedule is advisory client-side.
+            Note: On-chain Sputnik DAO v2 currently requires 2-of-2 council quorum for all release calls. The expedited schedule is advisory client-side.
           </p>
         </div>
       </div>
@@ -319,7 +319,7 @@ export function ContributorsView({
                 </h4>
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-slate-300 space-y-1.5 text-xs">
                   <p>
-                    <strong className="text-[var(--text-primary)] font-mono">≤ 5.0 NEAR:</strong> Fast-track eligible (single council vote recommended).
+                    <strong className="text-[var(--text-primary)] font-mono">≤ 5.0 NEAR:</strong> Expedited eligible (single council vote recommended).
                   </p>
                   <p>
                     <strong className="text-[var(--text-primary)] font-mono">&gt; 5.0 NEAR:</strong> Standard multi-sig quorum (full 2-of-2 council vote recommended).

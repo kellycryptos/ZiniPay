@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AppHeader } from '../navigation/AppHeader';
 import { UniversalFooter } from '../navigation/UniversalFooter';
 import { LandingHero } from './LandingHero';
+import { LandingProblemSection } from './LandingProblemSection';
 import { LandingHowItWorks } from './LandingHowItWorks';
-import { LandingFeaturesSection } from './LandingFeaturesSection';
-import { LandingVerifiedSection } from './LandingVerifiedSection';
-import { LandingAttacksSection } from './LandingAttacksSection';
-import { LandingRealVsSimulated } from './LandingRealVsSimulated';
-import { LandingTracksSection } from './LandingTracksSection';
+import { LandingEnforcedVsAdvisory } from './LandingEnforcedVsAdvisory';
+import { LandingWhatYouCanDo } from './LandingWhatYouCanDo';
+import { LandingSafetyLimits } from './LandingSafetyLimits';
 import { LandingFaqSection } from './LandingFaqSection';
-import { VerificationModal } from '../dashboard/VerificationModal';
+import { LandingVerifyCallout } from './LandingVerifyCallout';
 
 export interface LandingPageProps {
   onNavigateToApp: () => void;
   onNavigateToBoard?: () => void;
   onNavigateDocs?: () => void;
+  onNavigateVerify?: () => void;
   network?: 'testnet' | 'mainnet';
 }
 
@@ -22,71 +22,58 @@ export function LandingPage({
   onNavigateToApp,
   onNavigateToBoard,
   onNavigateDocs,
+  onNavigateVerify,
   network = 'testnet',
 }: LandingPageProps) {
-  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
-
-  const handleOpenVerify = () => setVerificationModalOpen(true);
-  const handleCloseVerify = () => setVerificationModalOpen(false);
+  const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-[var(--color-passed)] selection:text-black font-sans transition-colors duration-200">
-      {/* ── Keyless Verification Suite Modal ──────────────────── */}
-      <VerificationModal
-        isOpen={verificationModalOpen}
-        onClose={handleCloseVerify}
-        network={network}
-      />
-
       {/* ── Universal Header ──────────────────────────────────── */}
       <AppHeader
         currentPath="/"
         onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onNavigateBoard={onNavigateToBoard || onNavigateToApp}
         onNavigateDocs={onNavigateDocs}
-        onOpenVerifyModal={handleOpenVerify}
+        onNavigateVerify={handleVerify}
         network={network}
       />
 
-      {/* ── Main Landing Sections in Exact Mandated Order ─────── */}
+      {/* ── 8 Ordered Landing Sections for Users ─────────────── */}
       <main className="flex-1 flex flex-col">
-        {/* Section 1: Hero ("Let AI agents ask for money. Never let them take it.") */}
+        {/* 1. Hero: What ZiniPay does, who it is for, one button Open Dashboard */}
         <LandingHero
           onNavigateToApp={onNavigateToApp}
           onNavigateToBoard={onNavigateToBoard}
-          onOpenVerifyModal={handleOpenVerify}
         />
 
-        {/* Section 2: Problem & Solution in Plain Language (Agent proposes, PolicyHelper enforces, Humans approve) */}
-        <LandingHowItWorks onNavigateToApp={onNavigateToApp} />
+        {/* 2. The Problem: Giving an agent treasury access is risky */}
+        <LandingProblemSection />
 
-        {/* Section 3: Feature Cards (On-chain reputation, tier caps, public board, fail-closed policy, live verify) */}
-        <LandingFeaturesSection />
+        {/* 3. How a Payout Works in 3 Steps */}
+        <LandingHowItWorks />
 
-        {/* Section 4: Proof Strip (Real counts read from verified.json linking to explorer) & Verified Run Ledger */}
-        <LandingVerifiedSection />
+        {/* 4. What Is Enforced On-Chain vs. Advisory */}
+        <LandingEnforcedVsAdvisory />
 
-        {/* Section 5: Attacks Blocked (Replay, case-variant, over-cap, unauthorized, cooldown with real panic text) */}
-        <LandingAttacksSection />
+        {/* 5. What You Can Do Today */}
+        <LandingWhatYouCanDo onNavigateToApp={onNavigateToApp} />
 
-        {/* Section 6: What is Real and What is Simulated (Plain 2-column table) */}
-        <LandingRealVsSimulated />
+        {/* 6. Safety Limits and Honest Status */}
+        <LandingSafetyLimits />
 
-        {/* Section 7: Hackathon Tracks (Social Money & AI Security with evidence links) */}
-        <LandingTracksSection onNavigateToApp={onNavigateToApp} />
+        {/* 7. FAQ for Users */}
+        <LandingFaqSection />
 
-        {/* Section 8: FAQ (5 Questions) & Final Call to Action */}
-        <LandingFaqSection
-          onNavigateToApp={onNavigateToApp}
-          onOpenVerifyModal={handleOpenVerify}
-        />
+        {/* 8. Verify It Yourself Link */}
+        <LandingVerifyCallout onNavigateVerify={handleVerify} />
       </main>
 
       {/* ── Universal Footer ──────────────────────────────────── */}
       <UniversalFooter
         onNavigateBoard={onNavigateToBoard || onNavigateToApp}
         onNavigateDocs={onNavigateDocs}
-        onOpenVerifyModal={handleOpenVerify}
+        onNavigateVerify={handleVerify}
         network={network}
       />
     </div>

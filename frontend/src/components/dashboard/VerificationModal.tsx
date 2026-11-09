@@ -35,7 +35,6 @@ export function VerificationModal({
   onClose,
   network = 'testnet',
 }: VerificationModalProps) {
-  const [copiedCmd, setCopiedCmd] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [lastRunAt, setLastRunAt] = useState<string | null>(null);
 
@@ -334,12 +333,6 @@ export function VerificationModal({
     }
   }, [isOpen]);
 
-  const copyCommand = () => {
-    navigator.clipboard.writeText('npm run verify:testnet');
-    setCopiedCmd(true);
-    setTimeout(() => setCopiedCmd(false), 2000);
-  };
-
   const passCount = checkItems.filter((c) => c.status === 'pass').length;
   const infoCount = checkItems.filter((c) => c.status === 'info').length;
   const failCount = checkItems.filter((c) => c.status === 'fail' || c.status === 'error').length;
@@ -507,40 +500,22 @@ export function VerificationModal({
           })}
         </div>
 
-        {/* Footer: Scope Notice & 60-Second CLI Command */}
-        <div className="p-5 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col gap-3">
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-            <span className="font-mono text-[11px]">
-              Browser Scope: Runs 10 live on-chain state queries (+ 1 advisory info) via FastNear RPC.
-            </span>
-            <span className="text-[11px] text-slate-400">
-              For complete 24-check CLI suite & panic log assertions:
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-black/60 border border-white/10 font-mono text-xs">
-            <div className="flex items-center gap-2 text-slate-300">
-              <Terminal size={14} className="text-[#00EC97]" />
-              <span className="text-[#00EC97] font-semibold">npm run verify:testnet</span>
-            </div>
-            <button
-              type="button"
-              onClick={copyCommand}
-              className="px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-slate-200 text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+        {/* Footer: Scope Notice & Command Line Check Note */}
+        <div className="p-5 border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <span className="font-mono text-[11px] text-[var(--text-secondary)]">
+            Browser Scope: Runs 10 live on-chain state queries (+ 1 advisory info) via FastNear RPC.
+          </span>
+          <span className="text-[11px] text-[var(--text-secondary)]">
+            A command-line verification script is also available. See{' '}
+            <a
+              href="https://github.com/kellycryptos/ZiniPay#readme"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#00EC97] hover:underline font-semibold"
             >
-              {copiedCmd ? (
-                <>
-                  <Check size={12} className="text-emerald-400" />
-                  <span className="text-emerald-400">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={12} />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
+              README.md
+            </a>
+          </span>
         </div>
       </div>
     </div>
