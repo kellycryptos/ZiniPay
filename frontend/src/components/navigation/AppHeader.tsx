@@ -40,7 +40,6 @@ export function AppHeader({
   const isHome = currentPath === '/';
   const isBoard = currentPath === '/board' || currentPath.startsWith('/board') || currentPath.startsWith('/app');
   const isDocs = currentPath === '/docs' || currentPath.startsWith('/docs');
-  const isVerify = currentPath === '/verify' || currentPath.startsWith('/verify');
 
   const handleNavHome = () => {
     setMobileMenuOpen(false);
@@ -123,17 +122,6 @@ export function AppHeader({
             }`}
           >
             Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={handleOpenVerify}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              isVerify
-                ? 'text-[var(--text-primary)] bg-[var(--bg-panel-alt)] font-semibold border border-[var(--border-subtle)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)]'
-            }`}
-          >
-            Verification
           </button>
           <button
             type="button"
@@ -242,15 +230,6 @@ export function AppHeader({
             }`}
           >
             Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={handleOpenVerify}
-            className={`text-left px-3 py-2 rounded-lg text-sm ${
-              isVerify ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
-            }`}
-          >
-            Verification
           </button>
           <button
             type="button"
