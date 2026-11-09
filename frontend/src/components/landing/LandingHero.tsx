@@ -12,11 +12,13 @@ import { Proposal } from '../../lib/types';
 export interface LandingHeroProps {
   onNavigateToApp: () => void;
   onNavigateToBoard?: () => void;
+  onNavigateVerify?: () => void;
   onOpenVerifyModal?: () => void;
 }
 
 export function LandingHero({
   onNavigateToApp,
+  onNavigateVerify,
 }: LandingHeroProps) {
   const [hoveredGate, setHoveredGate] = useState<number | null>(null);
 
@@ -74,37 +76,63 @@ export function LandingHero({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center relative z-10">
         {/* Left Column: Hero Narrative */}
         <div className="lg:col-span-7 flex flex-col gap-6 text-left">
-          {/* Audience Eyebrow Pill */}
-          <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] w-fit backdrop-blur-md">
+          {/* Live on NEAR testnet badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] w-fit backdrop-blur-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-passed)] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-passed)]" />
             </span>
-            <span className="font-semibold text-[var(--text-primary)]">For DAOs on NEAR Protocol</span>
-            <span className="text-[var(--text-muted)]">·</span>
-            <span className="text-[var(--color-passed)]">Sputnik DAO v2</span>
+            <span className="text-[var(--color-passed)] font-medium">Live on NEAR testnet</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-3xl sm:text-5xl lg:text-[46px] font-bold tracking-tight text-[var(--text-primary)] leading-[1.15] max-w-xl text-balance">
-            An AI agent can propose treasury payouts. A smart contract limits it. Two humans approve.
+            Let an AI agent propose payments. Keep humans in charge of the money.
           </h1>
 
-          {/* Concise mechanism statement */}
+          {/* Subline */}
           <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-prose">
-            ZiniPay is a testnet treasury governance layer. Autonomous agents can inspect deliverables and draft proposals, but a Rust smart contract enforces spend caps and one-time deliverables on-chain, and two human council members hold the multi-sig keys.
+            ZiniPay lets a DAO use an AI agent for payouts without giving it the keys. A smart contract caps every payment and blocks repeats, and two people approve each one.
           </p>
 
-          {/* Action Row — Exactly ONE button: Open Dashboard */}
-          <div className="flex items-center pt-2">
+          {/* Action Row — Open Dashboard (primary), Verify it yourself (secondary) */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
               onClick={onNavigateToApp}
-              className="btn-primary cursor-pointer text-sm py-3 px-6 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2.5 group font-semibold tracking-wide"
+              className="btn-primary cursor-pointer text-sm py-3 px-6 shadow-lg shadow-[#00ec9720] hover:shadow-[#00ec9735] transition-all flex items-center gap-2 group font-semibold tracking-wide"
             >
               <span>Open Dashboard</span>
               <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
+            <a
+              href="/verify"
+              onClick={(e) => {
+                if (onNavigateVerify) {
+                  e.preventDefault();
+                  onNavigateVerify();
+                }
+              }}
+              className="px-5 py-3 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--bg-panel)] text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] text-sm font-medium transition-colors flex items-center gap-2"
+            >
+              <span>Verify it yourself</span>
+            </a>
+          </div>
+
+          {/* Three short points under the buttons */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-xs text-[var(--text-secondary)] font-mono">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
+              Spending caps
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
+              No duplicate payouts
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />
+              Two humans approve
+            </span>
           </div>
 
           {/* Three-Way Gate Preview */}

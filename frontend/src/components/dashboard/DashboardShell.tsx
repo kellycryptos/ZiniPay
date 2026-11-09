@@ -264,9 +264,11 @@ export function DashboardShell({
               onClick={onNavigateToLanding}
               className="flex items-center gap-2.5 text-left group cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00EC97] to-emerald-600 flex items-center justify-center font-display font-bold text-black text-sm shadow-md group-hover:scale-105 transition-transform">
-                ZP
-              </div>
+              <img
+                src="/logo.svg"
+                alt="ZiniPay Logo"
+                className="w-8 h-8 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0 group-hover:border-[#00EC97]/40 transition-colors"
+              />
               {!sidebarCollapsed && (
                 <div className="flex flex-col leading-tight">
                   <span className="font-display font-bold text-[var(--text-primary)] text-base tracking-tight">

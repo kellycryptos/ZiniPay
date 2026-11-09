@@ -7,11 +7,11 @@ export function LandingFaqSection() {
   const faqs = [
     {
       q: 'Who approves payouts?',
-      a: 'Two human council members on Sputnik DAO v2. Payouts cannot execute without a 2-of-2 human council multi-sig quorum. The AI agent holds zero council seats and zero voting rights.',
+      a: 'Two human council members on Sputnik DAO v2 approve payouts with a required 2-of-2 multi-sig quorum. The AI agent holds zero council seats and zero voting rights.',
     },
     {
       q: 'What can the agent not do?',
-      a: 'The agent cannot approve proposals, cannot vote, cannot bypass smart contract spend caps, cannot reuse deliverables, and cannot execute payouts directly. It can only inspect work deliverables and submit drafts to the DAO.',
+      a: 'The agent cannot approve proposals, vote, bypass spend caps, reuse deliverables, or execute payouts directly. It can only inspect work deliverables and submit drafts to the DAO.',
     },
     {
       q: 'What happens when a rule fails?',
@@ -19,7 +19,7 @@ export function LandingFaqSection() {
     },
     {
       q: 'Can a rogue or compromised agent drain the treasury?',
-      a: 'No. The agent has no private keys to the treasury funds. Even if an agent submits invalid proposals, PolicyHelper blocks over-cap or duplicate requests on-chain, and two human council members must sign every release.',
+      a: 'No. The agent holds no private keys, PolicyHelper blocks over-cap or duplicate requests on-chain, and two human council members must sign every release.',
     },
   ];
 

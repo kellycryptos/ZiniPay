@@ -79,7 +79,7 @@ export default function App() {
     }
   };
 
-  // On-Chain & Wallet State with Robust Defaults
+  // On-Chain & Wallet State Defaults
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>(
     (import.meta.env.VITE_NEAR_NETWORK as any) || 'testnet'
   );
