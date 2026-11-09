@@ -248,7 +248,8 @@ async function verifyProposal() {
   console.log(`      Recipient Score:     ${repScore !== null ? repScore : '0'} pts (Tier: ${tier})`);
   console.log(`      Effective Tier Cap:  ${capYocto ? formatNear(capYocto) : 'N/A'}`);
   console.log(`      Approval Tier:       ${approvalType} (${approvalDesc})`);
-  console.log(`      Quorum Required:     ${requiredVotes} council vote(s) (Recorded Votes: ${approveCount} Approve)`);
+  console.log(`      Advisory schedule:   ${requiredVotes} vote(s) (not enforced)`);
+  console.log('      Enforced on-chain:   2-of-2 council (zinipay-c1, zinipay-c2)');
   console.log(`      CID Burned on Chain: ${cidBurned ? 'true (Protected against replay)' : 'false'}`);
 
   const withinCap = capYocto && (BigInt(proposedAmount) <= BigInt(capYocto));

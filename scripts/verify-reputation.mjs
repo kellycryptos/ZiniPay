@@ -159,11 +159,11 @@ async function main() {
   console.log(`  CONTRIBUTOR TRACK RECORD: ${targetAccount}`);
   console.log('════════════════════════════════════════════════════════════════════');
   console.log(`  • On-Chain Score:       ${score} pts ${onChainScore !== null ? `(verified on ${POLICY_ID})` : '(ledger fallback)'}`);
-  console.log(`  • Reputation Tier:      ${tierInfo.tier} (${tierInfo.capMult}x spend cap multiplier | ${tierInfo.multiplier}x reward multiplier)`);
-  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks} (local off-chain cache: zinipay-reputation.json)`);
+  console.log(`  • Reputation Tier:      ${tierInfo.tier} (${tierInfo.capMult}x spend cap multiplier)`);
+  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks} (local off-chain cache, not verified on-chain)`);
   console.log(`  • Total Value Paid:     ${ledgerEntry.totalPaidNear.toFixed(4)} NEAR`);
-  console.log(`  • Proposals Approved:   ${ledgerEntry.approvedProposals}`);
-  console.log(`  • Deliverable Rejections: ${ledgerEntry.rejectionsCount}`);
+  console.log(`  • Proposals Approved:   ${ledgerEntry.approvedProposals} (local off-chain cache, not verified on-chain)`);
+  console.log(`  • Deliverable Rejections: ${ledgerEntry.rejectionsCount} (local off-chain cache, not verified on-chain)`);
   if (onChainCap) {
     console.log(`  • Effective Spend Cap:  ${formatNear(parseYocto(onChainCap))}`);
   }
@@ -184,7 +184,10 @@ async function main() {
   if (fs.existsSync(verifiedPath)) {
     try {
       const v = JSON.parse(fs.readFileSync(verifiedPath, 'utf8'));
-      matchedTxs = (v.transactions || []).filter((t) => t.recipient === targetAccount);
+      matchedTxs = (v.settledPayouts || []).filter((t) => t.recipient === targetAccount);
+      if (matchedTxs.length === 0 && Array.isArray(v.transactions)) {
+        matchedTxs = v.transactions.filter((t) => t.recipient === targetAccount && t.kind === 'payout');
+      }
     } catch {}
   }
 
