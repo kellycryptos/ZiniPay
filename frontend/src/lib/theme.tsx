@@ -23,10 +23,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (saved === 'light' || saved === 'dark') {
         return saved;
       }
-      // First visit is always light (ignore prefers-color-scheme)
-      return 'light';
+      // First visit defaults to 'dark' (saved choice in localStorage still wins)
+      return 'dark';
     }
-    return 'light';
+    return 'dark';
   });
 
   const applyTheme = (t: Theme) => {

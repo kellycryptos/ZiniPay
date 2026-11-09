@@ -92,7 +92,7 @@ export function KanbanBoard({
 
   // Map blocked attacks from verified.json
   const mappedAttacks: BoardAttackItem[] = blockedAttacks.map((att, idx) => {
-    const isPreChain = !att.txHash || (att.blockedBy && att.blockedBy.includes('Pre-chain'));
+    const isPreChain = !att.txHash || (att.blockedBy && att.blockedBy.toLowerCase().includes('pre-chain'));
     const attackId = isPreChain ? '#CHECK-1' : `#ATK-${idx}`;
     return {
       type: 'attack' as const,

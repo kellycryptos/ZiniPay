@@ -100,7 +100,7 @@ export function BoardCard({
               {isAttack ? card.id : `#ZP-${card.id}`}
             </span>
 
-            {isAttack && (card.id === '#CHECK-1' || !card.txHash || card.blockedBy.includes('Pre-chain')) ? (
+            {isAttack && (card.id === '#CHECK-1' || !card.txHash || card.blockedBy.toLowerCase().includes('pre-chain')) ? (
               <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/40">
                 Pre-chain check, not an on-chain transaction
               </span>

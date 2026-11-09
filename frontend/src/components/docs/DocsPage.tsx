@@ -277,7 +277,7 @@ export function DocsPage({
           </div>
 
           <p>
-            The Rust contract source is maintained at [`contracts/policy-helper/src/lib.rs`](file:///c:/Users/HP/Downloads/nearcode%20101043/contracts/policy-helper/src/lib.rs). The contract ownership is permanently held by Sputnik DAO v2 (<code className="text-[var(--text-primary)]">zinipay-demo.sputnikv2.testnet</code>) via tx <a href="https://testnet.nearblocks.io/txns/BmUTUzULrCCx5PZ2fRkmh49pW98W4eXUq2fVjYc4z9b" target="_blank" rel="noreferrer" className="text-[#00EC97] underline font-mono">BmUTUzUL...</a>.
+            The Rust contract source is maintained at <a href="https://github.com/kellycryptos/ZiniPay/blob/main/contracts/policy-helper/src/lib.rs" target="_blank" rel="noreferrer" className="text-[#00EC97] underline font-mono">contracts/policy-helper/src/lib.rs</a>. The contract ownership is currently held by Sputnik DAO v2 (<code className="text-[var(--text-primary)]">zinipay-demo.sputnikv2.testnet</code>) via tx <a href="https://testnet.nearblocks.io/txns/BmUTUzULrCCx5PZ2fRkmh49pW98W4eXUq2fVjYc4z9b" target="_blank" rel="noreferrer" className="text-[#00EC97] underline font-mono">BmUTUzUL...</a>.
           </p>
 
           <h3 className="font-bold text-[var(--text-primary)] text-base">Key Methods &amp; Enforced Panic Traps</h3>
