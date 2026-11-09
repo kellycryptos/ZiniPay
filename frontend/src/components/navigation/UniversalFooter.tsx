@@ -38,7 +38,7 @@ export function UniversalFooter({
           <div className="md:col-span-2 flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <img
-                src="/brand/logo-mark.svg"
+                src="/logo.svg"
                 alt="ZiniPay Logo"
                 className="w-7 h-7 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0"
               />

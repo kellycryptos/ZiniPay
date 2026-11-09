@@ -41,10 +41,11 @@ export function LandingPage({
 
       {/* ── 8 Ordered Landing Sections for Users ─────────────── */}
       <main className="flex-1 flex flex-col">
-        {/* 1. Hero: What ZiniPay does, who it is for, one button Open Dashboard */}
+        {/* 1. Hero: Plain and short with two actions and 3 short points */}
         <LandingHero
           onNavigateToApp={onNavigateToApp}
           onNavigateToBoard={onNavigateToBoard}
+          onNavigateVerify={handleVerify}
         />
 
         {/* 2. The Problem: Giving an agent treasury access is risky */}

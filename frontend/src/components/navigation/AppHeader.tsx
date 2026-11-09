@@ -79,7 +79,7 @@ export function AppHeader({
             className="flex items-center gap-2.5 text-left group cursor-pointer"
           >
             <img
-              src="/brand/logo-mark.svg"
+              src="/logo.svg"
               alt="ZiniPay Logo"
               className="w-8 h-8 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0 group-hover:border-[#00EC97]/40 transition-colors"
             />
