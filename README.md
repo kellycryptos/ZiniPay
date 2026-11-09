@@ -378,16 +378,16 @@ npm run verify:reputation -- zinipay-recipient2.testnet
 [1/3] Querying PolicyHelper On-Chain Reputation State...
   ✓ Reputation Found on-chain:
       Score:            30 pts
-      Tier:             Silver (1.5x multiplier)
+      Tier:             Silver (1.5x spend cap multiplier)
       Max Cap / Payout: 15.0000 NEAR
       Cooldown Period:  1440 mins (24.0 hrs)
       Registered In:    Contract zinipay-policy2.testnet
 
 [2/3] Querying Public Contributor Track Record...
   ✓ Track Record Verified:
-      Completed Tasks:  2 (local off-chain cache: zinipay-reputation.json)
+      Completed Tasks:  2 (local off-chain cache, not verified on-chain)
       Total NEAR Paid:  0.2000 NEAR
-      Rejections Count: 0
+      Rejections Count: 16 (local off-chain cache, not verified on-chain)
       Track Record:     100.0% completion rate (2 of 2)
       Recent Payouts:   2 confirmed testnet payout receipts
 
@@ -461,6 +461,9 @@ npm run verify:proposal -- 6
       Designated DAO:      zinipay-demo.sputnikv2.testnet
       Recipient Score:     30 pts (Tier: Silver)
       Effective Tier Cap:  15.0000 NEAR
+      Approval Tier:       SingleCouncil (Fast-track single council approval (Silver contributor <= 5 NEAR))
+      Advisory schedule:   1 vote(s) (not enforced)
+      Enforced on-chain:   2-of-2 council (zinipay-c1, zinipay-c2)
       CID Burned on Chain: true (Protected against replay)
       Spend Cap Gate:      PASSED (<= cap)
 
