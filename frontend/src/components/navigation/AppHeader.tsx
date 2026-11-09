@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
 import {
   Shield,
-  ArrowRight,
   Github,
   Menu,
   X,
-  ExternalLink,
-  Terminal,
-  BookOpen,
-  LayoutDashboard,
-  Home,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -20,6 +14,7 @@ export interface AppHeaderProps {
   onNavigateHome?: () => void;
   onNavigateBoard?: () => void;
   onNavigateDocs?: () => void;
+  onNavigateVerify?: () => void;
   onOpenVerifyModal?: () => void;
   walletConnected?: boolean;
   walletAccountId?: string | null;
@@ -32,6 +27,7 @@ export function AppHeader({
   onNavigateHome,
   onNavigateBoard,
   onNavigateDocs,
+  onNavigateVerify,
   onOpenVerifyModal,
   walletConnected = false,
   walletAccountId = null,
@@ -44,6 +40,7 @@ export function AppHeader({
   const isHome = currentPath === '/';
   const isBoard = currentPath === '/board' || currentPath.startsWith('/board') || currentPath.startsWith('/app');
   const isDocs = currentPath === '/docs' || currentPath.startsWith('/docs');
+  const isVerify = currentPath === '/verify' || currentPath.startsWith('/verify');
 
   const handleNavHome = () => {
     setMobileMenuOpen(false);
@@ -62,7 +59,13 @@ export function AppHeader({
 
   const handleOpenVerify = () => {
     setMobileMenuOpen(false);
-    if (onOpenVerifyModal) onOpenVerifyModal();
+    if (onNavigateVerify) {
+      onNavigateVerify();
+    } else if (onOpenVerifyModal) {
+      onOpenVerifyModal();
+    } else {
+      window.location.href = '/verify';
+    }
   };
 
   return (
@@ -123,6 +126,17 @@ export function AppHeader({
           </button>
           <button
             type="button"
+            onClick={handleOpenVerify}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              isVerify
+                ? 'text-[var(--text-primary)] bg-[var(--bg-panel-alt)] font-semibold border border-[var(--border-subtle)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)]'
+            }`}
+          >
+            Verification
+          </button>
+          <button
+            type="button"
             onClick={handleNavDocs}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
               isDocs
@@ -164,11 +178,11 @@ export function AppHeader({
           <button
             type="button"
             onClick={handleOpenVerify}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-mono text-[#00EC97] transition-all cursor-pointer shadow-sm"
-            title="Run 11 live in-browser JSON-RPC checks against NEAR Testnet"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-mono text-[#00EC97] transition-all cursor-pointer shadow-sm font-semibold"
+            title="View on-chain proof"
           >
             <Shield size={14} />
-            <span>Verify On-Chain</span>
+            <span>Verify on-chain</span>
           </button>
 
           {/* Primary CTA */}
@@ -190,104 +204,72 @@ export function AppHeader({
             <button
               type="button"
               onClick={handleNavBoard}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer shadow-sm"
+              className="px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer shadow-sm"
             >
-              <span>Launch App</span>
-              <ArrowRight size={14} />
+              Open Dashboard
             </button>
           )}
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)] transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-4 flex flex-col gap-3 font-sans shadow-xl">
-          <nav className="flex flex-col gap-1">
-            <button
-              type="button"
-              onClick={handleNavHome}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left ${
-                isHome ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-panel-alt)]'
-              }`}
-            >
-              <Home size={16} className="text-[var(--text-secondary)]" />
-              <span>Home</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleNavBoard}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left ${
-                isBoard ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-panel-alt)]'
-              }`}
-            >
-              <LayoutDashboard size={16} className="text-[var(--text-secondary)]" />
-              <span>Dashboard (/board)</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleNavDocs}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-left ${
-                isDocs ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-panel-alt)]'
-              }`}
-            >
-              <BookOpen size={16} className="text-[var(--text-secondary)]" />
-              <span>Docs (/docs)</span>
-            </button>
-            <a
-              href="https://github.com/kellycryptos/ZiniPay"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-panel-alt)] text-left"
-            >
-              <Github size={16} className="text-[var(--text-secondary)]" />
-              <span>GitHub Repository</span>
-            </a>
-          </nav>
-
-          <div className="pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-2">
-            {/* Mobile Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--text-primary)] cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                {theme === 'dark' ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-indigo-600" />}
-                <span>Theme: {theme === 'dark' ? 'Dark' : 'Light'}</span>
-              </div>
-              <span className="text-[10px] font-mono text-[var(--text-secondary)]">Switch</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenVerify}
-              className="w-full py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-[#00EC97] flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Shield size={14} />
-              <span>Run Verification Suite</span>
-            </button>
-
-            {!isBoard && (
-              <button
-                type="button"
-                onClick={handleNavBoard}
-                className="w-full py-2 px-3 rounded-lg bg-[#00EC97] text-black font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-              >
-                <span>Launch App</span>
-                <ArrowRight size={14} />
-              </button>
-            )}
-          </div>
+        <div className="lg:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleNavHome}
+            className={`text-left px-3 py-2 rounded-lg text-sm ${
+              isHome ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            }`}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            onClick={handleNavBoard}
+            className={`text-left px-3 py-2 rounded-lg text-sm ${
+              isBoard ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenVerify}
+            className={`text-left px-3 py-2 rounded-lg text-sm ${
+              isVerify ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            }`}
+          >
+            Verification
+          </button>
+          <button
+            type="button"
+            onClick={handleNavDocs}
+            className={`text-left px-3 py-2 rounded-lg text-sm ${
+              isDocs ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            }`}
+          >
+            Docs
+          </button>
+          <a
+            href="https://github.com/kellycryptos/ZiniPay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)]"
+          >
+            <Github size={14} />
+            <span>GitHub</span>
+          </a>
         </div>
       )}
     </header>
