@@ -357,7 +357,7 @@ export function VerificationModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white tracking-tight">
+                <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
                   In-Browser Live Testnet Verification Suite
                 </h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -372,7 +372,7 @@ export function VerificationModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -399,7 +399,7 @@ export function VerificationModal({
             type="button"
             onClick={runAllChecks}
             disabled={isRunning}
-            className="px-3 py-1 rounded-md bg-white/[0.08] hover:bg-white/[0.12] text-xs font-mono text-white flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-white/[0.08] hover:bg-white/[0.12] text-xs font-mono text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw size={12} className={isRunning ? 'animate-spin' : ''} />
             <span>{isRunning ? 'Running Queries...' : 'Re-Run Live Checks'}</span>
@@ -461,7 +461,7 @@ export function VerificationModal({
                         >
                           [{item.id}]
                         </span>
-                        <h4 className="text-xs font-semibold text-white">{item.label}</h4>
+                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">{item.label}</h4>
                         <span className="text-[10px] font-mono text-[var(--text-muted)]">
                           ({item.category})
                         </span>

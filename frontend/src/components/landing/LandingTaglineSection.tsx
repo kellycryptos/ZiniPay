@@ -71,7 +71,7 @@ export function LandingTaglineSection() {
                 <span
                   key={`word-${currentWordIdx}`}
                   className={`inline-block mr-[0.28em] transition-colors duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    isRevealed ? 'text-white font-medium' : 'text-white/20'
+                    isRevealed ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-muted)]/30'
                   }`}
                 >
                   {word}

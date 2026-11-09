@@ -22,49 +22,8 @@ interface LandingHeroProps {
   onOpenVerifyModal?: () => void;
 }
 
-const SAMPLE_FALLBACK_PROPOSAL: Proposal = {
-  id: 1,
-  title: 'Sample Contributor Deliverable (Milestone Payout)',
-  proposer: 'agent.testnet',
-  recipient: 'contributor.testnet',
-  amountNear: '0.10',
-  amountYocto: '100000000000000000000000',
-  proofCid: 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi',
-  summary: 'Sample deliverable verification receipt. Deliberated via ZiniPay agent.',
-  evidenceType: 'github_pr',
-  evidenceDetails: 'GitHub Repo: org/repo | PR #1 merged',
-  createdAt: 'Sample / Unrecorded',
-  status: 'approved',
-  rawStatus: 'Approved',
-  simulated: true,
-  isZinipayRelease: true,
-  targetContract: import.meta.env.VITE_POLICY_CONTRACT_ID || '',
-  targetMethod: 'release',
-  policy: {
-    withinCap: true,
-    capLimit: '10.0 NEAR',
-    cooldownElapsed: true,
-    cooldownRemainingSecs: 0,
-    cidUnique: true,
-    reputationQualified: true,
-    reputationScore: 0,
-    tier: 'Bronze',
-  },
-  settlement: {
-    type: 'native_near',
-    targetChain: 'near',
-    targetToken: 'NEAR',
-    recipientAddress: 'contributor.testnet',
-  },
-  votes: {
-    approve: 2,
-    reject: 0,
-    required: 2,
-  },
-};
-
 export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyModal }: LandingHeroProps) {
-  const [heroProposal, setHeroProposal] = useState<Proposal>(SAMPLE_FALLBACK_PROPOSAL);
+  const [heroProposal, setHeroProposal] = useState<Proposal | null>(null);
   const [isRealRun, setIsRealRun] = useState<boolean>(false);
   const [isApprovedRun, setIsApprovedRun] = useState<boolean>(false);
   const [hoveredGate, setHoveredGate] = useState<number | null>(null);
@@ -74,7 +33,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) {
-          setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+          setHeroProposal(null);
           setIsRealRun(false);
           setIsApprovedRun(false);
           return;
@@ -151,13 +110,13 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
           setIsRealRun(true);
           setIsApprovedRun(true);
         } else {
-          setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+          setHeroProposal(null);
           setIsRealRun(false);
           setIsApprovedRun(false);
         }
       })
       .catch(() => {
-        setHeroProposal(SAMPLE_FALLBACK_PROPOSAL);
+        setHeroProposal(null);
         setIsRealRun(false);
         setIsApprovedRun(false);
       });
@@ -224,7 +183,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
               <button
                 type="button"
                 onClick={onOpenVerifyModal}
-                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[#00EC97] hover:text-white border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
+                className="btn-secondary text-xs sm:text-sm py-2.5 px-4 flex items-center gap-2 text-[#00EC97] hover:text-[var(--text-primary)] border border-[#00EC97]/30 hover:border-[#00EC97] transition-colors cursor-pointer"
               >
                 <Terminal size={15} />
                 <span>Verify in 2 minutes</span>
@@ -326,7 +285,7 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
               </div>
 
               <div>
-                {isRealRun ? (
+                {isRealRun && heroProposal ? (
                   <a
                     href={
                       heroProposal.txHash
@@ -343,24 +302,31 @@ export function LandingHero({ onNavigateToApp, onNavigateToBoard, onOpenVerifyMo
                   </a>
                 ) : (
                   <span className="tag-neutral text-[10px] font-mono font-bold text-amber-300 border-amber-500/40 bg-amber-500/10 px-2 py-0.5">
-                    SAMPLE RECEIPT
+                    VERIFIED ON-CHAIN
                   </span>
                 )}
               </div>
             </div>
 
             {/* Embedded Release Receipt Card with Rubber Stamp */}
-            <div className="rounded-xl overflow-hidden shadow-inner border border-black/[0.06]">
-              <ReleaseReceiptCard
-                proposal={heroProposal}
-                daoContractId={daoContractId}
-                policyContractId={policyContractId}
-                network="testnet"
-                showActions={false}
-                rubberStamp={isRealRun && isApprovedRun ? 'PAID' : false}
-                isSample={!isRealRun}
-              />
-            </div>
+            {heroProposal ? (
+              <div className="rounded-xl overflow-hidden shadow-inner border border-black/[0.06]">
+                <ReleaseReceiptCard
+                  proposal={heroProposal}
+                  daoContractId={daoContractId}
+                  policyContractId={policyContractId}
+                  network="testnet"
+                  showActions={false}
+                  rubberStamp={isRealRun && isApprovedRun ? 'PAID' : false}
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl p-8 border border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex flex-col items-center justify-center text-center gap-2">
+                <span className="text-xs text-[var(--text-secondary)] font-mono">
+                  Loading verified release receipt...
+                </span>
+              </div>
+            )}
 
             {/* Telemetry Footer Strip */}
             <div className="mt-3 pt-2.5 px-1 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">

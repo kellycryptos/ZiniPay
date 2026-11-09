@@ -51,7 +51,13 @@
   --color-warm-brass: #D97706;
 
   /* Snappy spring transition curve from design system */
-  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    --card-attack-bg: #181316;
+  --card-attack-border: rgba(239, 68, 68, 0.30);
+  --card-attack-text: #FCA5A5;
+  --card-attack-reason-bg: rgba(69, 10, 10, 0.60);
+  --card-attack-reason-border: rgba(239, 68, 68, 0.30);
+  --card-attack-reason-text: #FECACA;
+--ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Light Theme Variables */
@@ -78,9 +84,25 @@ html.light, [data-theme="light"] {
   --color-pending: #D97706;
   --color-pending-bg: rgba(217, 119, 6, 0.08);
   --color-pending-border: rgba(217, 119, 6, 0.25);
+
+  --card-attack-bg: #FEF2F2;
+  --card-attack-border: #FECACA;
+  --card-attack-text: #991B1B;
+  --card-attack-reason-bg: #FFFFFF;
+  --card-attack-reason-border: #FECACA;
+  --card-attack-reason-text: #7F1D1D;
 }
 
+
 /* Light mode utility resets for dark-hardcoded elements */
+
+html.light .bg-\[\#12141A\] {
+  background-color: var(--bg-panel) !important;
+}
+html.light .bg-\[\#181316\] {
+  background-color: var(--card-attack-bg) !important;
+}
+
 html.light .bg-\[\#0A0A0C\] {
   background-color: var(--bg-canvas) !important;
 }

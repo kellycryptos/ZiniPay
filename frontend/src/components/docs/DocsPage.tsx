@@ -64,7 +64,7 @@ export function DocsPage({
             <BookOpen size={24} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-[var(--text-primary)] tracking-tight">
               Architecture &amp; Verification Docs
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -98,7 +98,7 @@ export function DocsPage({
             }}
             className={`shrink-0 px-2.5 py-1 rounded-md transition-colors ${
               activeSection === s.id
-                ? 'bg-white/10 text-white font-semibold'
+                ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]'
                 : 'hover:text-slate-200'
             }`}
           >
@@ -112,11 +112,11 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 01</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Problem &amp; Core Thesis
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4 text-sm text-slate-300 leading-relaxed">
-          <p className="text-base text-white font-medium">
+          <p className="text-base text-[var(--text-primary)] font-medium">
             &ldquo;Let AI agents ask for money. Never let them take it.&rdquo;
           </p>
           <p>
@@ -156,7 +156,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 02</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Solution: The Fail-Closed Three-Way Release Gate
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
@@ -170,7 +170,7 @@ export function DocsPage({
                 <span className="font-mono text-xs font-bold text-[#00EC97]">GATE 1</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-slate-400">Pre-Chain</span>
               </div>
-              <h3 className="font-bold text-white text-sm">Deliverable Match</h3>
+              <h3 className="font-bold text-[var(--text-primary)] text-sm">Deliverable Match</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Dual-agent deliberation validates that the GitHub PR is merged, the commit hash matches, the PR author matches the claim, and the IPFS CID is stripped to canonical base58/base32.
               </p>
@@ -181,7 +181,7 @@ export function DocsPage({
                 <span className="font-mono text-xs font-bold text-[#00EC97]">GATE 2</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-[#00EC97]">Rust Contract</span>
               </div>
-              <h3 className="font-bold text-white text-sm">PolicyHelper Contract</h3>
+              <h3 className="font-bold text-[var(--text-primary)] text-sm">PolicyHelper Contract</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Rust contract enforces per-proposal spend caps (Bronze 10N / Silver 15N / Gold 20N), checks recipient cooldown (60s), and permanently burns the CID into an on-chain set.
               </p>
@@ -192,7 +192,7 @@ export function DocsPage({
                 <span className="font-mono text-xs font-bold text-[#00EC97]">GATE 3</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-[#00EC97]">Sputnik DAO v2</span>
               </div>
-              <h3 className="font-bold text-white text-sm">Human Council Quorum</h3>
+              <h3 className="font-bold text-[var(--text-primary)] text-sm">Human Council Quorum</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Every payout proposal dispatches to Sputnik DAO v2, where 2-of-2 human council members must vote <code className="text-[#00EC97]">VoteApprove</code> before any NEAR leaves the treasury.
               </p>
@@ -206,7 +206,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 03</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           System Architecture
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6">
@@ -219,7 +219,7 @@ export function DocsPage({
             <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-center">
               <div className="p-3 rounded-lg bg-white/5 border border-white/10 w-full md:w-1/4">
                 <span className="text-slate-400 block text-[10px]">STEP 1</span>
-                <span className="font-bold text-white">Contributor</span>
+                <span className="font-bold text-[var(--text-primary)]">Contributor</span>
                 <span className="text-[10px] text-slate-400 block mt-1">PR / IPFS Deliverable</span>
               </div>
               <ArrowRight size={16} className="text-[#00EC97] shrink-0 rotate-90 md:rotate-0" />
@@ -231,7 +231,7 @@ export function DocsPage({
               <ArrowRight size={16} className="text-[#00EC97] shrink-0 rotate-90 md:rotate-0" />
               <div className="p-3 rounded-lg bg-white/5 border border-white/10 w-full md:w-1/4">
                 <span className="text-slate-400 block text-[10px]">STEP 3</span>
-                <span className="font-bold text-white">PolicyHelper</span>
+                <span className="font-bold text-[var(--text-primary)]">PolicyHelper</span>
                 <span className="text-[10px] text-slate-400 block mt-1">zinipay-policy2.testnet</span>
               </div>
               <ArrowRight size={16} className="text-[#00EC97] shrink-0 rotate-90 md:rotate-0" />
@@ -254,7 +254,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 04</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           PolicyHelper Smart Contract
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
@@ -272,15 +272,15 @@ export function DocsPage({
             </div>
             <div>
               <span className="text-slate-400">WASM Hash: </span>
-              <code className="text-white select-all">4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt</code>
+              <code className="text-[var(--text-primary)] select-all">4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt</code>
             </div>
           </div>
 
           <p>
-            The Rust contract source is maintained at [`contracts/policy-helper/src/lib.rs`](file:///c:/Users/HP/Downloads/nearcode%20101043/contracts/policy-helper/src/lib.rs). The contract ownership is permanently held by Sputnik DAO v2 (<code className="text-white">zinipay-demo.sputnikv2.testnet</code>) via tx <a href="https://testnet.nearblocks.io/txns/BmUTUzULrCCx5PZ2fRkmh49pW98W4eXUq2fVjYc4z9b" target="_blank" rel="noreferrer" className="text-[#00EC97] underline font-mono">BmUTUzUL...</a>.
+            The Rust contract source is maintained at [`contracts/policy-helper/src/lib.rs`](file:///c:/Users/HP/Downloads/nearcode%20101043/contracts/policy-helper/src/lib.rs). The contract ownership is permanently held by Sputnik DAO v2 (<code className="text-[var(--text-primary)]">zinipay-demo.sputnikv2.testnet</code>) via tx <a href="https://testnet.nearblocks.io/txns/BmUTUzULrCCx5PZ2fRkmh49pW98W4eXUq2fVjYc4z9b" target="_blank" rel="noreferrer" className="text-[#00EC97] underline font-mono">BmUTUzUL...</a>.
           </p>
 
-          <h3 className="font-bold text-white text-base">Key Methods &amp; Enforced Panic Traps</h3>
+          <h3 className="font-bold text-[var(--text-primary)] text-base">Key Methods &amp; Enforced Panic Traps</h3>
           <div className="divide-y divide-white/[0.08] text-xs font-mono">
             <div className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <span className="text-emerald-300 font-bold">check_policy(recipient, amount, cid)</span>
@@ -311,7 +311,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 05</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Reputation &amp; Tiers (Enforced versus Advisory)
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
@@ -372,7 +372,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 06</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Keyless Verification: &ldquo;Do X &rarr; See Y&rdquo;
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-6 text-sm text-slate-300 leading-relaxed">
@@ -388,7 +388,7 @@ export function DocsPage({
                 <button
                   type="button"
                   onClick={() => copyToClipboard('npm run verify:testnet', 'cmd1')}
-                  className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd1' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
                   <span>{copiedCmd === 'cmd1' ? 'Copied' : 'Copy'}</span>
@@ -409,7 +409,7 @@ export function DocsPage({
                 <button
                   type="button"
                   onClick={() => copyToClipboard('npm run verify:reputation -- zinipay-recipient2.testnet', 'cmd2')}
-                  className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd2' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
                   <span>{copiedCmd === 'cmd2' ? 'Copied' : 'Copy'}</span>
@@ -419,7 +419,7 @@ export function DocsPage({
                 npm run verify:reputation -- zinipay-recipient2.testnet
               </div>
               <p className="text-xs text-slate-400 font-sans">
-                <strong>See:</strong> Named account <code className="text-white">zinipay-recipient2.testnet</code> with on-chain score 30 pts, Silver tier cap (15 NEAR), and settled receipts from Proposals #5 and #6.
+                <strong>See:</strong> Named account <code className="text-[var(--text-primary)]">zinipay-recipient2.testnet</code> with on-chain score 30 pts, Silver tier cap (15 NEAR), and settled receipts from Proposals #5 and #6.
               </p>
             </div>
 
@@ -430,7 +430,7 @@ export function DocsPage({
                 <button
                   type="button"
                   onClick={() => copyToClipboard('npm run verify:proposal -- 6', 'cmd3')}
-                  className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                  className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd3' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
                   <span>{copiedCmd === 'cmd3' ? 'Copied' : 'Copy'}</span>
@@ -452,7 +452,7 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 07</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Live Proof &amp; Explorer Matrix
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4">
@@ -472,7 +472,7 @@ export function DocsPage({
               </thead>
               <tbody className="divide-y divide-white/5 text-slate-300">
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Proposal #5 Payout (Oct 30)</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Proposal #5 Payout (Oct 30)</td>
                   <td className="py-2.5 px-3 text-[#00EC97]">0.10 NEAR Settled (Deploy 1)</td>
                   <td className="py-2.5 px-3 text-slate-400">4B1Excqiga...6BPjd</td>
                   <td className="py-2.5 px-3 text-right">
@@ -482,7 +482,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Proposal #6 Creation (Nov 2)</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Proposal #6 Creation (Nov 2)</td>
                   <td className="py-2.5 px-3 text-emerald-400">0.10 NEAR Dispatched</td>
                   <td className="py-2.5 px-3 text-slate-400">HBs2djKVAt...kgVK</td>
                   <td className="py-2.5 px-3 text-right">
@@ -492,7 +492,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Proposal #6 Council 1 Approval</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Proposal #6 Council 1 Approval</td>
                   <td className="py-2.5 px-3 text-[#00EC97]">VoteApprove (c1)</td>
                   <td className="py-2.5 px-3 text-slate-400">22HTUkeVM6...4WvM</td>
                   <td className="py-2.5 px-3 text-right">
@@ -502,7 +502,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Proposal #6 Council 2 &amp; Execution</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Proposal #6 Council 2 &amp; Execution</td>
                   <td className="py-2.5 px-3 text-[#00EC97]">Quorum Reached &rarr; Settled</td>
                   <td className="py-2.5 px-3 text-slate-400">2nWMVtQ4z2...wg5d</td>
                   <td className="py-2.5 px-3 text-right">
@@ -512,7 +512,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Council Promotion to Silver Tier</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Council Promotion to Silver Tier</td>
                   <td className="py-2.5 px-3 text-[#00EC97]">+25 Pts (Total 30)</td>
                   <td className="py-2.5 px-3 text-slate-400">DfpR26Q4qg...5U6W</td>
                   <td className="py-2.5 px-3 text-right">
@@ -522,7 +522,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Attack 1: Duplicate CID Replay</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Attack 1: Duplicate CID Replay</td>
                   <td className="py-2.5 px-3 text-red-400">Panic Reverted (Anti-Replay)</td>
                   <td className="py-2.5 px-3 text-slate-400">9Gp7HmJb9j...EUSb</td>
                   <td className="py-2.5 px-3 text-right">
@@ -532,7 +532,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Attack 2: Over-Cap Drain (16 NEAR)</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Attack 2: Over-Cap Drain (16 NEAR)</td>
                   <td className="py-2.5 px-3 text-red-400">Panic Reverted (Cap Limit)</td>
                   <td className="py-2.5 px-3 text-slate-400">EiktoyYPMJ...qARZ</td>
                   <td className="py-2.5 px-3 text-right">
@@ -542,7 +542,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Attack 3: Unauthorized Caller</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Attack 3: Unauthorized Caller</td>
                   <td className="py-2.5 px-3 text-red-400">Panic Reverted (DAO-Only)</td>
                   <td className="py-2.5 px-3 text-slate-400">2zsvqGDF4B...K9W2</td>
                   <td className="py-2.5 px-3 text-right">
@@ -552,7 +552,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Attack 4: Case-Variant Replay</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Attack 4: Case-Variant Replay</td>
                   <td className="py-2.5 px-3 text-red-400">Panic Reverted (Canonical CID)</td>
                   <td className="py-2.5 px-3 text-slate-400">EwQAsc5rXE...2V3r</td>
                   <td className="py-2.5 px-3 text-right">
@@ -562,7 +562,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Attack 5: Cooldown Violation</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Attack 5: Cooldown Violation</td>
                   <td className="py-2.5 px-3 text-red-400">Panic Reverted (60s Cooldown)</td>
                   <td className="py-2.5 px-3 text-slate-400">2hVRAoT67H...X8y2</td>
                   <td className="py-2.5 px-3 text-right">
@@ -572,7 +572,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Contract Ownership Transfer</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Contract Ownership Transfer</td>
                   <td className="py-2.5 px-3 text-[#00EC97]">Transferred to Sputnik DAO</td>
                   <td className="py-2.5 px-3 text-slate-400">BmUTUzULrC...4z9b</td>
                   <td className="py-2.5 px-3 text-right">
@@ -582,7 +582,7 @@ export function DocsPage({
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2.5 px-3 font-semibold text-white">Blocked Admin: Former Owner Unburn</td>
+                  <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">Blocked Admin: Former Owner Unburn</td>
                   <td className="py-2.5 px-3 text-amber-400">Panic Reverted (Unauthorized)</td>
                   <td className="py-2.5 px-3 text-slate-400">EmKpSxi4LX...1w14</td>
                   <td className="py-2.5 px-3 text-right">
@@ -602,13 +602,13 @@ export function DocsPage({
         <div className="flex items-center gap-2 text-xs font-mono text-[#00EC97] uppercase tracking-wider font-semibold">
           <span>Section 08</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Known Limitations &amp; Scope Disclosures
         </h2>
         <div className="p-6 rounded-2xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4 text-xs text-slate-300 leading-relaxed font-sans">
           <ul className="flex flex-col gap-3 list-disc pl-4">
             <li>
-              <strong>Model Deliberation Keys:</strong> Real dual-agent LLM deliberation requires a funded NEAR AI Cloud API key (<code className="text-[#00EC97] font-mono">NEAR_AI_API_KEY</code>). In zero-env sandbox environments without this key, the system automatically runs the deterministic simulated deliberation fixture.
+              <strong>Model Deliberation Keys:</strong> Real dual-agent LLM deliberation requires a funded NEAR AI Cloud API key (<code className="text-[#00EC97] font-mono">NEAR_AI_API_KEY</code>). In zero-env sandbox environments without this key, the system automatically runs the deterministic simulated deliberation mode.
             </li>
             <li>
               <strong>DAO Framework Compatibility:</strong> ZiniPay is specifically designed and verified against <strong>Sputnik DAO v2</strong> contracts. Trezu is treated as untested; no compatibility is claimed.

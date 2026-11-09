@@ -23,12 +23,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (saved === 'light' || saved === 'dark') {
         return saved;
       }
-      // Check system preference
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light';
-      }
+      // First visit is always light (ignore prefers-color-scheme)
+      return 'light';
     }
-    return 'dark';
+    return 'light';
   });
 
   const applyTheme = (t: Theme) => {

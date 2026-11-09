@@ -1,11 +1,10 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, Terminal, Sparkles, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Terminal, CheckCircle2 } from 'lucide-react';
 
 interface RpcDownBannerProps {
   error: string;
   onRetry: () => void;
   isLoading: boolean;
-  onLaunchDemo?: () => void;
   onOpenVerification?: () => void;
 }
 
@@ -13,7 +12,6 @@ export function RpcDownBanner({
   error,
   onRetry,
   isLoading,
-  onLaunchDemo,
   onOpenVerification,
 }: RpcDownBannerProps) {
   return (
@@ -35,7 +33,7 @@ export function RpcDownBanner({
             {error || 'Unable to query Sputnik DAO at test.rpc.fastnear.com / rpc.testnet.near.org.'}
           </p>
           <p className="text-[11px] text-[var(--text-secondary)]">
-            Static verified receipts and proof cards remain fully verifiable below. You can retry the live RPC query or switch to local simulation.
+            Static verified receipts and proof cards remain fully verifiable below. You can retry the live RPC query.
           </p>
         </div>
       </div>
@@ -50,14 +48,6 @@ export function RpcDownBanner({
           <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
           <span>{isLoading ? 'Connecting...' : 'Retry RPC'}</span>
         </button>
-
-        <a
-          href="/board?demo=1"
-          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-md"
-        >
-          <Sparkles size={13} />
-          <span>Simulation Mode</span>
-        </a>
 
         {onOpenVerification && (
           <button

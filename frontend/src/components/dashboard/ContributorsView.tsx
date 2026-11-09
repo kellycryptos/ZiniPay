@@ -99,7 +99,7 @@ export function ContributorsView({
             <Users size={20} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">
+            <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
               Verified Contributors &amp; Reputation
             </h2>
             <p className="text-xs text-[var(--text-secondary)]">
@@ -125,7 +125,7 @@ export function ContributorsView({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-bold text-white">
+                <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
                   {accountId}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded font-semibold bg-slate-800 text-slate-200 border border-slate-700">
@@ -143,7 +143,7 @@ export function ContributorsView({
               href={`${explorerBase}/address/${accountId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-mono text-slate-400 hover:text-white flex items-center gap-1 transition-colors px-2.5 py-1 rounded bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"
+              className="text-xs font-mono text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors px-2.5 py-1 rounded bg-[var(--bg-canvas)] border border-[var(--border-subtle)]"
             >
               <span>NEARBlocks</span>
               <ExternalLink size={12} />
@@ -165,7 +165,7 @@ export function ContributorsView({
               Reputation Score
             </span>
             <div className="my-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-white tracking-tight">
+              <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {isLoadingScore ? '...' : score}
               </span>
               <span className="text-xs text-slate-400">pts</span>
@@ -180,7 +180,7 @@ export function ContributorsView({
               Enforced Spend Cap
             </span>
             <div className="my-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-white tracking-tight">
+              <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {capNear}
               </span>
               <span className="text-xs text-[#00EC97] font-semibold">NEAR</span>
@@ -195,7 +195,7 @@ export function ContributorsView({
               Recorded Payouts
             </span>
             <div className="my-1 flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-white tracking-tight">
+              <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {totalPaidNear > 0 ? totalPaidNear.toFixed(2) : '0.20'}
               </span>
               <span className="text-xs text-[#00EC97] font-semibold">NEAR</span>
@@ -222,7 +222,7 @@ export function ContributorsView({
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={15} className="text-[#00EC97] shrink-0" />
                     <div>
-                      <span className="font-semibold text-white">
+                      <span className="font-semibold text-[var(--text-primary)]">
                         Proposal #{p.proposalId} Payout ({p.amountNear} NEAR)
                       </span>
                       <p className="text-[11px] text-slate-400">
@@ -252,7 +252,7 @@ export function ContributorsView({
 
         {/* Approval Schedule Advisory Callout */}
         <div className="p-3.5 rounded-lg bg-[var(--bg-canvas)] border border-emerald-500/20 text-xs text-slate-300">
-          <div className="flex items-center gap-2 text-white font-semibold mb-1">
+          <div className="flex items-center gap-2 text-[var(--text-primary)] font-semibold mb-1">
             <Clock size={14} className="text-[#00EC97]" />
             <span>Advisory Approval Schedule ({tier} Tier)</span>
           </div>
@@ -275,7 +275,7 @@ export function ContributorsView({
                   <Award size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">
+                  <h3 className="font-bold text-[var(--text-primary)] text-base">
                     Silver Tier Governance Profile
                   </h3>
                   <p className="text-xs font-mono text-slate-400">
@@ -287,7 +287,7 @@ export function ContributorsView({
               <button
                 type="button"
                 onClick={() => setSelectedContributor(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -297,7 +297,7 @@ export function ContributorsView({
               <div className="p-4 rounded-xl bg-[var(--bg-canvas)] border border-white/10 flex flex-col gap-3 font-mono">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">On-Chain Reputation</span>
-                  <span className="text-white font-bold">{score} Points (Silver)</span>
+                  <span className="text-[var(--text-primary)] font-bold">{score} Points (Silver)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">Enforced Spend Limit</span>
@@ -305,7 +305,7 @@ export function ContributorsView({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">Cooldown Window</span>
-                  <span className="text-white font-bold">60 Seconds Between Payouts</span>
+                  <span className="text-[var(--text-primary)] font-bold">60 Seconds Between Payouts</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">Anti-Replay Protection</span>
@@ -314,15 +314,15 @@ export function ContributorsView({
               </div>
 
               <div className="flex flex-col gap-2">
-                <h4 className="font-bold text-white text-xs uppercase tracking-wider font-mono">
+                <h4 className="font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider font-mono">
                   Advisory Approval Schedule
                 </h4>
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-slate-300 space-y-1.5 text-xs">
                   <p>
-                    <strong className="text-white font-mono">≤ 5.0 NEAR:</strong> Fast-track eligible (single council vote recommended).
+                    <strong className="text-[var(--text-primary)] font-mono">≤ 5.0 NEAR:</strong> Fast-track eligible (single council vote recommended).
                   </p>
                   <p>
-                    <strong className="text-white font-mono">&gt; 5.0 NEAR:</strong> Standard multi-sig quorum (full 2-of-2 council vote recommended).
+                    <strong className="text-[var(--text-primary)] font-mono">&gt; 5.0 NEAR:</strong> Standard multi-sig quorum (full 2-of-2 council vote recommended).
                   </p>
                   <p className="text-[11px] text-slate-400 pt-1 border-t border-blue-500/20">
                     Sputnik DAO v2 policy enforces 2-of-2 council quorum on-chain for all payouts regardless of tier.
@@ -335,7 +335,7 @@ export function ContributorsView({
               <button
                 type="button"
                 onClick={() => setSelectedContributor(false)}
-                className="px-4 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.12] text-white text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)] text-xs font-medium transition-colors cursor-pointer"
               >
                 Close
               </button>

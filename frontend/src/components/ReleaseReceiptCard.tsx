@@ -14,7 +14,6 @@ interface ReleaseReceiptCardProps {
   onExecuteIntent?: (proposal: Proposal) => void;
   showActions?: boolean;
   rubberStamp?: boolean | 'PAID' | 'APPROVED';
-  isSample?: boolean;
 }
 
 export function ReleaseReceiptCard({
@@ -28,14 +27,13 @@ export function ReleaseReceiptCard({
   onExecuteIntent,
   showActions = true,
   rubberStamp,
-  isSample,
 }: ReleaseReceiptCardProps) {
   const explorerBase = network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
   const quorumReached = proposal.votes
     ? proposal.votes.approve >= proposal.votes.required
     : (proposal.status === 'approved' || proposal.status === 'settled');
 
-  // Strict check: only genuine ZiniPay release proposals or explicit demo simulations get gate results
+  // Strict check: only genuine ZiniPay release proposals get gate results
   // A proposal that is not a FunctionCall to the configured policy contract's release method must show all three gate rows as "Not a ZiniPay release".
   const isFunctionCallToConfiguredPolicy = Boolean(
     policyContractId &&
@@ -188,9 +186,7 @@ export function ReleaseReceiptCard({
           {proposal.simulated && (
             <span className="tag-pending text-[10px] font-mono">SIMULATION</span>
           )}
-          {isSample && (
-            <span className="tag-neutral text-[10px] font-mono">SAMPLE</span>
-          )}
+          
           {!isZinipay && (
             <span className="tag-neutral text-[10px] font-mono">EXTERNAL</span>
           )}

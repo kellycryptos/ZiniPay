@@ -110,15 +110,15 @@ export function ActivityFeed({
   const getBadgeStyle = (b: ActivityFeedItem['badge']) => {
     switch (b) {
       case 'Approved':
-        return 'bg-emerald-950/50 text-[#00EC97] border-emerald-500/30';
+        return 'bg-emerald-500/10 text-emerald-700 dark:text-[#00EC97] border-emerald-500/30';
       case 'Settled':
-        return 'bg-emerald-900/40 text-emerald-300 border-emerald-500/40';
+        return 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30';
       case 'Pending':
-        return 'bg-amber-950/50 text-amber-300 border-amber-500/30';
+        return 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30';
       case 'Rejected':
-        return 'bg-red-950/60 text-red-300 border-red-500/40';
+        return 'bg-red-500/10 text-red-800 dark:text-red-300 border-red-500/30';
       case 'Replay Blocked':
-        return 'bg-rose-950/70 text-rose-300 border-rose-500/50';
+        return 'bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/30';
       default:
         return 'bg-slate-800 text-slate-300 border-slate-700';
     }
@@ -133,7 +133,7 @@ export function ActivityFeed({
             <Activity size={16} />
           </div>
           <div>
-            <h2 className="font-semibold text-white text-base">On-Chain Activity Feed</h2>
+            <h2 className="font-semibold text-[var(--text-primary)] text-base">On-Chain Activity Feed</h2>
             <p className="text-xs text-[var(--text-secondary)]">
               Verified testnet events from Sputnik DAO v2 and PolicyHelper.
             </p>
@@ -149,8 +149,8 @@ export function ActivityFeed({
               onClick={() => setFilterBadge(b)}
               className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer ${
                 filterBadge === b
-                  ? 'bg-white text-black font-semibold'
-                  : 'bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)]'
+                  ? 'bg-[var(--text-primary)] text-[var(--bg-canvas)] font-semibold'
+                  : 'bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)]'
               }`}
             >
               {b === 'all' ? 'All Events' : b}
@@ -182,7 +182,7 @@ export function ActivityFeed({
 
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-xs text-white">{item.title}</span>
+                    <span className="font-semibold text-xs text-[var(--text-primary)]">{item.title}</span>
                     <span className="text-[10px] text-[var(--text-muted)] font-mono">
                       {item.timestamp}
                     </span>
@@ -199,7 +199,7 @@ export function ActivityFeed({
                   href={item.explorerUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
+                  className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
                   title="Inspect on NEARBlocks Testnet Explorer"
                 >
                   <span className="truncate max-w-[90px] sm:max-w-[110px]">

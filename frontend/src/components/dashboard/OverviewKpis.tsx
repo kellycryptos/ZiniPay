@@ -18,6 +18,11 @@ export interface BlockedAttackItem {
   rejectionReason: string;
   blockedBy: string;
   isAdminAction?: boolean;
+  caller?: string;
+  amountNear?: string;
+  deliverable?: string;
+  details?: string;
+  simulated?: boolean;
 }
 
 export interface SettledPayoutItem {
@@ -117,7 +122,7 @@ export function OverviewKpis({
             <div className="h-7 w-28 bg-white/[0.06] rounded animate-pulse" />
           ) : hasLiveBalance ? (
             <div className="flex items-baseline gap-2">
-              <span className="font-display text-2xl font-bold text-white tracking-tight">
+              <span className="font-display text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 {balanceNear!.toFixed(2)}
               </span>
               <span className="font-mono text-sm text-[#00EC97] font-semibold">NEAR</span>
@@ -184,7 +189,7 @@ export function OverviewKpis({
           {isLoaded ? (
             <>
               <div className="flex items-baseline gap-2">
-                <span className="font-display text-2xl font-bold text-white tracking-tight">
+                <span className="font-display text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                   {settledSumNear.toFixed(2)}
                 </span>
                 <span className="font-mono text-sm text-[#00EC97] font-semibold">NEAR</span>
@@ -238,7 +243,7 @@ export function OverviewKpis({
 
         <div className="my-3">
           <div className="flex items-baseline gap-2">
-            <span className="font-display text-2xl font-bold text-white tracking-tight">
+            <span className="font-display text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               {activeCount}
             </span>
             <span className="font-mono text-xs text-[var(--text-secondary)]">in queue</span>
@@ -275,7 +280,7 @@ export function OverviewKpis({
 
         <div className="my-2">
           <div className="flex items-baseline gap-2">
-            <span className="font-display text-2xl font-bold text-white tracking-tight">
+            <span className="font-display text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               5
             </span>
             <span className="font-mono text-xs text-red-400 font-semibold">Attacks</span>

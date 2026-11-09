@@ -41,8 +41,7 @@ export function StepByStepProposeForm({
   onChainPolicy,
   daoPolicy,
 }: StepByStepProposeFormProps) {
-  const isDemo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
-
+  
   // Form Fields — Empty by default (no fake values!)
   const [task, setTask] = useState('');
   const [deliverable, setDeliverable] = useState('');
@@ -286,7 +285,7 @@ export function StepByStepProposeForm({
             : 'Multi-agent consensus passed. Attestation generated.',
           score: confScore ?? 0,
           attestationSummary: delib?.attestationSummary || 'Report received (not independently verified)',
-          simulated: Boolean(data.simulated || isDemo),
+          simulated: Boolean(data.simulated),
           reviewType: delib?.reviewType || 'format-check-only',
         });
 
@@ -378,7 +377,7 @@ export function StepByStepProposeForm({
       evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${deliberationStatus.attestationSummary}`,
       createdAt: 'Just now',
       status: 'pending_quorum',
-      simulated: isDemo || Boolean(deliberationStatus.simulated),
+      simulated: Boolean(deliberationStatus.simulated),
       policy: {
         withinCap: true,
         capLimit: `${onChainPolicy ? (Number(BigInt(onChainPolicy.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1) : '15.0'} NEAR`,
