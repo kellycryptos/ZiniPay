@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Cpu, ShieldCheck, CheckCircle2, AlertTriangle, ExternalLink, Terminal, Sparkles, Copy, Check, Clock } from 'lucide-react';
 import { Proposal } from '../lib/types';
 import { AgentReasoningTree, ReasoningStep } from './ui/AgentReasoningTree';
@@ -12,6 +12,48 @@ interface DeliberationModalProps {
 export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationModalProps) {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'flow' | 'tee' | 'raw'>('flow');
+  const [verifiedSigners, setVerifiedSigners] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!proposal?.id) return;
+    fetch('/data/verified.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const txs = Array.isArray(data.transactions) ? data.transactions : [];
+        const signers: string[] = [];
+
+        // Check transactions for explicit votes or actions on this proposal
+        txs.forEach((tx: any) => {
+          const matchesProposal =
+            tx.proposalId === proposal.id ||
+            (typeof tx.label === 'string' && tx.label.includes(`Proposal #${proposal.id}`));
+
+          if (matchesProposal) {
+            if (tx.label?.includes('Council 1') && !signers.includes('zinipay-c1.testnet')) {
+              signers.push('zinipay-c1.testnet');
+            }
+            if (tx.label?.includes('Council 2') && !signers.includes('zinipay-c2.testnet')) {
+              signers.push('zinipay-c2.testnet');
+            }
+          }
+        });
+
+        // If no direct transaction votes found, check settledPayouts in verified.json
+        if (signers.length === 0 && Array.isArray(data.settledPayouts)) {
+          const payout = data.settledPayouts.find((p: any) => p.proposalId === proposal.id);
+          if (payout?.source?.includes('Sputnik DAO') && payout?.status === 'Approved') {
+            const hasC1 = txs.some((t: any) => t.label?.includes('Council 1'));
+            const hasC2 = txs.some((t: any) => t.label?.includes('Council 2'));
+            if (hasC1) signers.push('zinipay-c1.testnet');
+            if (hasC2) signers.push('zinipay-c2.testnet');
+          }
+        }
+
+        setVerifiedSigners(signers);
+      })
+      .catch(() => {});
+  }, [proposal?.id]);
 
   if (!isOpen || !proposal) return null;
 
@@ -29,14 +71,9 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
     .filter(([_, v]) => v === 'Approve')
     .map(([k]) => k);
 
-  // For known settled historical proposals #5 and #6 from verified.json, council signers were zinipay-c1 and zinipay-c2
-  const signersText = actualVoters.length > 0
-    ? actualVoters.join(', ')
-    : isApproved && (proposal.id === 5 || proposal.id === 6)
-    ? 'zinipay-c1.testnet, zinipay-c2.testnet'
-    : actualVoters.length > 0
-    ? actualVoters.join(', ')
-    : 'None yet';
+  // Read signers: prefer on-chain actualVoters from live query, then fall back to voters recorded in verified.json
+  const effectiveVoters = actualVoters.length > 0 ? actualVoters : verifiedSigners;
+  const signersText = effectiveVoters.length > 0 ? effectiveVoters.join(', ') : 'None yet';
 
   // Construct structured reasoning steps strictly from proposal metadata
   const reasoningSteps: ReasoningStep[] = [
@@ -52,7 +89,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         target: proposal.proofCid || 'Not specified',
         details: {
           'Deliverable': proposal.proofCid || 'None',
-          'Review Mode': 'Simulated local fixture (no funded NEAR AI key)',
+          'Review Mode': 'Model review: simulated (no funded NEAR AI key)',
         },
       },
       summary: 'Audited deliverable depth, commit history, and artifact CID uniqueness (model review: simulated).',
@@ -118,8 +155,8 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         : [
             `Sputnik DAO proposal #${proposal.id} registered on-chain`,
             `Awaiting council votes (${approveCount}/${requiredCount} approvals)`,
-            actualVoters.length > 0
-              ? `Recorded approving votes: ${actualVoters.join(', ')}`
+            effectiveVoters.length > 0
+              ? `Recorded approving votes: ${effectiveVoters.join(', ')}`
               : 'No council approvals recorded yet on this proposal',
           ],
       proofHash: isApproved && proposal.txHash ? `Tx: ${proposal.txHash}` : undefined,
