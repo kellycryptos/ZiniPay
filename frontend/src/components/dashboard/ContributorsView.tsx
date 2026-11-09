@@ -257,10 +257,12 @@ export function ContributorsView({
             <span>Advisory Approval Schedule ({tier} Tier)</span>
           </div>
           <p className="leading-relaxed text-slate-300">
-            Expedited single council vote for micro-tasks (≤ 5 NEAR) · Full 2-of-2 council quorum for standard tasks (&gt; 5 NEAR).
+            {tier === 'Silver' && 'Silver tier: 1 council vote up to 5 NEAR · Full 2-of-2 council quorum above 5 NEAR.'}
+            {tier === 'Gold' && 'Gold tier: auto-approve up to 2 NEAR · 1 council vote up to 8 NEAR · Full 2-of-2 council quorum above 8 NEAR.'}
+            {tier === 'Bronze' && 'Bronze tier: Full 2-of-2 council quorum (2 votes required) for all amounts.'}
           </p>
           <p className="text-[10px] text-slate-400 mt-1 font-mono">
-            Note: On-chain Sputnik DAO v2 currently requires 2-of-2 council quorum for all release calls. The expedited schedule is advisory client-side.
+            Contract tiers: Bronze needs 2 votes, Silver 1 vote up to 5 NEAR, Gold auto-approve up to 2 NEAR and 1 vote up to 8 NEAR, all advisory. Sputnik DAO v2 enforces 2-of-2 council quorum on-chain for all payouts.
           </p>
         </div>
       </div>
@@ -276,7 +278,7 @@ export function ContributorsView({
                 </div>
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)] text-base">
-                    Silver Tier Governance Profile
+                    {tier} Tier Governance Profile
                   </h3>
                   <p className="text-xs font-mono text-slate-400">
                     {accountId}
@@ -297,11 +299,11 @@ export function ContributorsView({
               <div className="p-4 rounded-xl bg-[var(--bg-canvas)] border border-white/10 flex flex-col gap-3 font-mono">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">On-Chain Reputation</span>
-                  <span className="text-[var(--text-primary)] font-bold">{score} Points (Silver)</span>
+                  <span className="text-[var(--text-primary)] font-bold">{score} Points ({tier})</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">Enforced Spend Limit</span>
-                  <span className="text-[#00EC97] font-bold">15.0 NEAR (1.5x Multiplier)</span>
+                  <span className="text-[#00EC97] font-bold">{capNear}.0 NEAR ({tier === 'Gold' ? '2.0x' : tier === 'Silver' ? '1.5x' : '1.0x'} Multiplier)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 uppercase text-[10px]">Cooldown Window</span>
@@ -317,15 +319,20 @@ export function ContributorsView({
                 <h4 className="font-bold text-[var(--text-primary)] text-xs uppercase tracking-wider font-mono">
                   Advisory Approval Schedule
                 </h4>
-                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-slate-300 space-y-1.5 text-xs">
-                  <p>
-                    <strong className="text-[var(--text-primary)] font-mono">≤ 5.0 NEAR:</strong> Expedited eligible (single council vote recommended).
-                  </p>
-                  <p>
-                    <strong className="text-[var(--text-primary)] font-mono">&gt; 5.0 NEAR:</strong> Standard multi-sig quorum (full 2-of-2 council vote recommended).
-                  </p>
-                  <p className="text-[11px] text-slate-400 pt-1 border-t border-blue-500/20">
-                    Sputnik DAO v2 policy enforces 2-of-2 council quorum on-chain for all payouts regardless of tier.
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-slate-300 space-y-2 text-xs">
+                  <div className="space-y-1">
+                    <p>
+                      <strong className="text-[var(--text-primary)] font-mono">Bronze Tier:</strong> Needs 2 council votes for all amounts.
+                    </p>
+                    <p>
+                      <strong className="text-[var(--text-primary)] font-mono">Silver Tier:</strong> 1 vote up to 5 NEAR, 2 votes above 5 NEAR.
+                    </p>
+                    <p>
+                      <strong className="text-[var(--text-primary)] font-mono">Gold Tier:</strong> Auto-approve up to 2 NEAR, 1 vote up to 8 NEAR, 2 votes above 8 NEAR.
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 pt-1.5 border-t border-blue-500/20 font-mono">
+                    All schedules are advisory. Sputnik DAO v2 enforces 2-of-2 council quorum on-chain for all payouts.
                   </p>
                 </div>
               </div>

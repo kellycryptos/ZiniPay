@@ -11,7 +11,7 @@ export function LandingEnforcedVsAdvisory() {
   ];
 
   const advisoryRules = [
-    'Expedited single-vote schedule for micro-tasks (≤ 5 NEAR)',
+    'Advisory approval schedule by reputation tier (see Policy page). Every payout still needs both council votes.',
     'Contributor reputation score calculations & tier mapping',
     'Deliverable artifact inspection & risk evaluation',
     'Model review: simulated (local dry-run, no ungrounded LLM inference)',
@@ -29,7 +29,7 @@ export function LandingEnforcedVsAdvisory() {
             What is enforced on-chain vs. advisory
           </h2>
           <p className="text-sm sm:text-base text-[var(--text-secondary)] mt-2 leading-relaxed">
-            Cryptographic guarantees are strictly separated from client-side guidance and local evaluation.
+            On-chain enforcement is separated from client-side guidance and local evaluation.
           </p>
         </div>
 

@@ -408,7 +408,7 @@ export function DocsPage({
                 <span className="text-[#00EC97] font-bold">2. Verify Contributor Reputation State</span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard('node scripts/verify-reputation.mjs -- zinipay-recipient2.testnet', 'cmd2')}
+                  onClick={() => copyToClipboard('node scripts/verify-reputation.mjs zinipay-recipient2.testnet', 'cmd2')}
                   className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd2' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -416,7 +416,7 @@ export function DocsPage({
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-black/60 border border-white/5 font-mono text-xs text-[#00EC97]">
-                node scripts/verify-reputation.mjs -- zinipay-recipient2.testnet
+                node scripts/verify-reputation.mjs zinipay-recipient2.testnet
               </div>
               <p className="text-xs text-slate-400 font-sans">
                 <strong>See:</strong> Named account <code className="text-[var(--text-primary)]">zinipay-recipient2.testnet</code> with on-chain score 30 pts, Silver tier cap (15 NEAR), and settled receipts from Proposals #5 and #6.
@@ -429,7 +429,7 @@ export function DocsPage({
                 <span className="text-[#00EC97] font-bold">3. Verify Proposal #6 Cross-Reference</span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard('node scripts/verify-proposal.mjs -- 6', 'cmd3')}
+                  onClick={() => copyToClipboard('node scripts/verify-proposal.mjs 6', 'cmd3')}
                   className="text-slate-400 hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
                 >
                   {copiedCmd === 'cmd3' ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -437,7 +437,7 @@ export function DocsPage({
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-black/60 border border-white/5 font-mono text-xs text-[#00EC97]">
-                node scripts/verify-proposal.mjs -- 6
+                node scripts/verify-proposal.mjs 6
               </div>
               <p className="text-xs text-slate-400 font-sans">
                 <strong>See:</strong> Cross-references Sputnik DAO Proposal #6 on-chain against PolicyHelper spend limits and deliverable burn registry.
