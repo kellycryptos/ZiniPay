@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const SCREENSHOTS_DIR = path.resolve(ROOT, 'screenshots');
-const ARTIFACTS_DIR = 'C:\\Users\\HP\\.gemini\\antigravity\\brain\\219c2754-9a7d-474d-95ac-c4b11c77add5';
+const ARTIFACTS_DIR = process.env.ARTIFACTS_DIR || path.resolve(ROOT, 'screenshots');
 
 if (!fs.existsSync(SCREENSHOTS_DIR)) {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });

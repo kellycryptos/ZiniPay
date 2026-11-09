@@ -130,13 +130,13 @@ export function DashboardShell({
   const verifiedBlockedAttacks: BlockedAttackItem[] = [
     {
       index: 1,
-      label: 'Deliberation Rejection',
+      label: 'Local DeliberationEngine test run, not on-chain',
       vector: 'Stolen Deliverable / Author Mismatch PR',
       caller: 'zinipay-recipient2.testnet',
       deliverable: 'near/near-sdk-rs#1651',
       amountNear: '0.10',
       rejectionReason: 'PR author (vsavchyn-dev) does not match recipient handle (zinipay-recipient2.testnet)',
-      blockedBy: 'DeliberationEngine (Pre-Chain)',
+      blockedBy: 'Pre-Chain (Local DeliberationEngine test run, not on-chain)',
       isAdminAction: false,
     },
     {
