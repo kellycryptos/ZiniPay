@@ -375,6 +375,16 @@ async function main() {
       const isAttack = tx.label?.toLowerCase().includes('attack') || tx.label?.toLowerCase().includes('blocked');
 
       if (isAttack) {
+        if (status?._source === 'nearblocks-v3' || status?._source?.includes('nearblocks')) {
+          report(
+            `5.Tx-${tx.index}`,
+            `${tx.label}`,
+            'UNVERIFIED',
+            `Tx: ${tx.txHash.slice(0, 10)}... (panic text unavailable from NearBlocks)`
+          );
+          continue;
+        }
+
         // Assert transaction reverted with expected panic and specific contract error message
         const hasFailure = !!status?.status?.Failure || status?.receipts_outcome?.some(r => !!r.outcome?.status?.Failure);
         const logs = status?.receipts_outcome?.flatMap(r => r.outcome?.logs || []) || [];
