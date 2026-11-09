@@ -72,7 +72,6 @@ interface DashboardShellProps {
   onProposalCreated: (proposal: Proposal) => void;
   onShowToast: (msg: string) => void;
   onRefresh: () => void;
-  isDemoMode: boolean;
   onNavigateToLanding?: () => void;
 }
 
@@ -100,7 +99,6 @@ export function DashboardShell({
   onProposalCreated,
   onShowToast,
   onRefresh,
-  isDemoMode,
   onNavigateToLanding,
 }: DashboardShellProps) {
   // Navigation State
@@ -134,6 +132,9 @@ export function DashboardShell({
       index: 1,
       label: 'Deliberation Rejection',
       vector: 'Stolen Deliverable / Author Mismatch PR',
+      caller: 'zinipay-recipient2.testnet',
+      deliverable: 'near/near-sdk-rs#1651',
+      amountNear: '0.10',
       rejectionReason: 'PR author (vsavchyn-dev) does not match recipient handle (zinipay-recipient2.testnet)',
       blockedBy: 'DeliberationEngine (Pre-Chain)',
       isAdminAction: false,
@@ -142,6 +143,9 @@ export function DashboardShell({
       index: 2,
       label: 'Blocked Attack 1',
       vector: 'Replay Deliverable CID (kellycryptos/ZiniPay#2)',
+      caller: 'zinipay-demo.sputnikv2.testnet',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      amountNear: '0.10',
       rejectionReason: 'CID already used — duplicate release attempt blocked',
       blockedBy: 'PolicyHelper (On-Chain)',
       txHash: '9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb',
@@ -152,7 +156,10 @@ export function DashboardShell({
       index: 3,
       label: 'Blocked Attack 2',
       vector: 'Over-Cap Treasury Spend (16.0 NEAR)',
-      rejectionReason: 'Amount 16000000000000000000000000 exceeds effective tier cap 15000000000000000000000000 for recipient zinipay-recipient2.testnet',
+      caller: 'zinipay-recipient2.testnet',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      amountNear: '16.0',
+      rejectionReason: 'Amount 16.0 NEAR exceeds effective tier cap 15.0 NEAR for recipient zinipay-recipient2.testnet',
       blockedBy: 'PolicyHelper (On-Chain)',
       txHash: 'EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
       explorerUrl: 'https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ',
@@ -162,6 +169,9 @@ export function DashboardShell({
       index: 4,
       label: 'Blocked Attack 3',
       vector: 'Unauthorized Release Caller (agentzinipaytestnet.testnet)',
+      caller: 'agentzinipaytestnet.testnet',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      amountNear: '0.10',
       rejectionReason: 'Only owner or designated DAO can call this',
       blockedBy: 'PolicyHelper (On-Chain)',
       txHash: '2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B',
@@ -172,6 +182,9 @@ export function DashboardShell({
       index: 5,
       label: 'Blocked Attack 4',
       vector: 'Case-Variant CID Replay (KELLYCRYPTOS/ZINIPAY#2)',
+      caller: 'zinipay-demo.sputnikv2.testnet',
+      deliverable: 'KELLYCRYPTOS/ZINIPAY#2',
+      amountNear: '0.10',
       rejectionReason: 'CID already used — duplicate release attempt blocked',
       blockedBy: 'PolicyHelper (On-Chain)',
       txHash: 'EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y',
@@ -182,6 +195,9 @@ export function DashboardShell({
       index: 6,
       label: 'Blocked Attack 5',
       vector: 'Cooldown Violation (16 seconds remaining)',
+      caller: 'zinipay-recipient2.testnet',
+      deliverable: 'kellycryptos/ZiniPay#2',
+      amountNear: '0.10',
       rejectionReason: 'Cooldown not elapsed. 16 seconds remaining.',
       blockedBy: 'PolicyHelper (On-Chain)',
       txHash: '2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD',
@@ -191,7 +207,9 @@ export function DashboardShell({
     {
       index: 7,
       label: 'Blocked Admin Action',
-      vector: 'Former Owner Unburn Attempt (Post-DAO Transfer)',
+      vector: 'Former Owner Admin Rejection',
+      caller: 'former-owner.testnet',
+      deliverable: 'Admin: unburn_cid',
       rejectionReason: 'Only owner or designated DAO can call this',
       blockedBy: 'PolicyHelper (On-Chain / Post-DAO Transfer)',
       txHash: 'EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14',
@@ -249,7 +267,7 @@ export function DashboardShell({
               </div>
               {!sidebarCollapsed && (
                 <div className="flex flex-col leading-tight">
-                  <span className="font-display font-bold text-white text-base tracking-tight">
+                  <span className="font-display font-bold text-[var(--text-primary)] text-base tracking-tight">
                     ZiniPay
                   </span>
                   <span className="text-[10px] font-mono text-[var(--text-muted)]">
@@ -263,7 +281,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] transition-colors cursor-pointer"
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
@@ -273,7 +291,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-[var(--text-primary)]"
             >
               <X size={18} />
             </button>
@@ -314,8 +332,8 @@ export function DashboardShell({
                   }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-white/[0.08] text-white font-semibold border border-white/[0.12]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
+                      ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]'
+                      : 'text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.03]'
                   }`}
                   title={item.label}
                 >
@@ -342,7 +360,7 @@ export function DashboardShell({
                 setVerificationModalOpen(true);
                 setMobileMenuOpen(false);
               }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.03] transition-colors cursor-pointer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.03] transition-colors cursor-pointer"
               title="Keyless on-chain verification suite"
             >
               <Terminal size={16} className="text-[#00EC97] shrink-0" />
@@ -388,7 +406,7 @@ export function DashboardShell({
                     Change
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-xs text-white truncate" title={connectedAccount}>
+                <div className="flex items-center gap-1.5 font-mono text-xs text-[var(--text-primary)] truncate" title={connectedAccount}>
                   <Wallet size={12} className="text-[#00EC97] shrink-0" />
                   <span className="truncate">{connectedAccount}</span>
                 </div>
@@ -403,7 +421,7 @@ export function DashboardShell({
                 <button
                   type="button"
                   onClick={onOpenWalletModal}
-                  className="w-full py-1.5 px-2 rounded-md bg-white/[0.08] hover:bg-white/[0.15] border border-white/[0.12] text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Wallet size={12} />
                   {!sidebarCollapsed && <span>Connect Wallet</span>}
@@ -423,7 +441,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08]"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.08]"
             >
               <Menu size={18} />
             </button>
@@ -433,7 +451,7 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={onNavigateToLanding}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 ZiniPay
               </button>
@@ -441,12 +459,12 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={() => setCurrentView('overview')}
-                className="hover:text-white transition-colors cursor-pointer"
+                className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 Dashboard
               </button>
               <ChevronRight size={12} className="text-slate-600 shrink-0" />
-              <span className="text-white font-semibold capitalize truncate">
+              <span className="text-[var(--text-primary)] font-semibold capitalize truncate">
                 {currentView.replace('_', ' ')}
               </span>
             </div>
@@ -465,13 +483,13 @@ export function DashboardShell({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search proposals, attacks..."
-                className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-[#00EC97] rounded-lg pl-8 pr-7 py-1 text-xs text-white placeholder:text-slate-600 focus:outline-none font-mono"
+                className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-[#00EC97] rounded-lg pl-8 pr-7 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none font-mono"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[var(--text-primary)]"
                 >
                   <X size={12} />
                 </button>
@@ -483,7 +501,7 @@ export function DashboardShell({
               type="button"
               onClick={onRefresh}
               disabled={isLoadingOnChain}
-              className="p-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               title="Refresh Sputnik DAO on-chain state"
             >
               <RefreshCw size={14} className={isLoadingOnChain ? 'animate-spin' : ''} />
@@ -503,7 +521,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={onOpenWalletModal}
-              className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-xs font-semibold text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Wallet size={13} className="text-[#00EC97]" />
               <span className="hidden sm:inline">
@@ -515,27 +533,6 @@ export function DashboardShell({
           </div>
         </header>
 
-        {/* ── Optional Simulation Mode Banner ─────────────────── */}
-        {isDemoMode && (
-          <aside
-            aria-label="Demo mode"
-            className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs font-mono text-amber-300"
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-amber-400 shrink-0" />
-              <span>
-                SIMULATION MODE ACTIVE (?demo=1) · Walking through local proposal deliberation. All data labelled Simulation.
-              </span>
-            </div>
-            <a
-              href="/board"
-              className="underline text-amber-200 hover:text-white text-[11px]"
-            >
-              Exit to Live Testnet
-            </a>
-          </aside>
-        )}
-
         {/* ── Scrollable Workspace Body ───────────────────────── */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">
           {/* RPC Down Banner (if error querying chain) */}
@@ -544,9 +541,6 @@ export function DashboardShell({
               error={daoError}
               onRetry={onRefresh}
               isLoading={isLoadingOnChain}
-              onLaunchDemo={() => {
-                window.location.href = '/board?demo=1';
-              }}
               onOpenVerification={() => setVerificationModalOpen(true)}
             />
           )}
@@ -556,7 +550,7 @@ export function DashboardShell({
             <div className="max-w-3xl mx-auto w-full">
               <div className="flex items-center justify-between mb-4 border-b border-[var(--border-subtle)] pb-3">
                 <div>
-                  <h2 className="text-base font-bold text-white">Dispatched New Payout</h2>
+                  <h2 className="text-base font-bold text-[var(--text-primary)]">Dispatched New Payout</h2>
                   <p className="text-xs text-[var(--text-secondary)]">
                     Agent deliberates on artifact, validates spend cap, and creates Sputnik DAO FunctionCall.
                   </p>
@@ -564,7 +558,7 @@ export function DashboardShell({
                 <button
                   type="button"
                   onClick={() => setCurrentView('overview')}
-                  className="text-xs font-mono text-slate-400 hover:text-white cursor-pointer"
+                  className="text-xs font-mono text-slate-400 hover:text-[var(--text-primary)] cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -617,7 +611,7 @@ export function DashboardShell({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Columns3 size={16} className="text-[#00EC97]" />
-                    <h2 className="font-semibold text-white text-base">Governance Board</h2>
+                    <h2 className="font-semibold text-[var(--text-primary)] text-base">Governance Board</h2>
                   </div>
                   <button
                     type="button"
@@ -656,7 +650,7 @@ export function DashboardShell({
             <div className="flex flex-col gap-4 w-full max-w-7xl mx-auto">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
                 <div>
-                  <h2 className="text-base font-bold text-white">Public Board</h2>
+                  <h2 className="text-base font-bold text-[var(--text-primary)]">Public Board</h2>
                   <p className="text-xs text-[var(--text-secondary)]">
                     All proposals and blocked attacks across 4 governance stages.
                   </p>
@@ -718,9 +712,9 @@ export function DashboardShell({
                     <AlertOctagon size={18} />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-white">Security & Attack Log</h2>
+                    <h2 className="text-base font-bold text-[var(--text-primary)]">Security & Attack Log</h2>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      5 on-chain blocked attack transactions + 1 blocked admin recovery action + 1 pre-chain check.
+                      5 on-chain blocked attack transactions + 1 blocked admin recovery action + 1 pre-chain check (not an on-chain transaction).
                     </p>
                   </div>
                 </div>
@@ -747,7 +741,7 @@ export function DashboardShell({
                         </span>
                         <div className="flex flex-col gap-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-xs text-white truncate">
+                            <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
                               {att.vector}
                             </h4>
                             <span className="text-[10px] font-mono text-red-400">
@@ -765,7 +759,7 @@ export function DashboardShell({
                           href={att.explorerUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
                         >
                           <span>Explorer</span>
                           <ExternalLink size={12} />
@@ -793,7 +787,7 @@ export function DashboardShell({
                         </span>
                         <div className="flex flex-col gap-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-xs text-white truncate">
+                            <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
                               {att.vector}
                             </h4>
                             <span className="text-[10px] font-mono text-amber-400">
@@ -811,7 +805,7 @@ export function DashboardShell({
                           href={att.explorerUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-amber-400 transition-colors"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-amber-400 transition-colors"
                         >
                           <span>Explorer</span>
                           <ExternalLink size={12} />
@@ -843,6 +837,7 @@ export function DashboardShell({
           {/* Universal Footer */}
           <div className="mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
             <UniversalFooter
+              onNavigateBoard={() => setCurrentView('board')}
               onOpenVerifyModal={() => setVerificationModalOpen(true)}
               onNavigateDocs={() => setCurrentView('docs')}
               network={network}

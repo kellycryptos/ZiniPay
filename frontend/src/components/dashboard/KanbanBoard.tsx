@@ -91,26 +91,30 @@ export function KanbanBoard({
     : [...mappedProposals, ...settledCards];
 
   // Map blocked attacks from verified.json
-  const mappedAttacks: BoardAttackItem[] = blockedAttacks.map((att, idx) => ({
-    type: 'attack',
-    id: `#ATK-${idx + 1}`,
-    vector: att.vector || 'Blocked Attempt',
-    recipient: att.caller || 'attacker.testnet',
-    amountNear: att.vector?.includes('Over-Cap') ? '16.0' : undefined,
-    tier: 'Blocked',
-    prUrl: att.details?.includes('github.com')
-      ? att.details.match(/https:\/\/github\.com\/[^\s'"]+/)?.[0]
-      : undefined,
-    deliverable: att.details?.includes('CID')
-      ? 'kellycryptos/ZiniPay#2'
-      : 'Deliverable',
-    status: 'blocked',
-    rejectionReason: att.rejectionReason || 'Policy violation blocked on-chain',
-    blockedBy: att.blockedBy || 'PolicyHelper (On-Chain)',
-    explorerUrl: att.explorerUrl,
-    txHash: att.txHash,
-    simulated: Boolean(att.simulated),
-  }));
+  const mappedAttacks: BoardAttackItem[] = blockedAttacks.map((att, idx) => {
+    const isPreChain = !att.txHash || (att.blockedBy && att.blockedBy.includes('Pre-chain'));
+    const attackId = isPreChain ? '#CHECK-1' : `#ATK-${idx}`;
+    return {
+      type: 'attack' as const,
+      id: attackId,
+      vector: att.vector || 'Blocked Attempt',
+      recipient: att.caller || 'zinipay-recipient2.testnet',
+      amountNear: att.vector?.includes('Over-Cap') ? '16.0' : undefined,
+      tier: isPreChain ? 'Pre-Chain' : 'Blocked',
+      prUrl: att.details?.includes('github.com')
+        ? att.details.match(/https:\/\/github\.com\/[^\s'"]+/)?.[0]
+        : undefined,
+      deliverable: att.details?.includes('CID')
+        ? 'kellycryptos/ZiniPay#2'
+        : 'Deliverable',
+      status: 'blocked' as const,
+      rejectionReason: att.rejectionReason || 'Policy violation blocked on-chain',
+      blockedBy: att.blockedBy || (isPreChain ? 'Pre-chain check, not an on-chain transaction' : 'PolicyHelper (On-Chain)'),
+      explorerUrl: att.explorerUrl,
+      txHash: att.txHash,
+      simulated: Boolean(att.simulated),
+    };
+  });
 
   // Filtering by search query
   const filterItem = (item: BoardCardData) => {

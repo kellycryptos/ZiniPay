@@ -98,8 +98,8 @@ export function UniversalFooter({
   return (
     <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] font-sans transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col gap-10">
-        {/* Top Section: Brand, Pitch & Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-[var(--border-subtle)]">
+        {/* Top Section: Brand & Quick Links */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 pb-8 border-b border-[var(--border-subtle)]">
           {/* Col 1: Brand & Description */}
           <div className="md:col-span-2 flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
@@ -118,25 +118,49 @@ export function UniversalFooter({
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed max-w-md">
               A constrained agent layer for community treasuries on NEAR. The agent proposes payouts, a Rust contract enforces spend caps and anti-replay guards, and human councils approve via Sputnik DAO v2 multi-sig.
             </p>
-            <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)] mt-1">
-              <span>Built at <strong className="text-[var(--text-primary)]">NEAR HACKATHON</strong></span>
-              <span>•</span>
-              <span>Open source under <strong className="text-[var(--text-primary)]">MIT License</strong></span>
-            </div>
           </div>
 
-          {/* Col 2: Explorer & On-Chain Addresses */}
+          {/* Col 2: Product */}
+          <div className="flex flex-col gap-2.5 text-xs">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
+              Product
+            </span>
+            <button
+              type="button"
+              onClick={onNavigateBoard ? onNavigateBoard : () => { window.location.href = '/board'; }}
+              className="text-left text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors cursor-pointer"
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={onOpenVerifyModal}
+              className="text-left text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <Shield size={12} className="text-[#00EC97]" />
+              <span>Verification</span>
+            </button>
+            <button
+              type="button"
+              onClick={onNavigateDocs ? onNavigateDocs : () => { window.location.href = '/docs'; }}
+              className="text-left text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors cursor-pointer"
+            >
+              Docs
+            </button>
+          </div>
+
+          {/* Col 3: Evidence */}
           <div className="flex flex-col gap-2.5 text-xs font-mono">
-            <span className="text-[11px] uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
-              On-Chain Deployments
+            <span className="text-[11px] uppercase tracking-wider text-[var(--text-secondary)] font-semibold font-sans">
+              Evidence
             </span>
             <a
-              href={`${explorerBase}/address/zinipay-demo.sputnikv2.testnet`}
+              href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
             >
-              <span>Sputnik DAO v2</span>
+              <span>GitHub</span>
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
             <a
@@ -145,62 +169,52 @@ export function UniversalFooter({
               rel="noopener noreferrer"
               className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
             >
-              <span>PolicyHelper Contract</span>
+              <span>PolicyHelper contract</span>
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
             <a
-              href={`${explorerBase}/address/zinipay-recipient2.testnet`}
+              href={`${explorerBase}/address/zinipay-demo.sputnikv2.testnet`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
             >
-              <span>Recipient Account</span>
+              <span>Sputnik DAO</span>
+              <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
+            </a>
+            <a
+              href="/data/verified.json"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
+            >
+              <span>verified.json</span>
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
           </div>
 
-          {/* Col 3: Navigation & Code */}
+          {/* Col 4: Project */}
           <div className="flex flex-col gap-2.5 text-xs">
             <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
-              Resources
+              Project
             </span>
-            {onNavigateBoard && (
-              <button
-                type="button"
-                onClick={onNavigateBoard}
-                className="text-left text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-              >
-                Dashboard (/board)
-              </button>
-            )}
-            {onNavigateDocs && (
-              <button
-                type="button"
-                onClick={onNavigateDocs}
-                className="text-left text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-              >
-                Architecture &amp; Docs
-              </button>
-            )}
             <a
-              href="https://github.com/kellycryptos/ZiniPay"
+              href="https://github.com/kellycryptos/ZiniPay/blob/main/README.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors flex items-center justify-between group"
             >
-              <Github size={14} />
-              <span>GitHub Repository</span>
+              <span>README</span>
+              <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
-            {onOpenVerifyModal && (
-              <button
-                type="button"
-                onClick={onOpenVerifyModal}
-                className="text-left text-[#00EC97] hover:underline transition-colors font-mono cursor-pointer flex items-center gap-1"
-              >
-                <Shield size={12} />
-                <span>Run In-Browser RPC Suite</span>
-              </button>
-            )}
+            <a
+              href="https://github.com/kellycryptos/ZiniPay/blob/main/docs/SUBMISSION.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors flex items-center justify-between group"
+            >
+              <span>Submission</span>
+              <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
+            </a>
           </div>
         </div>
 
@@ -320,13 +334,13 @@ export function UniversalFooter({
           )}
         </div>
 
-        {/* Bottom Disclaimers & Licensing */}
-        <div className="pt-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[var(--text-secondary)]">
+        {/* Bottom Bar */}
+        <div className="pt-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[var(--text-secondary)]">
           <p>
-            © 2026 ZiniPay Contributors. MIT License. Built for NEAR HACKATHON.
+            Built at NEAR HACKATHON 2026. Testnet only, not audited.
           </p>
-          <p className="text-center sm:text-right">
-            AI-Assisted Development: Engineered under human architectural supervision with fail-closed Rust invariants.
+          <p className="text-center sm:text-right text-[11px]">
+            Open source under MIT License
           </p>
         </div>
       </div>

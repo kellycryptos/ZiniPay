@@ -89,7 +89,7 @@ export function BoardCard({
       <div className="p-4 flex flex-col gap-3 font-sans">
         {/* ── Top Bar: ID, Tier Badge & Explorer Link ─────────── */}
         <div className="flex items-center justify-between gap-2 border-b pb-2.5 border-white/[0.08]">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
                 isAttack
@@ -100,14 +100,18 @@ export function BoardCard({
               {isAttack ? card.id : `#ZP-${card.id}`}
             </span>
 
-            {!isAttack && (
+            {isAttack && (card.id === '#CHECK-1' || !card.txHash || card.blockedBy.includes('Pre-chain')) ? (
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/40">
+                Pre-chain check, not an on-chain transaction
+              </span>
+            ) : !isAttack ? (
               <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                 Model review: simulated
               </span>
-            )}
+            ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Tier Badge */}
             <span
               className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border ${
@@ -162,18 +166,20 @@ export function BoardCard({
               : 'bg-white/[0.03] border-white/[0.08] text-slate-200'
           }`}
         >
-          <div className="flex items-center gap-1.5 truncate max-w-[170px]" title={card.recipient}>
-            <User size={12} className={isAttack ? 'text-red-400' : 'text-slate-400'} />
+          <div className="flex items-center gap-1.5 truncate max-w-[200px]" title={card.recipient}>
+            <User size={12} className={isAttack ? 'text-red-400 shrink-0' : 'text-slate-400 shrink-0'} />
             <span className="truncate">{card.recipient}</span>
           </div>
 
-          <div className="font-bold text-sm shrink-0">
+          <div className="font-bold text-xs shrink-0">
             {card.amountNear ? (
               <span className={isAttack ? 'text-red-300' : 'text-[#00EC97]'}>
                 {card.amountNear} NEAR
               </span>
             ) : isAttack ? (
-              <span className="text-red-400">Unauthorized</span>
+              <span className="text-red-300/80 font-mono text-[11px]">
+                {card.id === '#CHECK-1' ? 'Pre-Chain' : 'Blocked Call'}
+              </span>
             ) : (
               <span className="text-[#00EC97]">0.10 NEAR</span>
             )}
@@ -206,16 +212,16 @@ export function BoardCard({
 
         {/* ── Attack Rejection / Council Vote Stamp ───────────── */}
         {isAttack ? (
-          <div className="pt-2 border-t border-red-500/20 flex flex-col gap-1 text-[11px]">
+          <div className="pt-2 border-t border-red-500/20 flex flex-col gap-1.5 text-[11px]">
             <div className="flex items-center justify-between">
               <span className="font-mono text-red-400 font-semibold uppercase tracking-wider text-[10px]">
-                BLOCKED ON-CHAIN
+                {card.txHash ? 'BLOCKED ON-CHAIN' : 'PRE-CHAIN CHECK'}
               </span>
-              <span className="text-[10px] text-red-300/70 font-mono">
-                {card.blockedBy.split(' ')[0]}
+              <span className="text-[10px] text-red-300/80 font-mono truncate max-w-[200px]" title={card.blockedBy}>
+                {card.blockedBy}
               </span>
             </div>
-            <p className="text-[10px] text-red-200 font-mono bg-red-950/50 p-1.5 rounded border border-red-500/30 line-clamp-2">
+            <p className="text-[11px] text-red-100 font-mono bg-red-950/60 p-2 rounded border border-red-500/30 leading-relaxed break-words">
               {card.rejectionReason}
             </p>
           </div>

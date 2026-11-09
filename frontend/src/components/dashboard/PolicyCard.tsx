@@ -56,7 +56,7 @@ export function PolicyCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-white text-base">PolicyHelper Governance Guardrails</h2>
+              <h2 className="font-semibold text-[var(--text-primary)] text-base">PolicyHelper Governance Guardrails</h2>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/60 text-[#00EC97] border border-emerald-500/30">
                 Rust Contract
               </span>
@@ -71,7 +71,7 @@ export function PolicyCard({
           <button
             type="button"
             onClick={copyContract}
-            className="px-2.5 py-1 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-[11px] font-mono text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[11px] font-mono text-slate-300 hover:text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Copy contract ID"
           >
             {copiedContract ? <Check size={12} className="text-[#00EC97]" /> : <Copy size={12} />}
@@ -81,7 +81,7 @@ export function PolicyCard({
             href={`${explorerBase}/address/${policyContractId}`}
             target="_blank"
             rel="noreferrer"
-            className="p-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[#1E232F] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[#00EC97] transition-colors"
+            className="p-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[#00EC97] transition-colors"
             title="Inspect PolicyHelper on NEARBlocks"
           >
             <ExternalLink size={13} />
@@ -93,7 +93,7 @@ export function PolicyCard({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-1">
           <span className="text-[10px] font-mono uppercase text-[var(--text-muted)]">Base Spend Cap</span>
-          <span className="font-mono text-base font-bold text-white">
+          <span className="font-mono text-base font-bold text-[var(--text-primary)]">
             {isLoading ? '...' : `${baseCapNear} NEAR`}
           </span>
           <span className="text-[10px] text-emerald-400 font-mono">Enforced on-chain</span>
@@ -101,13 +101,13 @@ export function PolicyCard({
 
         <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-1">
           <span className="text-[10px] font-mono uppercase text-[var(--text-muted)]">Tier Scale</span>
-          <span className="font-mono text-base font-bold text-white">1.0x / 1.5x / 2.0x</span>
+          <span className="font-mono text-base font-bold text-[var(--text-primary)]">1.0x / 1.5x / 2.0x</span>
           <span className="text-[10px] text-emerald-400 font-mono">Enforced on-chain</span>
         </div>
 
         <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-1">
           <span className="text-[10px] font-mono uppercase text-[var(--text-muted)]">Cooldown</span>
-          <span className="font-mono text-base font-bold text-white">
+          <span className="font-mono text-base font-bold text-[var(--text-primary)]">
             {isLoading ? '...' : `${cooldownSecs}s`}
           </span>
           <span className="text-[10px] text-emerald-400 font-mono">Enforced on-chain</span>
@@ -115,7 +115,7 @@ export function PolicyCard({
 
         <div className="p-3 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-1">
           <span className="text-[10px] font-mono uppercase text-[var(--text-muted)]">Contract Owner</span>
-          <span className="font-mono text-xs font-bold text-white truncate" title={contractOwner}>
+          <span className="font-mono text-xs font-bold text-[var(--text-primary)] truncate" title={contractOwner}>
             {contractOwner}
           </span>
           <span className="text-[10px] text-emerald-400 font-mono">Sputnik DAO v2</span>
@@ -125,7 +125,7 @@ export function PolicyCard({
       {/* ── Tier Matrix Table (Enforced vs Advisory) ───────────── */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-white uppercase tracking-wider font-mono">
+          <span className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider font-mono">
             Reputation & Tier Policy Matrix
           </span>
           <span className="text-[11px] font-mono text-amber-400 flex items-center gap-1">
@@ -153,7 +153,7 @@ export function PolicyCard({
                   Bronze
                 </td>
                 <td className="py-3 px-3 font-mono">0 – 19 pts</td>
-                <td className="py-3 px-3 font-mono font-bold text-white">
+                <td className="py-3 px-3 font-mono font-bold text-[var(--text-primary)]">
                   10 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(1.0x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
@@ -174,7 +174,7 @@ export function PolicyCard({
                   Silver
                 </td>
                 <td className="py-3 px-3 font-mono">20 – 59 pts</td>
-                <td className="py-3 px-3 font-mono font-bold text-white">
+                <td className="py-3 px-3 font-mono font-bold text-[var(--text-primary)]">
                   15 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(1.5x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
@@ -195,7 +195,7 @@ export function PolicyCard({
                   Gold
                 </td>
                 <td className="py-3 px-3 font-mono">60+ pts</td>
-                <td className="py-3 px-3 font-mono font-bold text-white">
+                <td className="py-3 px-3 font-mono font-bold text-[var(--text-primary)]">
                   20 NEAR <span className="text-[10px] text-[var(--text-muted)] font-normal">(2.0x base)</span>
                 </td>
                 <td className="py-3 px-3 font-mono text-slate-300">
@@ -217,14 +217,14 @@ export function PolicyCard({
       <div className="p-3.5 rounded-lg bg-[var(--bg-canvas)] border border-emerald-500/20 flex items-start gap-3 text-xs leading-relaxed">
         <Scale size={18} className="text-[#00EC97] shrink-0 mt-0.5" />
         <div className="flex flex-col gap-1">
-          <p className="font-semibold text-white">
+          <p className="font-semibold text-[var(--text-primary)]">
             Enforced vs. Advisory Clarity:
           </p>
           <p className="text-[var(--text-secondary)]">
             <span className="text-emerald-400 font-mono">Enforced:</span> Tier caps (10 / 15 / 20 NEAR), the 60-second cooldown, and one-time deliverable CIDs are strictly enforced on-chain by the PolicyHelper Rust contract. Any proposal violating these limits is blocked before creation.
           </p>
           <p className="text-[var(--text-secondary)]">
-            <span className="text-amber-400 font-mono">Advisory:</span> The approval schedule from <code className="font-mono text-white">get_approval_tier</code> is advisory only. Every actual payout requires Sputnik DAO v2 council 2-of-2 human multi-sig quorum before funds can execute.
+            <span className="text-amber-400 font-mono">Advisory:</span> The approval schedule from <code className="font-mono text-[var(--text-primary)]">get_approval_tier</code> is advisory only. Every actual payout requires Sputnik DAO v2 council 2-of-2 human multi-sig quorum before funds can execute.
           </p>
         </div>
       </div>

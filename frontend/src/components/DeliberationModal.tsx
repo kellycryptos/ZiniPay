@@ -52,7 +52,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
         target: proposal.proofCid || 'Not specified',
         details: {
           'Deliverable': proposal.proofCid || 'None',
-          'Review Mode': 'Simulated local fixture (no funded NEAR AI key)',
+          'Review Mode': 'Simulated local mode (no funded NEAR AI key)',
         },
       },
       summary: 'Audited deliverable depth, commit history, and artifact CID uniqueness (model review: simulated).',
@@ -139,7 +139,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">Multi-Agent Deliberation</h3>
+                <h3 className="font-bold text-base text-[var(--text-primary)]">Multi-Agent Deliberation</h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
                   Model review: simulated
                 </span>
@@ -149,7 +149,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+            className="p-2 text-gray-400 hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-panel-alt)] transition-colors"
           >
             <X size={18} />
           </button>
@@ -228,7 +228,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
             <div className="flex flex-col gap-4 font-mono">
               <div className="p-4 rounded-xl bg-gray-900 border border-gray-800 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white font-bold text-xs flex items-center gap-1.5">
+                  <span className="text-[var(--text-primary)] font-bold text-xs flex items-center gap-1.5">
                     <Cpu size={14} className="text-purple-400" />
                     NEAR AI Cloud Execution Status
                   </span>
@@ -271,7 +271,7 @@ export function DeliberationModal({ proposal, isOpen, onClose }: DeliberationMod
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-medium text-xs transition-colors"
+            className="px-4 py-2 rounded-xl bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-medium text-xs transition-colors"
           >
             Close
           </button>

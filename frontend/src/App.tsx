@@ -15,7 +15,6 @@ import { ProofModal } from './components/ProofModal';
 import { DeliberationModal } from './components/DeliberationModal';
 import { IntentsModal } from './components/IntentsModal';
 import { WalletModal } from './components/WalletModal';
-import { initialProposals, initialActivities } from './lib/mockData';
 import { Proposal, ActivityEvent } from './lib/types';
 import {
   fetchDaoProposals,
@@ -38,10 +37,7 @@ import {
 import { CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const isDemoMode =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('demo') === '1';
-
+  
   // Client-side Router: "/" or "/board" (with "/app" redirecting to "/board")
   const [currentPath, setCurrentPath] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -146,11 +142,9 @@ export default function App() {
     return 'contributor';
   };
 
-  // In demo mode (?demo=1), load initial simulated proposals; in live mode, start empty and fetch from on-chain RPC
-  const [proposals, setProposals] = useState<Proposal[]>(() => (isDemoMode ? initialProposals : []));
-  const [activities, setActivities] = useState<ActivityEvent[]>(() =>
-    isDemoMode ? initialActivities : []
-  );
+  // On-chain live proposals and activities state
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
 
   // Modal inspection states
   const [selectedProofProposal, setSelectedProofProposal] = useState<Proposal | null>(null);
@@ -203,12 +197,10 @@ export default function App() {
     if (!targetDao || !targetDao.trim()) {
       setIsLoadingOnChain(false);
       const errMsg =
-        'DAO contract is not configured. Provide a valid DAO contract ID via ?dao=... or append ?demo=1 to view simulated data.';
+        'DAO contract is not configured. Provide a valid DAO contract ID via ?dao=...';
       setDaoError(errMsg);
       setTreasuryState({ status: 'error', error: errMsg, balance: undefined });
-      if (!isDemoMode) {
-        setProposals([]);
-      }
+      setProposals([]);
       return;
     }
 
@@ -240,23 +232,16 @@ export default function App() {
         }
       }
 
-      if (!isDemoMode) {
-        setProposals(liveProps);
-        if (liveProps.length > 0 && currentPath.startsWith('/board')) {
-          showToast(`Synced ${liveProps.length} on-chain proposals from ${targetDao}`);
-        }
-      } else {
-        const demoProps = initialProposals.map((p) => ({ ...p, simulated: true }));
-        setProposals(demoProps);
+      setProposals(liveProps);
+      if (liveProps.length > 0 && currentPath.startsWith('/board')) {
+        showToast(`Synced ${liveProps.length} on-chain proposals from ${targetDao}`);
       }
     } catch (err: any) {
       console.warn('NEAR RPC query:', err);
       const errMsg = err.message || 'Failed to query Sputnik DAO on NEAR RPC';
       setDaoError(errMsg);
       setTreasuryState({ status: 'error', error: errMsg, balance: undefined });
-      if (!isDemoMode) {
-        setProposals([]);
-      }
+      setProposals([]);
     } finally {
       setIsLoadingOnChain(false);
     }
@@ -445,7 +430,6 @@ export default function App() {
             loadLiveDaoData(daoContract, network);
             showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
           }}
-          isDemoMode={isDemoMode}
           onNavigateToLanding={() => navigate('/')}
         />
       ) : (

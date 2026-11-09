@@ -53,7 +53,7 @@ export function LandingTechStack() {
       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-10">
         {/* Header */}
         <div className="border-b border-[var(--border-subtle)] pb-6">
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--text-primary)] tracking-tight">
             Infrastructure
           </h2>
           <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-2xl leading-relaxed">
@@ -80,7 +80,7 @@ export function LandingTechStack() {
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-sm text-white mb-1 tracking-tight">
+                  <h3 className="font-bold text-sm text-[var(--text-primary)] mb-1 tracking-tight">
                     {item.name}
                   </h3>
                   <div className="text-[11px] font-mono text-[var(--color-passed)] mb-2">

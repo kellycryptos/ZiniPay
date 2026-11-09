@@ -81,13 +81,13 @@ export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, on
               <Globe size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white">NEAR Intents Settlement</h3>
+              <h3 className="font-bold text-base text-[var(--text-primary)]">NEAR Intents Settlement</h3>
               <p className="text-xs text-gray-400 mt-0.5">Cross-Chain Release to {targetChain}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+            className="p-2 text-gray-400 hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-panel-alt)] transition-colors"
           >
             <X size={18} />
           </button>
@@ -100,7 +100,7 @@ export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, on
           <div className="p-4 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] text-gray-400 uppercase font-mono">From Sputnik Treasury</span>
-              <span className="font-bold text-white text-base">{proposal.amountNear} NEAR</span>
+              <span className="font-bold text-[var(--text-primary)] text-base">{proposal.amountNear} NEAR</span>
               <span className="text-[11px] text-gray-500 font-mono">{daoContractId || 'DAO Treasury'}</span>
             </div>
 
@@ -119,7 +119,7 @@ export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, on
 
           {/* How it works breakdown */}
           <div className="flex flex-col gap-2.5 p-4 rounded-xl bg-black/40 border border-gray-800/80 font-mono text-[11px]">
-            <div className="text-white font-bold flex items-center gap-1.5">
+            <div className="text-[var(--text-primary)] font-bold flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-emerald-400" />
               <span>Atomic Intent Execution Flow</span>
             </div>
@@ -166,7 +166,7 @@ export function IntentsModal({ proposal, daoContractId = '', isOpen, onClose, on
         <div className="p-4 border-t border-gray-800 bg-[#12121E] flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-medium text-xs transition-colors"
+            className="px-4 py-2 rounded-xl bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-medium text-xs transition-colors"
           >
             Close
           </button>

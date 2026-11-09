@@ -129,7 +129,7 @@ export function LandingRealVsSimulated() {
                   Simulated / Advisory / Quote-Only
                 </h3>
                 <p className="text-xs text-amber-500 font-mono">
-                  Transparent disclosures on unmocked external boundaries
+                  Transparent disclosures on live external boundaries
                 </p>
               </div>
             </div>

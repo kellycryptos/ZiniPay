@@ -28,13 +28,13 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-bold text-white font-mono">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] font-mono">
               Deliverable Proof
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -43,7 +43,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
         {/* Modal Body */}
         <div className="mt-4 space-y-4">
           <div>
-            <p className="text-sm font-bold text-white">
+            <p className="text-sm font-bold text-[var(--text-primary)]">
               #{proposal.id} · {proposal.title}
             </p>
           </div>
@@ -124,7 +124,7 @@ export function ProofModal({ proposal, onClose }: ProofModalProps) {
             </a>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-colors"
+              className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-[var(--text-primary)] transition-colors"
             >
               Close
             </button>

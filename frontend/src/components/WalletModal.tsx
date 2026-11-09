@@ -76,7 +76,7 @@ export function WalletModal({
               <Wallet size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-white">NEAR Account & Identity</h3>
+              <h3 className="font-bold text-sm text-[var(--text-primary)]">NEAR Account & Identity</h3>
               <p className="text-[11px] font-mono text-[var(--color-passed)] mt-0.5">
                 NEAR {network.toUpperCase()}
               </p>
@@ -85,7 +85,7 @@ export function WalletModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-[var(--text-muted)] hover:text-white rounded-md hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -119,7 +119,7 @@ export function WalletModal({
 
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)]">
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-white font-bold font-mono text-sm break-all">
+                  <span className="text-[var(--text-primary)] font-bold font-mono text-sm break-all">
                     {connectedAccount}
                   </span>
                   <span className="text-[10px] text-[var(--text-muted)]">
@@ -130,7 +130,7 @@ export function WalletModal({
                   href={`https://${network === 'testnet' ? 'testnet.' : ''}nearblocks.io/address/${connectedAccount}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-1.5 text-[var(--text-muted)] hover:text-white rounded transition-colors"
+                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded transition-colors"
                   title="View on NEARBlocks"
                 >
                   <ExternalLink size={14} />
@@ -186,14 +186,14 @@ export function WalletModal({
                   type="button"
                   onClick={handleLaunchOfficialModal}
                   disabled={isLaunching}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-900/40 to-cyan-900/30 hover:from-emerald-800/50 hover:to-cyan-800/40 border border-emerald-500/40 hover:border-[#00EC97] text-white font-medium flex items-center justify-between transition-all shadow-lg cursor-pointer group"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-900/40 to-cyan-900/30 hover:from-emerald-800/50 hover:to-cyan-800/40 border border-emerald-500/40 hover:border-[#00EC97] text-[var(--text-primary)] font-medium flex items-center justify-between transition-all shadow-lg cursor-pointer group"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="p-1.5 rounded-lg bg-black/40 text-[#00EC97]">
                       <Wallet size={16} />
                     </div>
                     <div className="text-left">
-                      <div className="text-xs font-semibold text-white group-hover:text-[#00EC97] transition-colors">
+                      <div className="text-xs font-semibold text-[var(--text-primary)] group-hover:text-[#00EC97] transition-colors">
                         {isLaunching ? 'Initializing Wallet Selector...' : 'Launch NEAR Wallet Selector'}
                       </div>
                       <div className="text-[11px] text-[var(--text-muted)]">
@@ -201,7 +201,7 @@ export function WalletModal({
                       </div>
                     </div>
                   </div>
-                  <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight size={14} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] group-hover:translate-x-0.5 transition-all" />
                 </button>
               </div>
 
@@ -232,7 +232,7 @@ export function WalletModal({
                       className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[#1A1F2C] border border-[var(--border-subtle)] hover:border-amber-500/40 flex flex-col gap-1 text-left cursor-pointer transition-all group"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-white text-xs group-hover:text-amber-300">
+                        <span className="font-semibold text-[var(--text-primary)] text-xs group-hover:text-amber-300">
                           {acc.label}
                         </span>
                         <span className="text-[9px] font-mono px-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -251,7 +251,7 @@ export function WalletModal({
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
                     placeholder="Enter any account.testnet"
-                    className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder:text-gray-600 focus:outline-none"
+                    className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-amber-400 rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] font-mono placeholder:text-gray-600 focus:outline-none"
                   />
                   <button
                     type="button"
