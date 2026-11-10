@@ -1,14 +1,11 @@
 import React from 'react';
-import { AppHeader } from '../navigation/AppHeader';
-import { UniversalFooter } from '../navigation/UniversalFooter';
+import { LandingHeader } from './LandingHeader';
 import { LandingHero } from './LandingHero';
-import { LandingProblemSection } from './LandingProblemSection';
+import { LandingBenefits } from './LandingBenefits';
 import { LandingHowItWorks } from './LandingHowItWorks';
-import { LandingEnforcedVsAdvisory } from './LandingEnforcedVsAdvisory';
-import { LandingWhatYouCanDo } from './LandingWhatYouCanDo';
-import { LandingSafetyLimits } from './LandingSafetyLimits';
-import { LandingFaqSection } from './LandingFaqSection';
-import { LandingVerifyCallout } from './LandingVerifyCallout';
+import { LandingStatusStrip } from './LandingStatusStrip';
+import { LandingClosingCta } from './LandingClosingCta';
+import { LandingFooter } from './LandingFooter';
 
 export interface LandingPageProps {
   onNavigateToApp: () => void;
@@ -23,59 +20,45 @@ export function LandingPage({
   onNavigateToBoard,
   onNavigateDocs,
   onNavigateVerify,
-  network = 'testnet',
 }: LandingPageProps) {
+  const handleNavigateApp = onNavigateToBoard || onNavigateToApp;
   const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-[var(--color-passed)] selection:text-black font-sans transition-colors duration-200">
-      {/* ── Universal Header ──────────────────────────────────── */}
-      <AppHeader
-        currentPath="/"
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-[#00EC97]/30 selection:text-white transition-colors duration-200">
+      {/* ── Plain Header ──────────────────────────────────────── */}
+      <LandingHeader
         onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        onNavigateBoard={onNavigateToBoard || onNavigateToApp}
+        onNavigateToApp={handleNavigateApp}
         onNavigateDocs={onNavigateDocs}
-        onNavigateVerify={handleVerify}
-        network={network}
       />
 
-      {/* ── 8 Ordered Landing Sections for Users ─────────────── */}
+      {/* ── Main Content: 5 Ordered Plain Sections ───────────── */}
       <main className="flex-1 flex flex-col">
-        {/* 1. Hero: Plain and short with two actions and 3 short points */}
+        {/* a. Hero */}
         <LandingHero
-          onNavigateToApp={onNavigateToApp}
-          onNavigateToBoard={onNavigateToBoard}
+          onNavigateToApp={handleNavigateApp}
           onNavigateVerify={handleVerify}
         />
 
-        {/* 2. The Problem: Giving an agent treasury access is risky */}
-        <LandingProblemSection />
+        {/* b. Three Benefit Cards */}
+        <LandingBenefits />
 
-        {/* 3. How a Payout Works in 3 Steps */}
+        {/* c. How It Works (Three Steps) */}
         <LandingHowItWorks />
 
-        {/* 4. What Is Enforced On-Chain vs. Advisory */}
-        <LandingEnforcedVsAdvisory />
+        {/* d. Honest Status Strip */}
+        <LandingStatusStrip onNavigateVerify={handleVerify} />
 
-        {/* 5. What You Can Do Today */}
-        <LandingWhatYouCanDo onNavigateToApp={onNavigateToApp} />
-
-        {/* 6. Safety Limits and Honest Status */}
-        <LandingSafetyLimits />
-
-        {/* 7. FAQ for Users */}
-        <LandingFaqSection />
-
-        {/* 8. Verify It Yourself Link */}
-        <LandingVerifyCallout onNavigateVerify={handleVerify} />
+        {/* e. Closing Section with One Button */}
+        <LandingClosingCta onNavigateToApp={handleNavigateApp} />
       </main>
 
-      {/* ── Universal Footer ──────────────────────────────────── */}
-      <UniversalFooter
-        onNavigateBoard={onNavigateToBoard || onNavigateToApp}
+      {/* ── Plain Footer ──────────────────────────────────────── */}
+      <LandingFooter
+        onNavigateToApp={handleNavigateApp}
         onNavigateDocs={onNavigateDocs}
         onNavigateVerify={handleVerify}
-        network={network}
       />
     </div>
   );
