@@ -447,7 +447,7 @@ export default function App() {
           network={network}
         />
       ) : isDocsRoute ? (
-        <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans">
+        <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans w-full max-w-full overflow-x-hidden">
           <AppHeader
             currentPath="/docs"
             onNavigateHome={() => navigate('/')}

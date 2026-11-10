@@ -28,7 +28,7 @@ export function LandingPage({
   const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-[var(--color-passed)] selection:text-black font-sans transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] selection:bg-[var(--color-passed)] selection:text-black font-sans transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       {/* ── Universal Header ──────────────────────────────────── */}
       <AppHeader
         currentPath="/"

@@ -161,11 +161,9 @@ export function UniversalFooter({
           </div>
         </div>
 
-        {/* Bottom Bar: Testnet only, not audited. plus GitHub link */}
-        <div className="pt-4 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[var(--text-secondary)]">
-          <p>
-            Testnet only, not audited.
-          </p>
+        {/* Bottom Bar: GitHub link */}
+        <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono text-[var(--text-secondary)]">
+          <span className="text-[var(--text-muted)]">ZiniPay</span>
           <a
             href="https://github.com/kellycryptos/ZiniPay"
             target="_blank"

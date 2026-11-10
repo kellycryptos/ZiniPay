@@ -6,6 +6,8 @@ import {
   X,
   Sun,
   Moon,
+  ExternalLink,
+  ArrowRight,
 } from 'lucide-react';
 import { useTheme } from '../../lib/theme';
 
@@ -70,12 +72,12 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/90 backdrop-blur-md transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Left: Brand & Network Badge */}
-        <div className="flex items-center gap-3">
+        {/* Left: Brand & Network Badge (under 768px: ONLY logo and ZiniPay name) */}
+        <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={handleNavHome}
-            className="flex items-center gap-2.5 text-left group cursor-pointer"
+            className="flex items-center gap-2.5 text-left group cursor-pointer shrink-0"
           >
             <img
               src="/logo.svg"
@@ -92,8 +94,8 @@ export function AppHeader({
             </div>
           </button>
 
-          {/* Testnet Badge */}
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-[#00EC97]">
+          {/* Testnet Badge - hidden under 768px wide */}
+          <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-[#00EC97] shrink-0 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97] animate-pulse" />
             <span>NEAR {network === 'mainnet' ? 'Mainnet' : 'Testnet'}</span>
           </span>
@@ -145,13 +147,13 @@ export function AppHeader({
           </a>
         </nav>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          {/* Light / Dark Mode Toggle Button */}
+        {/* Right: Actions (under 768px: ONLY menu button) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Light / Dark Mode Toggle Button - hidden under 768px (lives in mobile menu panel) */}
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer flex items-center justify-center shadow-sm"
+            className="hidden md:flex p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer items-center justify-center shadow-sm shrink-0"
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
@@ -166,24 +168,24 @@ export function AppHeader({
           <button
             type="button"
             onClick={handleOpenVerify}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-mono text-[#00EC97] transition-all cursor-pointer shadow-sm font-semibold"
+            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-mono text-[#00EC97] transition-all cursor-pointer shadow-sm font-semibold shrink-0"
             title="View on-chain proof"
           >
             <Shield size={14} />
             <span>Verify on-chain</span>
           </button>
 
-          {/* Primary CTA */}
+          {/* Primary CTA (Desktop/Tablet only - hidden under 768px) */}
           {isBoard ? (
             walletConnected && walletAccountId ? (
-              <span className="font-mono text-xs px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-[180px]">
+              <span className="hidden md:inline-block font-mono text-xs px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-[180px]">
                 {walletAccountId}
               </span>
             ) : onConnectWallet ? (
               <button
                 type="button"
                 onClick={onConnectWallet}
-                className="px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer"
+                className="hidden md:inline-flex px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer shrink-0"
               >
                 Connect Wallet
               </button>
@@ -192,17 +194,17 @@ export function AppHeader({
             <button
               type="button"
               onClick={handleNavBoard}
-              className="px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer shadow-sm"
+              className="hidden md:inline-flex px-3.5 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer shadow-sm shrink-0"
             >
               Open Dashboard
             </button>
           )}
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Toggle (Visible under 768px) */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+            className="md:hidden p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -210,45 +212,131 @@ export function AppHeader({
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu Backdrop */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 flex flex-col gap-2">
+        <div
+          className="fixed inset-0 top-16 z-30 bg-black/60 backdrop-blur-xs md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Menu Panel (under 768px) */}
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/98 backdrop-blur-xl p-4 flex flex-col gap-2 shadow-2xl">
           <button
             type="button"
             onClick={handleNavHome}
-            className={`text-left px-3 py-2 rounded-lg text-sm ${
-              isHome ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              isHome
+                ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold border border-[var(--border-subtle)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)]'
             }`}
           >
-            Home
+            <span>Home</span>
+            {isHome && <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />}
           </button>
+
           <button
             type="button"
             onClick={handleNavBoard}
-            className={`text-left px-3 py-2 rounded-lg text-sm ${
-              isBoard ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              isBoard
+                ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold border border-[var(--border-subtle)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)]'
             }`}
           >
-            Dashboard
+            <span>Dashboard</span>
+            {isBoard && <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />}
           </button>
+
           <button
             type="button"
             onClick={handleNavDocs}
-            className={`text-left px-3 py-2 rounded-lg text-sm ${
-              isDocs ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold' : 'text-[var(--text-secondary)]'
+            className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              isDocs
+                ? 'bg-[var(--bg-panel-alt)] text-[#00EC97] font-semibold border border-[var(--border-subtle)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)]'
             }`}
           >
-            Docs
+            <span>Docs</span>
+            {isDocs && <span className="w-1.5 h-1.5 rounded-full bg-[#00EC97]" />}
           </button>
+
           <a
             href="https://github.com/kellycryptos/ZiniPay"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[var(--text-secondary)]"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)] transition-colors"
           >
-            <Github size={14} />
-            <span>GitHub</span>
+            <div className="flex items-center gap-2">
+              <Github size={16} />
+              <span>GitHub</span>
+            </div>
+            <ExternalLink size={13} className="text-[var(--text-muted)]" />
           </a>
+
+          {/* Theme toggle row inside menu panel */}
+          <div className="border-t border-[var(--border-subtle)] my-1 pt-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-alt)] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                {theme === 'dark' ? (
+                  <Sun size={16} className="text-amber-400" />
+                ) : (
+                  <Moon size={16} className="text-indigo-400" />
+                )}
+                <span>Theme</span>
+              </div>
+              <span className="text-xs font-mono text-[var(--text-muted)] capitalize">
+                {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+              </span>
+            </button>
+          </div>
+
+          {/* One Open Dashboard Button inside menu */}
+          <div className="pt-1 flex flex-col gap-2">
+            {isBoard ? (
+              walletConnected && walletAccountId ? (
+                <div className="p-2.5 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] flex items-center justify-between text-xs font-mono">
+                  <span className="text-[var(--text-secondary)]">Account:</span>
+                  <span className="text-[#00EC97] font-semibold truncate max-w-[180px]">{walletAccountId}</span>
+                </div>
+              ) : onConnectWallet ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onConnectWallet();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer text-center shadow-md"
+                >
+                  Connect Wallet
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNavBoard}
+                  className="w-full py-2.5 px-4 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer text-center shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <span>Open Dashboard</span>
+                  <ArrowRight size={14} />
+                </button>
+              )
+            ) : (
+              <button
+                type="button"
+                onClick={handleNavBoard}
+                className="w-full py-2.5 px-4 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-xs transition-colors cursor-pointer text-center shadow-md flex items-center justify-center gap-1.5"
+              >
+                <span>Open Dashboard</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
         </div>
       )}
     </header>
