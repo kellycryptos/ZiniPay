@@ -384,7 +384,7 @@ export function VerificationPage({
   const failCount = checkItems.filter((c) => c.status === 'fail' || c.status === 'error').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <AppHeader
         currentPath="/verify"

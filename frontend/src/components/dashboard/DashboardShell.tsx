@@ -450,23 +450,23 @@ export function DashboardShell({
             </button>
 
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-muted)] truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono text-[var(--text-muted)] truncate min-w-0">
               <button
                 type="button"
                 onClick={onNavigateToLanding}
-                className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                className="hidden sm:inline hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 ZiniPay
               </button>
-              <ChevronRight size={12} className="text-slate-600 shrink-0" />
+              <ChevronRight size={12} className="hidden sm:inline text-slate-600 shrink-0" />
               <button
                 type="button"
                 onClick={() => setCurrentView('overview')}
-                className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                className="hidden sm:inline hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 Dashboard
               </button>
-              <ChevronRight size={12} className="text-slate-600 shrink-0" />
+              <ChevronRight size={12} className="hidden sm:inline text-slate-600 shrink-0" />
               <span className="text-[var(--text-primary)] font-semibold capitalize truncate">
                 {currentView.replace('_', ' ')}
               </span>
