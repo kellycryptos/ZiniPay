@@ -6,6 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
+[![Security Policy](https://img.shields.io/badge/Security-Policy%20%26%20Limits-yellow.svg)](SECURITY.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg)](https://www.typescriptlang.org)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-DEA584.svg)](https://www.rust-lang.org)
 
@@ -627,6 +628,8 @@ Key friction points analyzed include:
 ---
 
 ## 11. Known Limitations & Security Model
+
+> For our threat model, automated check results, self-review disclosures, and vulnerability reporting procedures, see [SECURITY.md](SECURITY.md).
 
 Based on verified on-chain state queries directly on NEAR Testnet (`test.rpc.fastnear.com`):
 
