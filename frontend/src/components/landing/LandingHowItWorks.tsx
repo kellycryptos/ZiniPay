@@ -20,10 +20,10 @@ export function LandingHowItWorks() {
   ];
 
   return (
-    <section className="py-16 sm:py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] transition-colors duration-200">
-      <div className="max-w-[1100px] mx-auto px-6">
-        <div className="mb-10 text-left">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+    <section className="relative py-12 sm:py-16 z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-10 text-center sm:text-left">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             How it works
           </h2>
         </div>
@@ -32,16 +32,16 @@ export function LandingHowItWorks() {
           {steps.map((s) => (
             <div
               key={s.num}
-              className="p-6 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4 shadow-sm"
+              className="p-6 sm:p-7 rounded-2xl bg-[#0F1715]/90 border border-slate-800 hover:border-emerald-500/40 transition-all duration-300 flex flex-col gap-4 shadow-lg backdrop-blur-md group"
             >
-              <div className="font-mono text-xs font-bold text-[#00EC97] px-2.5 py-1 rounded bg-[#00EC97]/10 w-fit">
+              <div className="font-mono text-xs font-bold text-[#00E599] px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-400/30 w-fit shadow-[0_0_12px_rgba(0,229,153,0.15)]">
                 Step {s.num}
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                   {s.title}
                 </h3>
-                <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+                <p className="mt-2 text-sm text-slate-400 leading-relaxed">
                   {s.description}
                 </p>
               </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { AmbientBackground } from './AmbientBackground';
 import { LandingHeader } from './LandingHeader';
 import { LandingHero } from './LandingHero';
 import { LandingBenefits } from './LandingBenefits';
@@ -25,36 +26,39 @@ export function LandingPage({
   const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-[#00EC97]/30 selection:text-white transition-colors duration-200 w-full max-w-full overflow-x-hidden">
-      {/* ── Plain Header ──────────────────────────────────────── */}
+    <div className="min-h-screen relative flex flex-col bg-[#070D0C] text-white font-sans selection:bg-[#00E599]/30 selection:text-white w-full max-w-full overflow-x-hidden antialiased">
+      {/* ── Ambient Background: Obsidian Gradient, 3D Orbs & Constellations ── */}
+      <AmbientBackground />
+
+      {/* ── Floating Glassmorphic Navbar ─────────────────────────────────── */}
       <LandingHeader
         onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onNavigateToApp={handleNavigateApp}
         onNavigateDocs={onNavigateDocs}
       />
 
-      {/* ── Main Content: 5 Ordered Plain Sections ───────────── */}
-      <main className="flex-1 flex flex-col">
-        {/* a. Hero */}
+      {/* ── Main Content: Hero & Glassmorphic Workflow Sections ───────────── */}
+      <main className="flex-1 flex flex-col relative z-10">
+        {/* 1. Hero with Status Badge, Two-Line Title, and Horizontal Workflow Cards */}
         <LandingHero
           onNavigateToApp={handleNavigateApp}
           onNavigateVerify={handleVerify}
         />
 
-        {/* b. Three Benefit Cards */}
+        {/* 2. Three Benefit Cards (Dark Glassmorphism) */}
         <LandingBenefits />
 
-        {/* c. How It Works (Three Steps) */}
+        {/* 3. How It Works (Three Steps) */}
         <LandingHowItWorks />
 
-        {/* d. Honest Status Strip */}
+        {/* 4. Sleek Full-Width Testnet Notice Bar */}
         <LandingStatusStrip onNavigateVerify={handleVerify} />
 
-        {/* e. Closing Section with One Button */}
+        {/* 5. Closing Live Demo CTA */}
         <LandingClosingCta onNavigateToApp={handleNavigateApp} />
       </main>
 
-      {/* ── Plain Footer ──────────────────────────────────────── */}
+      {/* ── Dark Glassmorphic Footer ─────────────────────────────────────── */}
       <LandingFooter
         onNavigateToApp={handleNavigateApp}
         onNavigateDocs={onNavigateDocs}

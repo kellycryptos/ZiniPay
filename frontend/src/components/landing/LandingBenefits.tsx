@@ -21,24 +21,24 @@ export function LandingBenefits() {
   ];
 
   return (
-    <section className="py-16 sm:py-20 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] transition-colors duration-200">
-      <div className="max-w-[1100px] mx-auto px-6">
+    <section className="relative py-12 sm:py-16 z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {benefits.map((b) => {
             const Icon = b.icon;
             return (
               <div
                 key={b.title}
-                className="p-6 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-4 shadow-sm"
+                className="p-6 sm:p-7 rounded-2xl bg-[#0F1715]/90 border border-slate-800 hover:border-emerald-500/40 transition-all duration-300 group shadow-lg flex flex-col gap-4 backdrop-blur-md"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#00EC97]/10 border border-[#00EC97]/25 flex items-center justify-center text-[#00EC97]">
-                  <Icon size={20} />
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-[#00E599] group-hover:shadow-[0_0_15px_rgba(0,229,153,0.3)] group-hover:scale-105 transition-all">
+                  <Icon size={22} className="drop-shadow-[0_0_6px_rgba(0,229,153,0.4)]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                  <h3 className="text-lg font-bold text-white tracking-tight">
                     {b.title}
                   </h3>
-                  <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">
+                  <p className="mt-2 text-sm text-slate-400 leading-relaxed">
                     {b.description}
                   </p>
                 </div>

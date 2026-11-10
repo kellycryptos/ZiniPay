@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
-import { Github, Menu, X, Sun, Moon } from 'lucide-react';
+import { Github, Menu, X, Sun, Moon, ArrowRight } from 'lucide-react';
 import { useTheme } from '../../lib/theme';
 
 export interface LandingHeaderProps {
   onNavigateHome?: () => void;
   onNavigateToApp: () => void;
   onNavigateDocs?: () => void;
+}
+
+export function ZiniPayLogo({ className = 'w-7 h-7' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      {/* Geometric 'Z' Logo with rounded emerald bars */}
+      <rect x="4" y="5" width="24" height="4.5" rx="2.25" fill="#00E599" />
+      <path
+        d="M24 7.5L8 24.5"
+        stroke="#00E599"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <rect x="4" y="22.5" width="24" height="4.5" rx="2.25" fill="#00E599" />
+    </svg>
+  );
 }
 
 export function LandingHeader({
@@ -40,115 +61,130 @@ export function LandingHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/95 backdrop-blur-md transition-colors duration-200">
-      <div className="max-w-[1100px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
-        {/* Left: Logo and Name ONLY (no tagline, no pill) */}
+    <header className="sticky top-0 z-50 w-full px-4 sm:px-6 pt-4 pb-2 pointer-events-none">
+      {/* Floating Glassmorphic Pill Container */}
+      <div className="max-w-6xl mx-auto rounded-2xl bg-[#0F1C18]/80 backdrop-blur-md border border-emerald-500/20 shadow-[0_0_25px_rgba(16,185,129,0.1)] px-5 sm:px-7 py-3 flex items-center justify-between gap-4 pointer-events-auto transition-all duration-300">
+        
+        {/* Left: Green geometric "Z" logo icon next to bold white "ZiniPay" text */}
         <button
           type="button"
           onClick={handleHome}
-          className="flex items-center gap-2.5 cursor-pointer text-left group"
+          className="flex items-center gap-2.5 cursor-pointer text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-lg py-1"
         >
-          <img
-            src="/logo.svg"
-            alt="ZiniPay Logo"
-            className="w-8 h-8 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0 group-hover:border-[#00EC97]/40 transition-colors"
-          />
-          <span className="font-sans text-lg font-bold text-[var(--text-primary)] tracking-tight">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <ZiniPayLogo className="w-7 h-7 drop-shadow-[0_0_8px_rgba(0,229,153,0.5)]" />
+          </div>
+          <span className="font-sans text-xl font-bold text-white tracking-tight">
             ZiniPay
           </span>
         </button>
 
-        {/* Center: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6">
+        {/* Center: Navigation links with active "Home" indicator */}
+        <nav className="hidden md:flex items-center gap-8 relative">
+          {/* Active Home Link */}
           <button
             type="button"
             onClick={handleHome}
-            className="text-sm font-medium text-[var(--text-primary)] hover:text-[#00EC97] transition-colors cursor-pointer"
+            className="relative py-1 text-sm font-medium text-white transition-colors cursor-pointer group flex flex-col items-center"
           >
-            Home
+            <span>Home</span>
+            {/* Glowing green underline indicator at bottom edge */}
+            <span className="absolute -bottom-3 w-8 h-[2px] bg-[#00E599] rounded-full shadow-[0_0_8px_#00E599]" />
           </button>
+
           <button
             type="button"
             onClick={handleApp}
-            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+            className="text-sm font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             Dashboard
           </button>
+
           <button
             type="button"
             onClick={handleDocs}
-            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+            className="text-sm font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             Docs
           </button>
+
           <a
             href="https://github.com/kellycryptos/ZiniPay"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5"
+            className="text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 group"
           >
-            <Github size={15} />
+            <Github size={15} className="group-hover:text-white transition-colors" />
             <span>GitHub</span>
           </a>
         </nav>
 
-        {/* Right: Theme Toggle and Open Dashboard CTA (No Verify button) */}
+        {/* Right: Pill-shaped dark/light mode toggle switch & neon green CTA */}
         <div className="flex items-center gap-3">
+          {/* Theme Toggle Switch */}
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer flex items-center justify-center shadow-sm"
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle dark/light theme"
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-[#12221D]/90 border border-emerald-500/20 text-slate-400 hover:text-white transition-all cursor-pointer shadow-inner"
           >
-            {theme === 'dark' ? (
-              <Sun size={16} className="text-amber-400" />
-            ) : (
-              <Moon size={16} className="text-indigo-600 dark:text-indigo-400" />
-            )}
+            <Sun
+              size={13}
+              className={`${
+                theme === 'light' ? 'text-amber-400' : 'text-slate-500'
+              } transition-colors`}
+            />
+            <Moon
+              size={13}
+              className={`${
+                theme === 'dark' ? 'text-emerald-400' : 'text-slate-500'
+              } transition-colors`}
+            />
           </button>
 
+          {/* Bright Neon Green CTA Button: Open Dashboard → */}
           <button
             type="button"
             onClick={handleApp}
-            className="px-4 py-2 rounded-lg bg-[#00EC97] hover:bg-[#00c980] text-black font-semibold text-sm transition-colors cursor-pointer shadow-sm"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-[#00E599] hover:bg-[#00ffaa] text-[#070D0C] font-semibold text-sm transition-all duration-200 shadow-[0_0_20px_rgba(0,229,153,0.5)] hover:shadow-[0_0_30px_rgba(0,229,153,0.7)] cursor-pointer active:scale-[0.98]"
           >
-            Open Dashboard
+            <span>Open Dashboard</span>
+            <span className="font-bold text-base leading-none">→</span>
           </button>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Hamburger Button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-panel-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
-            aria-label="Toggle navigation menu"
+            aria-label="Open navigation menu"
+            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-emerald-950/40 transition-colors"
           >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Drawer Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-6 py-4 flex flex-col gap-3">
+        <div className="md:hidden max-w-6xl mx-auto mt-2 p-4 rounded-xl bg-[#0F1C18]/95 backdrop-blur-md border border-emerald-500/20 shadow-xl flex flex-col gap-3 pointer-events-auto">
           <button
             type="button"
             onClick={handleHome}
-            className="text-left text-sm font-medium text-[var(--text-primary)]"
+            className="text-left text-sm font-semibold text-[#00E599] py-1.5"
           >
             Home
           </button>
           <button
             type="button"
             onClick={handleApp}
-            className="text-left text-sm font-medium text-[var(--text-secondary)]"
+            className="text-left text-sm font-medium text-slate-300 hover:text-white py-1.5"
           >
             Dashboard
           </button>
           <button
             type="button"
             onClick={handleDocs}
-            className="text-left text-sm font-medium text-[var(--text-secondary)]"
+            className="text-left text-sm font-medium text-slate-300 hover:text-white py-1.5"
           >
             Docs
           </button>
@@ -156,11 +192,18 @@ export function LandingHeader({
             href="https://github.com/kellycryptos/ZiniPay"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)]"
+            className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white py-1.5"
           >
-            <Github size={15} />
+            <Github size={16} />
             <span>GitHub</span>
           </a>
+          <button
+            type="button"
+            onClick={handleApp}
+            className="mt-2 w-full py-2.5 rounded-xl bg-[#00E599] text-[#070D0C] font-semibold text-sm text-center shadow-[0_0_15px_rgba(0,229,153,0.4)]"
+          >
+            Open Dashboard →
+          </button>
         </div>
       )}
     </header>
