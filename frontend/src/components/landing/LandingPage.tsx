@@ -2,8 +2,10 @@ import React from 'react';
 import { AmbientBackground } from './AmbientBackground';
 import { LandingHeader } from './LandingHeader';
 import { LandingHero } from './LandingHero';
-import { LandingBenefits } from './LandingBenefits';
+import { LandingProblem } from './LandingProblem';
 import { LandingHowItWorks } from './LandingHowItWorks';
+import { LandingKeyFeatures } from './LandingKeyFeatures';
+import { LandingBenefits } from './LandingBenefits';
 import { LandingStatusStrip } from './LandingStatusStrip';
 import { LandingClosingCta } from './LandingClosingCta';
 import { LandingFooter } from './LandingFooter';
@@ -35,6 +37,7 @@ export function LandingPage({
         onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onNavigateToApp={handleNavigateApp}
         onNavigateDocs={onNavigateDocs}
+        onNavigateVerify={handleVerify}
       />
 
       {/* ── Main Content: Hero & Glassmorphic Workflow Sections ───────────── */}
@@ -45,17 +48,29 @@ export function LandingPage({
           onNavigateVerify={handleVerify}
         />
 
-        {/* 2. Three Benefit Cards (Dark Glassmorphism) */}
-        <LandingBenefits />
+        {/* 2. The Problem: Why Autonomous Agent Treasuries Break Without Guardrails */}
+        <LandingProblem />
 
-        {/* 3. How It Works (Three Steps) */}
+        {/* 3. The Solution: Agent Proposes, Policy Enforces, Humans Approve */}
         <LandingHowItWorks />
 
-        {/* 4. Sleek Full-Width Testnet Notice Bar */}
+        {/* 4. Key Features: Named-Account Reputation, Tiered Approvals, Public Board, Fail-Closed */}
+        <LandingKeyFeatures
+          onNavigateToBoard={handleNavigateApp}
+          onNavigateVerify={handleVerify}
+        />
+
+        {/* 5. Attacks That Fail: Verified Testnet Receipts */}
+        <LandingBenefits />
+
+        {/* 6. Sleek Full-Width Testnet Notice Bar */}
         <LandingStatusStrip onNavigateVerify={handleVerify} />
 
-        {/* 5. Closing Live Demo CTA */}
-        <LandingClosingCta onNavigateToApp={handleNavigateApp} />
+        {/* 7. Closing Live Demo CTA */}
+        <LandingClosingCta
+          onNavigateToApp={handleNavigateApp}
+          onNavigateVerify={handleVerify}
+        />
       </main>
 
       {/* ── Dark Glassmorphic Footer ─────────────────────────────────────── */}

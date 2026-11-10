@@ -31,6 +31,8 @@ import {
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
 import { OverviewKpis, BlockedAttackItem, SettledPayoutItem } from './OverviewKpis';
+import { SocialMoneyFlowBanner } from './SocialMoneyFlowBanner';
+import { ContributorReputationStrip } from './ContributorReputationStrip';
 import { PolicyCard } from './PolicyCard';
 import { ContributorsView } from './ContributorsView';
 import { UniversalFooter } from '../navigation/UniversalFooter';
@@ -116,6 +118,29 @@ export function DashboardShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('demo') === '1' || isSimulated;
+    }
+    return isSimulated;
+  });
+
+  const toggleDemoMode = () => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('demo') === '1') {
+        url.searchParams.delete('demo');
+        window.history.replaceState({}, '', url.pathname + url.search);
+        setIsDemoMode(false);
+        onShowToast('Exited Demo Mode');
+      } else {
+        url.searchParams.set('demo', '1');
+        window.history.replaceState({}, '', url.pathname + url.search);
+        setIsDemoMode(true);
+        onShowToast('Demo Mode (?demo=1) Active: Zero-wallet evaluation ready!');
+      }
+    }
+  };
   const [verificationModalOpen, setVerificationModalOpen] = useState<boolean>(false);
   const [settledPayouts, setSettledPayouts] = useState<SettledPayoutItem[]>([]);
   const [verifiedTxs, setVerifiedTxs] = useState<any[]>([]);
@@ -546,6 +571,21 @@ export function DashboardShell({
               )}
             </button>
 
+            {/* Demo Mode Button / Badge (?demo=1) */}
+            <button
+              type="button"
+              onClick={toggleDemoMode}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isDemoMode
+                  ? 'bg-[#00E599]/20 border-[#00E599] text-[#00EC97] shadow-[0_0_15px_rgba(0,229,153,0.3)]'
+                  : 'bg-slate-100 dark:bg-[#0B1412]/80 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title={isDemoMode ? 'Demo Mode Active (?demo=1). Click to toggle.' : 'Activate Demo Mode (?demo=1) for 0-wallet evaluation.'}
+            >
+              <Sparkles size={13} className={isDemoMode ? 'text-[#00E599]' : ''} />
+              <span className="hidden sm:inline">{isDemoMode ? 'Demo Mode Active' : 'Demo Mode'}</span>
+            </button>
+
             {/* Glowing Emerald Pill Badge: Verified on-chain */}
             <button
               type="button"
@@ -625,6 +665,9 @@ export function DashboardShell({
           {/* VIEW: OVERVIEW */}
           {currentView === 'overview' && (
             <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto min-w-0">
+              {/* One Full Social Money Flow Obvious at a Glance */}
+              <SocialMoneyFlowBanner isDemoMode={isDemoMode} />
+
               {/* 4-Metric High Density Strip */}
               <OverviewKpis
                 treasuryState={treasuryState}
@@ -637,13 +680,12 @@ export function DashboardShell({
                 onSelectAttack={() => setCurrentView('security')}
               />
 
-              {/* Policy Card with Enforced vs Advisory Tier Matrix */}
-              <PolicyCard
-                policyState={onChainPolicy}
+              {/* Contributor Reputation with Tier Badges + Visible Tier Matrix */}
+              <ContributorReputationStrip
                 policyContractId={policyContractId}
                 daoContract={daoContract}
                 network={network}
-                isLoading={isLoadingOnChain}
+                contributorScore={contributorReputation ?? 30}
               />
 
               {/* 4-Column Board */}
@@ -670,13 +712,13 @@ export function DashboardShell({
                   searchQuery={searchQuery}
                   onInspectProposal={onInspectProof}
                   onInspectAttack={() => setCurrentView('security')}
-                  canVote={activeRole === 'council' && !isSimulated}
+                  canVote={(activeRole === 'council' && !isSimulated) || isDemoMode}
                   onVote={onVote}
                   isLoading={isLoadingOnChain}
                 />
               </div>
 
-              {/* Activity Feed */}
+              {/* Activity Feed with Status and Explorer Links */}
               <ActivityFeed
                 verifiedTxs={verifiedTxs}
                 liveActivities={activities}
@@ -688,6 +730,9 @@ export function DashboardShell({
           {/* VIEW: BOARD (Focused Full View) */}
           {currentView === 'board' && (
             <div className="flex flex-col gap-4 w-full max-w-7xl mx-auto">
+              {/* Social Money Flow Banner */}
+              <SocialMoneyFlowBanner isDemoMode={isDemoMode} />
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                 <div>
                   <h2 className="text-base font-bold text-white">Public Board</h2>
@@ -712,7 +757,7 @@ export function DashboardShell({
                 searchQuery={searchQuery}
                 onInspectProposal={onInspectProof}
                 onInspectAttack={() => setCurrentView('security')}
-                canVote={activeRole === 'council' && !isSimulated}
+                canVote={(activeRole === 'council' && !isSimulated) || isDemoMode}
                 onVote={onVote}
                 isLoading={isLoadingOnChain}
               />

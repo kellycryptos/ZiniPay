@@ -126,18 +126,32 @@ export default function App() {
   const [daoPolicy, setDaoPolicy] = useState<DaoOnChainPolicy | null>(null);
   const [contributorReputation, setContributorReputation] = useState<number | null>(null);
 
-  // Connected account restored from session or null
+  // Connected account restored from session or demo fallback
+  const isDemoUrlParam = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1';
+
   const [connectedAccount, setConnectedAccount] = useState<string | null>(() => {
     const stored = getStoredWalletAccount();
-    return stored ? stored.accountId : null;
+    if (stored) return stored.accountId;
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1') {
+      return 'zinipay-c1.testnet';
+    }
+    return null;
   });
   const [isSimulatedSigner, setIsSimulatedSigner] = useState<boolean>(() => {
     const stored = getStoredWalletAccount();
-    return stored ? Boolean(stored.isSimulated) : false;
+    if (stored) return Boolean(stored.isSimulated);
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1') {
+      return true;
+    }
+    return false;
   });
   const [activeRole, setActiveRole] = useState<'council' | 'agent' | 'contributor'>(() => {
     const stored = getStoredWalletAccount();
-    return stored ? stored.role : 'contributor';
+    if (stored) return stored.role;
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === '1') {
+      return 'council';
+    }
+    return 'contributor';
   });
 
   const resolveAccountRole = (
@@ -303,7 +317,36 @@ export default function App() {
     }
 
     if (isSimulatedSigner) {
-      showToast(`Observer mode (${connectedAccount}) is read-only. Connect a verified council wallet on NEAR to sign.`);
+      // In demo mode or observer simulation, simulate council action in local state
+      const voteType = approve ? 'VoteApprove' : 'VoteReject';
+      setProposals((prev) =>
+        prev.map((p) => {
+          if (p.id === proposalId) {
+            const currentVotes = p.votes || { approve: 0, reject: 0, required: 2 };
+            const newApprove = approve ? Math.min(2, currentVotes.approve + 1) : currentVotes.approve;
+            const newReject = !approve ? currentVotes.reject + 1 : currentVotes.reject;
+            const isQuorumReached = newApprove >= 2;
+            return {
+              ...p,
+              status: isQuorumReached ? 'approved' : p.status,
+              votes: { ...currentVotes, approve: newApprove, reject: newReject },
+            };
+          }
+          return p;
+        })
+      );
+      setActivities((prev) => [
+        {
+          id: `sim-vote-${Date.now()}`,
+          timestamp: 'Just now',
+          type: approve ? 'quorum_reached' : 'policy_pass',
+          title: `Simulated Council ${voteType}`,
+          description: `Council member ${connectedAccount} cast ${voteType} on Proposal #${proposalId}.`,
+          badge: approve ? 'Approved' : 'Rejected',
+        },
+        ...prev,
+      ]);
+      showToast(`[Demo Mode] Simulated council ${voteType} cast on Proposal #${proposalId}!`);
       return;
     }
 

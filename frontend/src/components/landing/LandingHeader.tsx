@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Github, Menu, X, Sun, Moon } from 'lucide-react';
+import { Github, Menu, X, Sun, Moon, Shield } from 'lucide-react';
 import { useTheme } from '../../lib/theme';
 
 export interface LandingHeaderProps {
   onNavigateHome?: () => void;
   onNavigateToApp: () => void;
   onNavigateDocs?: () => void;
+  onNavigateVerify?: () => void;
 }
 
 export function ZiniPayLogo({ className = 'w-7 h-7' }: { className?: string }) {
@@ -16,7 +17,6 @@ export function ZiniPayLogo({ className = 'w-7 h-7' }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Geometric 'Z' Logo with rounded emerald bars */}
       <rect x="4" y="5" width="24" height="4.5" rx="2.25" fill="#00E599" />
       <path
         d="M24 7.5L8 24.5"
@@ -33,6 +33,7 @@ export function LandingHeader({
   onNavigateHome,
   onNavigateToApp,
   onNavigateDocs,
+  onNavigateVerify,
 }: LandingHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -60,6 +61,15 @@ export function LandingHeader({
     }
   };
 
+  const handleVerify = () => {
+    setMobileMenuOpen(false);
+    if (onNavigateVerify) {
+      onNavigateVerify();
+    } else {
+      window.location.href = '/verify';
+    }
+  };
+
   return (
     <header className="relative z-50 w-full px-4 sm:px-6 pt-4 pb-2">
       {/* Floating Glassmorphic Pill Container */}
@@ -74,21 +84,24 @@ export function LandingHeader({
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
             <ZiniPayLogo className="w-7 h-7 drop-shadow-[0_0_8px_rgba(0,229,153,0.5)]" />
           </div>
-          <span className="font-sans text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-            ZiniPay
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-sans text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              ZiniPay
+            </span>
+            <span className="hidden sm:inline-block text-[10px] font-mono text-emerald-700 dark:text-[#00EC97] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              NEAR Testnet
+            </span>
+          </div>
         </button>
 
         {/* Center: Navigation links with active "Home" indicator */}
-        <nav className="hidden md:flex items-center gap-8 relative">
-          {/* Active Home Link */}
+        <nav className="hidden md:flex items-center gap-7 relative">
           <button
             type="button"
             onClick={handleHome}
             className="relative py-1 text-sm font-medium text-slate-900 dark:text-white transition-colors cursor-pointer group flex flex-col items-center"
           >
             <span>Home</span>
-            {/* Glowing green underline indicator at bottom edge */}
             <span className="absolute -bottom-3 w-8 h-[2px] bg-[#00E599] rounded-full shadow-[0_0_8px_#00E599]" />
           </button>
 
@@ -97,7 +110,16 @@ export function LandingHeader({
             onClick={handleApp}
             className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
-            Dashboard
+            Public Board
+          </button>
+
+          <button
+            type="button"
+            onClick={handleVerify}
+            className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <Shield size={13} className="text-[#00E599]" />
+            <span>Verification</span>
           </button>
 
           <button
@@ -142,13 +164,13 @@ export function LandingHeader({
             />
           </button>
 
-          {/* Bright Neon Green CTA Button: Open Dashboard → */}
+          {/* Bright Neon Green CTA Button: Open Board → */}
           <button
             type="button"
             onClick={handleApp}
             className="hidden sm:inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-xl bg-[#00E599] hover:bg-[#00ffaa] text-[#070D0C] font-semibold text-sm transition-all duration-200 shadow-[0_0_20px_rgba(0,229,153,0.5)] hover:shadow-[0_0_30px_rgba(0,229,153,0.7)] cursor-pointer active:scale-[0.98]"
           >
-            <span>Open Dashboard</span>
+            <span>Open Board</span>
             <span className="font-bold text-base leading-none">→</span>
           </button>
 
@@ -178,7 +200,15 @@ export function LandingHeader({
               onClick={handleApp}
               className="text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white py-1.5 transition-colors cursor-pointer"
             >
-              Dashboard
+              Public Board
+            </button>
+            <button
+              type="button"
+              onClick={handleVerify}
+              className="text-left text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white py-1.5 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Shield size={14} className="text-[#00E599]" />
+              <span>Verification Suite</span>
             </button>
             <button
               type="button"
@@ -202,7 +232,7 @@ export function LandingHeader({
               onClick={handleApp}
               className="mt-2 w-full py-2.5 rounded-xl bg-[#00E599] hover:bg-[#00ffaa] text-[#070D0C] font-semibold text-sm text-center shadow-[0_0_15px_rgba(0,229,153,0.4)] transition-all cursor-pointer active:scale-[0.98]"
             >
-              Open Dashboard →
+              Open Public Board →
             </button>
           </div>
         )}
