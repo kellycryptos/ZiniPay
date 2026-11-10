@@ -437,6 +437,7 @@ export default function App() {
           }}
           onNavigateToLanding={() => navigate('/')}
           onNavigateVerify={() => navigate('/verify')}
+          onNavigateDocs={() => navigate('/docs')}
         />
       ) : isVerifyRoute ? (
         <VerificationPage

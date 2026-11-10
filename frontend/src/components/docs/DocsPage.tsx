@@ -17,8 +17,6 @@ import {
   Flame,
   Search,
 } from 'lucide-react';
-import { AppHeader } from '../navigation/AppHeader';
-import { UniversalFooter } from '../navigation/UniversalFooter';
 import { VerificationModal } from '../dashboard/VerificationModal';
 
 interface DocsPageProps {
@@ -56,7 +54,7 @@ export function DocsPage({
   ];
 
   const content = (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 font-sans text-slate-100">
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 font-sans text-[var(--text-primary)]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
         <div className="flex items-center gap-3">
@@ -625,42 +623,14 @@ export function DocsPage({
     </div>
   );
 
-  if (embedded) {
-    return (
-      <>
-        <VerificationModal
-          isOpen={verificationModalOpen}
-          onClose={() => setVerificationModalOpen(false)}
-          network={network}
-        />
-        {content}
-      </>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[var(--bg-canvas)] text-slate-100 flex flex-col font-sans selection:bg-[#00EC97]/30 selection:text-white">
+    <>
       <VerificationModal
         isOpen={verificationModalOpen}
         onClose={() => setVerificationModalOpen(false)}
         network={network}
       />
-      <AppHeader
-        currentPath="/docs"
-        onNavigateHome={onNavigateHome}
-        onNavigateBoard={onNavigateBoard}
-        onNavigateDocs={() => {}}
-        onOpenVerifyModal={() => setVerificationModalOpen(true)}
-        network={network}
-      />
-      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
-        {content}
-      </main>
-      <UniversalFooter
-        onOpenVerifyModal={() => setVerificationModalOpen(true)}
-        onNavigateDocs={() => {}}
-        network={network}
-      />
-    </div>
+      {content}
+    </>
   );
 }
