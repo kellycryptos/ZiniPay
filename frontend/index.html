@@ -7,7 +7,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#121721" />
+    <meta name="theme-color" content="#070D0C" />
     <title>ZiniPay — Let AI propose payments. Humans keep the keys.</title>
     <meta name="description" content="Let an AI agent propose payments. Keep humans in charge of the money. A smart contract caps every payment and blocks repeats, and two people approve each one." />
 
@@ -24,9 +24,40 @@
     <meta name="twitter:description" content="Let an AI agent propose payments. Keep humans in charge of the money. A smart contract caps every payment and blocks repeats, and two people approve each one." />
     <meta name="twitter:url" content="https://zini-pay.vercel.app/" />
     <meta name="twitter:image" content="https://zini-pay.vercel.app/og-image.png" />
+
+    <!-- Critical instant paint inline styles (zero FOIT/FOUC) -->
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html {
+        background-color: #070D0C;
+        color: #f8fafc;
+      }
+      html:not(.dark) {
+        background-color: #F4FBF7;
+        color: #0f172a;
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+
+    <!-- Async Font Loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+    </noscript>
+
     <script>
       window.global = window;
       window.process = { env: {} };

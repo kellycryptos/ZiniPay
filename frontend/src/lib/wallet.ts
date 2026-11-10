@@ -2,18 +2,22 @@
  * wallet.ts — Real NEAR Wallet Selector Integration
  * Supports MyNearWallet, Meteor Wallet, and HERE Wallet across Mainnet & Testnet,
  * plus local session persistence and account subscription.
+ *
+ * Lazily loads @near-wallet-selector so the landing page does not incur
+ * the ~1.8MB wallet vendor bundle on initial page load.
  */
 
-import { setupWalletSelector, WalletSelector } from '@near-wallet-selector/core';
-import { setupModal, WalletSelectorModal } from '@near-wallet-selector/modal-ui';
-import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet';
-import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
-import { setupHereWallet } from '@near-wallet-selector/here-wallet';
+import type { WalletSelector } from '@near-wallet-selector/core';
+import type { WalletSelectorModal } from '@near-wallet-selector/modal-ui';
+import { setStoredWalletAccount } from './walletStorage';
+
+export * from './walletStorage';
 
 export type NearNetworkId = 'testnet' | 'mainnet';
 
 let selectorInstance: WalletSelector | null = null;
 let modalInstance: WalletSelectorModal | null = null;
+let initPromise: Promise<{ selector: WalletSelector; modal: WalletSelectorModal }> | null = null;
 
 export async function initNearWallet(network: NearNetworkId = 'testnet'): Promise<{
   selector: WalletSelector;
@@ -21,6 +25,10 @@ export async function initNearWallet(network: NearNetworkId = 'testnet'): Promis
 }> {
   if (selectorInstance && modalInstance) {
     return { selector: selectorInstance, modal: modalInstance };
+  }
+
+  if (initPromise) {
+    return initPromise;
   }
 
   const timeoutPromise = new Promise<never>((_, reject) =>
@@ -35,7 +43,37 @@ export async function initNearWallet(network: NearNetworkId = 'testnet'): Promis
     )
   );
 
-  const initPromise = (async () => {
+  initPromise = (async () => {
+    // Dynamic import: Only download NEAR wallet selector packages when actually requested
+    const [
+      { Buffer },
+      { setupWalletSelector },
+      { setupModal },
+      { setupMyNearWallet },
+      { setupMeteorWallet },
+      { setupHereWallet },
+    ] = await Promise.all([
+      import('buffer'),
+      import('@near-wallet-selector/core'),
+      import('@near-wallet-selector/modal-ui'),
+      import('@near-wallet-selector/my-near-wallet'),
+      import('@near-wallet-selector/meteor-wallet'),
+      import('@near-wallet-selector/here-wallet'),
+    ]);
+
+    if (typeof window !== 'undefined') {
+      (window as any).Buffer = Buffer;
+    }
+
+    // Inject modal styles only when selector is initialized
+    if (typeof document !== 'undefined' && !document.getElementById('near-wallet-modal-css')) {
+      const link = document.createElement('link');
+      link.id = 'near-wallet-modal-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/@near-wallet-selector/modal-ui@10.1.4/styles.css';
+      document.head.appendChild(link);
+    }
+
     const selector = await setupWalletSelector({
       network,
       modules: [
@@ -54,7 +92,12 @@ export async function initNearWallet(network: NearNetworkId = 'testnet'): Promis
     return { selector, modal };
   })();
 
-  return await Promise.race([initPromise, timeoutPromise]);
+  try {
+    return await Promise.race([initPromise, timeoutPromise]);
+  } catch (err) {
+    initPromise = null;
+    throw err;
+  }
 }
 
 export async function openNearWalletModal(network: NearNetworkId = 'testnet'): Promise<void> {
@@ -71,41 +114,6 @@ export async function getActiveAccountId(): Promise<string | null> {
 export function isRealWalletConnected(): boolean {
   if (!selectorInstance) return false;
   return selectorInstance.isSignedIn();
-}
-
-export function isStoredWalletSimulated(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('zinipay_is_simulated') === 'true';
-}
-
-export function getStoredWalletAccount(): {
-  accountId: string;
-  role: 'council' | 'agent' | 'contributor';
-  isSimulated: boolean;
-} | null {
-  if (typeof window === 'undefined') return null;
-  const acc = localStorage.getItem('zinipay_connected_account');
-  const role = (localStorage.getItem('zinipay_active_role') as any) || 'council';
-  const isSimulated = localStorage.getItem('zinipay_is_simulated') === 'true';
-  if (acc && acc.trim()) return { accountId: acc.trim(), role, isSimulated };
-  return null;
-}
-
-export function setStoredWalletAccount(
-  accountId: string | null,
-  role: 'council' | 'agent' | 'contributor' = 'council',
-  isSimulated: boolean = false
-): void {
-  if (typeof window === 'undefined') return;
-  if (accountId && accountId.trim()) {
-    localStorage.setItem('zinipay_connected_account', accountId.trim());
-    localStorage.setItem('zinipay_active_role', role);
-    localStorage.setItem('zinipay_is_simulated', isSimulated ? 'true' : 'false');
-  } else {
-    localStorage.removeItem('zinipay_connected_account');
-    localStorage.removeItem('zinipay_active_role');
-    localStorage.removeItem('zinipay_is_simulated');
-  }
 }
 
 export async function disconnectWallet(): Promise<void> {

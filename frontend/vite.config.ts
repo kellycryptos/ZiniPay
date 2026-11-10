@@ -37,5 +37,10 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1200,
+    modulePreload: {
+      resolveDependencies: (filename, deps) => {
+        return deps.filter((dep) => !dep.includes('near-wallet-vendor'));
+      },
+    },
   },
 });

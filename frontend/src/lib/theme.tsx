@@ -19,11 +19,14 @@ const THEME_STORAGE_KEY = 'zinipay_theme';
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (saved === 'light' || saved === 'dark') {
-        return saved;
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+        if (saved === 'light' || saved === 'dark') {
+          return saved;
+        }
+      } catch (e) {
+        // LocalStorage access restricted
       }
-      // First visit defaults to 'dark' (saved choice in localStorage still wins)
       return 'dark';
     }
     return 'dark';

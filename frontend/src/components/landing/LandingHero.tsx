@@ -74,7 +74,7 @@ export function LandingHero({
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
         
         {/* 1. Top Status Badge: Live on NEAR testnet */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-400/50 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_18px_rgba(16,185,129,0.25)] backdrop-blur-md mb-8 transition-transform hover:scale-105">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-400/50 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_18px_rgba(16,185,129,0.25)] mb-8 transition-transform hover:scale-105">
           <span className="w-2 h-2 rounded-full bg-[#00E599] shadow-[0_0_8px_#00E599] animate-pulse" />
           <span className="text-xs sm:text-sm font-medium text-emerald-800 dark:text-emerald-300">
             Live on NEAR testnet
@@ -112,7 +112,7 @@ export function LandingHero({
           <a
             href="/verify"
             onClick={handleVerify}
-            className="px-7 py-3.5 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-slate-700/80 hover:border-emerald-500/50 text-slate-800 dark:text-white font-medium text-base backdrop-blur-md transition-all duration-200 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-pointer"
+            className="px-7 py-3.5 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-slate-700/80 hover:border-emerald-500/50 text-slate-800 dark:text-white font-medium text-base transition-all duration-200 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-pointer"
           >
             Verify it yourself
           </a>
@@ -124,7 +124,7 @@ export function LandingHero({
             
             {/* 5a. Left Anchor Icon: Glowing Neon Green AI Robot */}
             <div
-              className="w-14 h-14 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center shrink-0 shadow-sm dark:shadow-lg"
+              className="w-14 h-14 rounded-2xl bg-white/95 dark:bg-[#0F1715]/95 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center shrink-0 shadow-sm dark:shadow-lg"
               title="Autonomous Agent Pipeline"
             >
               <RobotAiIcon className="w-8 h-8 drop-shadow-[0_0_10px_rgba(0,229,153,0.5)]" />
@@ -139,7 +139,7 @@ export function LandingHero({
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 1
                   ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/95 dark:bg-[#0F1715]/95 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
@@ -170,7 +170,7 @@ export function LandingHero({
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 2
                   ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/95 dark:bg-[#0F1715]/95 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
@@ -204,7 +204,7 @@ export function LandingHero({
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 3
                   ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/95 dark:bg-[#0F1715]/95 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
@@ -231,7 +231,7 @@ export function LandingHero({
 
             {/* 5e. Right Anchor Icon: Subtle Checkmark */}
             <div
-              className="w-14 h-14 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0 shadow-sm dark:shadow-lg"
+              className="w-14 h-14 rounded-2xl bg-white/95 dark:bg-[#0F1715]/95 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0 shadow-sm dark:shadow-lg"
               title="Verified Settlement"
             >
               <Check size={20} />
