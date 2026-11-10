@@ -31,9 +31,9 @@ export function UniversalFooter({
 
   return (
     <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] font-sans transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col gap-10">
-        {/* Top Section: Brand & Navigation Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 pb-8 border-b border-[var(--border-subtle)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        {/* Brand & Navigation Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Col 1: Brand & Description */}
           <div className="md:col-span-2 flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
@@ -89,15 +89,6 @@ export function UniversalFooter({
               Evidence
             </span>
             <a
-              href="https://github.com/kellycryptos/ZiniPay"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
-            >
-              <span>GitHub</span>
-              <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
-            </a>
-            <a
               href={`${explorerBase}/address/zinipay-policy2.testnet`}
               target="_blank"
               rel="noopener noreferrer"
@@ -115,15 +106,6 @@ export function UniversalFooter({
               <span>Sputnik DAO</span>
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
-            <a
-              href="/data/verified.json"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[#00EC97] transition-colors flex items-center justify-between group"
-            >
-              <span>verified.json</span>
-              <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
-            </a>
           </div>
 
           {/* Col 4: Project */}
@@ -132,12 +114,12 @@ export function UniversalFooter({
               Project
             </span>
             <a
-              href="https://github.com/kellycryptos/ZiniPay/blob/main/README.md"
+              href="https://github.com/kellycryptos/ZiniPay"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors flex items-center justify-between group"
             >
-              <span>README</span>
+              <span>GitHub</span>
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
             <a
@@ -159,20 +141,6 @@ export function UniversalFooter({
               <ExternalLink size={12} className="text-slate-500 group-hover:text-[#00EC97]" />
             </a>
           </div>
-        </div>
-
-        {/* Bottom Bar: GitHub link */}
-        <div className="pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono text-[var(--text-secondary)]">
-          <span className="text-[var(--text-muted)]">ZiniPay</span>
-          <a
-            href="https://github.com/kellycryptos/ZiniPay"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[#00EC97] transition-colors flex items-center gap-1.5"
-          >
-            <span>GitHub</span>
-            <ExternalLink size={12} />
-          </a>
         </div>
       </div>
     </footer>
