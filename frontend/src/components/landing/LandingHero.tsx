@@ -74,25 +74,25 @@ export function LandingHero({
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
         
         {/* 1. Top Status Badge: Live on NEAR testnet */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 shadow-[0_0_18px_rgba(16,185,129,0.25)] backdrop-blur-md mb-8 transition-transform hover:scale-105">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-400/50 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_18px_rgba(16,185,129,0.25)] backdrop-blur-md mb-8 transition-transform hover:scale-105">
           <span className="w-2 h-2 rounded-full bg-[#00E599] shadow-[0_0_8px_#00E599] animate-pulse" />
-          <span className="text-xs sm:text-sm font-medium text-emerald-300">
+          <span className="text-xs sm:text-sm font-medium text-emerald-800 dark:text-emerald-300">
             Live on NEAR testnet
           </span>
         </div>
 
-        {/* 2. Main Headline (Two Lines) */}
+        {/* 2. Main Headline (Two Lines with High Contrast) */}
         <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.12]">
-          <span className="block text-white">
+          <span className="block text-slate-900 dark:text-white">
             Let an AI agent propose payments.
           </span>
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#D1FAE5] via-[#A7F3D0] to-[#E6FFFA] mt-1">
+          <span className="block bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-200 dark:to-emerald-400 bg-clip-text text-transparent mt-1">
             Keep humans in charge of the money.
           </span>
         </h1>
 
         {/* 3. Subheadline */}
-        <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 mt-6 leading-relaxed">
+        <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-6 leading-relaxed">
           Automated rules check every proposal against strict spending limits, and real people give the final sign-off.
         </p>
 
@@ -112,7 +112,7 @@ export function LandingHero({
           <a
             href="/verify"
             onClick={handleVerify}
-            className="px-7 py-3.5 rounded-xl bg-slate-900/70 hover:bg-slate-800/80 border border-slate-700/80 hover:border-emerald-500/50 text-white font-medium text-base backdrop-blur-md transition-all duration-200 shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-pointer"
+            className="px-7 py-3.5 rounded-xl bg-white dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-slate-700/80 hover:border-emerald-500/50 text-slate-800 dark:text-white font-medium text-base backdrop-blur-md transition-all duration-200 shadow-sm dark:shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-pointer"
           >
             Verify it yourself
           </a>
@@ -124,7 +124,7 @@ export function LandingHero({
             
             {/* 5a. Left Anchor Icon: Glowing Neon Green AI Robot */}
             <div
-              className="w-14 h-14 rounded-2xl bg-[#0F1715]/90 border border-slate-800 flex items-center justify-center shrink-0 shadow-lg"
+              className="w-14 h-14 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center shrink-0 shadow-sm dark:shadow-lg"
               title="Autonomous Agent Pipeline"
             >
               <RobotAiIcon className="w-8 h-8 drop-shadow-[0_0_10px_rgba(0,229,153,0.5)]" />
@@ -138,24 +138,24 @@ export function LandingHero({
               onKeyDown={(e) => { if (e.key === 'Enter') setActiveStep(1); }}
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 1
-                  ? 'border-2 border-emerald-400 bg-gradient-to-r from-emerald-950/40 via-[#0F1715]/95 to-[#0F1715]/95 shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-slate-800 bg-[#0F1715]/90 hover:border-slate-700'
+                  ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                   activeStep === 1
                     ? 'bg-emerald-500/15 border border-emerald-400/40 text-[#00E599]'
-                    : 'bg-slate-800/60 border border-slate-700/60 text-slate-400'
+                    : 'bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400'
                 }`}
               >
                 <Bot size={22} className={activeStep === 1 ? 'drop-shadow-[0_0_6px_#00E599]' : ''} />
               </div>
               <div>
-                <div className="text-sm sm:text-base font-bold text-white tracking-tight">
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
                   Agent proposes
                 </div>
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Submits payment request
                 </div>
               </div>
@@ -169,15 +169,15 @@ export function LandingHero({
               onKeyDown={(e) => { if (e.key === 'Enter') setActiveStep(2); }}
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 2
-                  ? 'border-2 border-emerald-400 bg-gradient-to-r from-emerald-950/40 via-[#0F1715]/95 to-[#0F1715]/95 shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-slate-800 bg-[#0F1715]/90 hover:border-slate-700'
+                  ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                   activeStep === 2
                     ? 'bg-emerald-500/15 border border-emerald-400/40 text-[#00E599]'
-                    : 'bg-slate-800/60 border border-slate-700/60 text-[#00E599]/80'
+                    : 'bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-emerald-600 dark:text-[#00E599]/80'
                 }`}
               >
                 <SlidersHorizontal
@@ -186,10 +186,10 @@ export function LandingHero({
                 />
               </div>
               <div>
-                <div className="text-sm sm:text-base font-bold text-white tracking-tight">
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
                   Limits check
                 </div>
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Rules test the payment
                 </div>
               </div>
@@ -203,15 +203,15 @@ export function LandingHero({
               onKeyDown={(e) => { if (e.key === 'Enter') setActiveStep(3); }}
               className={`p-4 rounded-2xl flex items-center gap-3.5 min-w-[230px] sm:min-w-[260px] text-left transition-all duration-200 cursor-pointer ${
                 activeStep === 3
-                  ? 'border-2 border-emerald-400 bg-gradient-to-r from-emerald-950/40 via-[#0F1715]/95 to-[#0F1715]/95 shadow-[0_0_25px_rgba(16,185,129,0.22)]'
-                  : 'border border-slate-800 bg-[#0F1715]/90 hover:border-slate-700'
+                  ? 'border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50/80 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-[#0F1715]/95 dark:to-[#0F1715]/95 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.22)]'
+                  : 'border border-emerald-600/20 dark:border-slate-800 bg-white/85 dark:bg-[#0F1715]/90 hover:border-emerald-500/40 dark:hover:border-slate-700'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                   activeStep === 3
                     ? 'bg-emerald-500/15 border border-emerald-400/40 text-[#00E599]'
-                    : 'bg-slate-800/60 border border-slate-700/60 text-[#00E599]/80'
+                    : 'bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-emerald-600 dark:text-[#00E599]/80'
                 }`}
               >
                 <Users
@@ -220,10 +220,10 @@ export function LandingHero({
                 />
               </div>
               <div>
-                <div className="text-sm sm:text-base font-bold text-white tracking-tight">
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
                   Two people approve
                 </div>
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Humans give final sign-off
                 </div>
               </div>
@@ -231,7 +231,7 @@ export function LandingHero({
 
             {/* 5e. Right Anchor Icon: Subtle Checkmark */}
             <div
-              className="w-14 h-14 rounded-2xl bg-[#0F1715]/90 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0 shadow-lg"
+              className="w-14 h-14 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0 shadow-sm dark:shadow-lg"
               title="Verified Settlement"
             >
               <Check size={20} />

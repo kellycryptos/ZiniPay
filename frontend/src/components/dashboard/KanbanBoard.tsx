@@ -39,7 +39,6 @@ export function KanbanBoard({
     if (p.status === 'approved' || p.status === 'settled') {
       boardStatus = 'approved_paid';
     } else if (p.status === 'pending_quorum') {
-      // If votes === 0, can classify as 'proposed', if votes > 0, 'awaiting_council'
       boardStatus = p.votes && p.votes.approve > 0 ? 'awaiting_council' : 'proposed';
     }
 
@@ -65,7 +64,7 @@ export function KanbanBoard({
     };
   });
 
-    // Map settled proposals from verified.json if not already in mappedProposals
+  // Map settled proposals from verified.json if not already in mappedProposals
   const hasApproved = mappedProposals.some((p) => p.status === 'approved_paid');
   const settledCards: BoardProposalItem[] = (settledPayouts || []).map((p) => ({
     type: 'proposal' as const,
@@ -144,28 +143,29 @@ export function KanbanBoard({
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        
         {/* ── COLUMN 1: PROPOSED ────────────────────────────── */}
-        <div className="flex flex-col gap-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+        <div className="flex flex-col gap-3.5 rounded-2xl bg-[#0B1210]/90 border border-slate-800/70 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/70">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <ShieldCheck size={14} />
+                <ShieldCheck size={15} />
               </div>
-              <h3 className="font-semibold text-white text-xs">Proposed</h3>
+              <h3 className="font-bold text-white text-xs tracking-tight">Proposed</h3>
             </div>
-            <span className="font-mono text-xs text-[var(--text-muted)] bg-[var(--bg-canvas)] px-2 py-0.5 rounded border border-[var(--border-subtle)]">
+            <span className="font-mono text-xs text-slate-400 bg-[#070D0C] px-2 py-0.5 rounded-md border border-slate-800">
               {proposedItems.length}
             </span>
           </div>
 
           <div className="flex flex-col gap-3 min-h-[220px]">
             {isLoading ? (
-              <div className="h-32 rounded-xl bg-white/[0.03] animate-pulse border border-[var(--border-subtle)]" />
+              <div className="h-32 rounded-xl bg-slate-800/40 animate-pulse border border-slate-800/80" />
             ) : proposedItems.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                <Inbox size={22} className="opacity-40 mb-1.5" />
-                <p className="text-xs font-mono">No new proposals</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Agent queue clear</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 border border-dashed border-slate-800/80 rounded-xl">
+                <Inbox size={24} className="opacity-40 mb-2 text-slate-500" />
+                <p className="text-xs font-mono text-slate-400">No new proposals</p>
+                <p className="text-[10px] text-slate-600 mt-0.5">Agent queue clear</p>
               </div>
             ) : (
               proposedItems.map((item) => (
@@ -183,27 +183,27 @@ export function KanbanBoard({
         </div>
 
         {/* ── COLUMN 2: AWAITING COUNCIL ───────────────────── */}
-        <div className="flex flex-col gap-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+        <div className="flex flex-col gap-3.5 rounded-2xl bg-[#0B1210]/90 border border-slate-800/70 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/70">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Clock size={14} />
+                <Clock size={15} />
               </div>
-              <h3 className="font-semibold text-white text-xs">Awaiting Council</h3>
+              <h3 className="font-bold text-white text-xs tracking-tight">Awaiting Council</h3>
             </div>
-            <span className="font-mono text-xs text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
+            <span className="font-mono text-xs text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-500/30 font-semibold">
               {awaitingItems.length}
             </span>
           </div>
 
           <div className="flex flex-col gap-3 min-h-[220px]">
             {isLoading ? (
-              <div className="h-32 rounded-xl bg-white/[0.03] animate-pulse border border-[var(--border-subtle)]" />
+              <div className="h-32 rounded-xl bg-slate-800/40 animate-pulse border border-slate-800/80" />
             ) : awaitingItems.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                <Inbox size={22} className="opacity-40 mb-1.5" />
-                <p className="text-xs font-mono">No pending votes</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Sputnik DAO v2 council quorum clear</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 border border-dashed border-slate-800/80 rounded-xl">
+                <Inbox size={24} className="opacity-40 mb-2 text-slate-500" />
+                <p className="text-xs font-mono text-slate-400">No pending votes</p>
+                <p className="text-[10px] text-slate-600 mt-0.5">Sputnik DAO v2 council quorum clear</p>
               </div>
             ) : (
               awaitingItems.map((item) => (
@@ -224,26 +224,26 @@ export function KanbanBoard({
         </div>
 
         {/* ── COLUMN 3: APPROVED AND PAID ──────────────────── */}
-        <div className="flex flex-col gap-3 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] p-3.5 shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+        <div className="flex flex-col gap-3.5 rounded-2xl bg-[#0B1210]/90 border border-slate-800/70 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/70">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <CheckCircle2 size={14} />
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-[#00E599] border border-emerald-500/20">
+                <CheckCircle2 size={15} />
               </div>
-              <h3 className="font-semibold text-white text-xs">Approved & Paid</h3>
+              <h3 className="font-bold text-white text-xs tracking-tight">Approved &amp; Paid</h3>
             </div>
-            <span className="font-mono text-xs text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+            <span className="font-mono text-xs text-[#00E599] bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30 font-semibold shadow-[0_0_8px_rgba(0,229,153,0.15)]">
               {approvedItems.length}
             </span>
           </div>
 
           <div className="flex flex-col gap-3 min-h-[220px]">
             {isLoading ? (
-              <div className="h-32 rounded-xl bg-white/[0.03] animate-pulse border border-[var(--border-subtle)]" />
+              <div className="h-32 rounded-xl bg-slate-800/40 animate-pulse border border-slate-800/80" />
             ) : approvedItems.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                <Inbox size={22} className="opacity-40 mb-1.5" />
-                <p className="text-xs font-mono">No payouts settled yet</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 border border-dashed border-slate-800/80 rounded-xl">
+                <Inbox size={24} className="opacity-40 mb-2 text-slate-500" />
+                <p className="text-xs font-mono text-slate-400">No payouts settled yet</p>
               </div>
             ) : (
               approvedItems.map((item) => (
@@ -255,7 +255,6 @@ export function KanbanBoard({
                     if (original && onInspectProposal) {
                       onInspectProposal(original);
                     } else if (onInspectProposal) {
-                      // Fallback synthetic proposal for Proposal #6
                       onInspectProposal({
                         id: 6,
                         title: item.title,
@@ -298,15 +297,15 @@ export function KanbanBoard({
         </div>
 
         {/* ── COLUMN 4: BLOCKED ─────────────────────────────── */}
-        <div className="flex flex-col gap-3 rounded-xl bg-[var(--bg-panel)] border border-red-500/20 p-3.5 shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-red-500/20">
+        <div className="flex flex-col gap-3.5 rounded-2xl bg-[#120B0D]/90 border border-red-500/30 p-4 shadow-lg backdrop-blur-md">
+          <div className="flex items-center justify-between pb-3 border-b border-red-500/20">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-red-950/40 text-red-400 border border-red-500/30">
-                <ShieldAlert size={14} />
+              <div className="p-1.5 rounded-lg bg-red-950/40 text-rose-400 border border-red-500/30">
+                <ShieldAlert size={15} />
               </div>
-              <h3 className="font-semibold text-white text-xs">Blocked Attacks</h3>
+              <h3 className="font-bold text-white text-xs tracking-tight">Blocked Attacks</h3>
             </div>
-            <span className="font-mono text-xs text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-500/30">
+            <span className="font-mono text-xs text-rose-300 bg-red-950/60 px-2 py-0.5 rounded-md border border-red-500/30 font-semibold shadow-[0_0_8px_rgba(239,68,68,0.15)]">
               {blockedItems.length}
             </span>
           </div>
@@ -323,6 +322,7 @@ export function KanbanBoard({
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );

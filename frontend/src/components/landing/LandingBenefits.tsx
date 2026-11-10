@@ -29,16 +29,16 @@ export function LandingBenefits() {
             return (
               <div
                 key={b.title}
-                className="p-6 sm:p-7 rounded-2xl bg-[#0F1715]/90 border border-slate-800 hover:border-emerald-500/40 transition-all duration-300 group shadow-lg flex flex-col gap-4 backdrop-blur-md"
+                className="p-6 sm:p-7 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 hover:border-emerald-500/40 transition-all duration-300 group shadow-sm dark:shadow-lg flex flex-col gap-4 backdrop-blur-md"
               >
                 <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-[#00E599] group-hover:shadow-[0_0_15px_rgba(0,229,153,0.3)] group-hover:scale-105 transition-all">
                   <Icon size={22} className="drop-shadow-[0_0_6px_rgba(0,229,153,0.4)]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                     {b.title}
                   </h3>
-                  <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                     {b.description}
                   </p>
                 </div>

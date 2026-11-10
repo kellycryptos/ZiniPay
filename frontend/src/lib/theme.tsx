@@ -43,7 +43,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         root.setAttribute('data-theme', 'dark');
         root.style.colorScheme = 'dark';
       }
-      localStorage.setItem(THEME_STORAGE_KEY, t);
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, t);
+      } catch (e) {
+        // Handle localStorage disabled / restricted environments gracefully
+      }
     }
   };
 
@@ -52,11 +56,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const setTheme = (t: Theme) => {
+    applyTheme(t);
     setThemeState(t);
   };
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setThemeState((prev) => {
+      const nextTheme = prev === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      return nextTheme;
+    });
   };
 
   return (

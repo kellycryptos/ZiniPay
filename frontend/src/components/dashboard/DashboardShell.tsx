@@ -24,6 +24,7 @@ import {
   Plus,
   Scale,
   GitPullRequest,
+  Bot,
 } from 'lucide-react';
 import { Proposal, ActivityEvent } from '../../lib/types';
 import { PolicyContractState, DaoOnChainPolicy, TreasuryBalanceResult } from '../../lib/nearRpc';
@@ -37,6 +38,7 @@ import { ActivityFeed } from './ActivityFeed';
 import { RpcDownBanner } from './RpcDownBanner';
 import { VerificationModal } from './VerificationModal';
 import { StepByStepProposeForm } from '../StepByStepProposeForm';
+import { ZiniPayLogo } from '../landing/LandingHeader';
 
 export type DashboardView =
   | 'overview'
@@ -235,7 +237,21 @@ export function DashboardShell({
   ];
 
   return (
-    <div className="flex h-screen w-full bg-[var(--bg-canvas)] text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen w-full bg-[#070D0C] text-slate-100 font-sans overflow-hidden relative selection:bg-[#00E599]/30 selection:text-white">
+      {/* ── Atmospheric Radial Emerald Glow ──────────────────── */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            'radial-gradient(circle at 50% -10%, #0F231D 0%, #070D0C 60%, #050908 100%)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="fixed top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none z-0"
+      />
+
       {/* ── Keyless Verification Suite Modal ──────────────────── */}
       <VerificationModal
         isOpen={verificationModalOpen}
@@ -253,29 +269,27 @@ export function DashboardShell({
 
       {/* ── Collapsible Left Sidebar ──────────────────────────── */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col justify-between border-r border-[var(--border-subtle)] bg-[var(--bg-panel)] transition-all duration-300 ease-spring ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col justify-between border-r border-emerald-500/15 bg-[#0B1412]/90 backdrop-blur-md transition-all duration-300 ${
           mobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'
         } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-64'}`}
       >
         {/* Top: Logo & Collapse Button */}
         <div className="flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border-subtle)]">
+          <div className="flex items-center justify-between p-4 border-b border-slate-800/70">
             <button
               type="button"
               onClick={onNavigateToLanding}
-              className="flex items-center gap-2.5 text-left group cursor-pointer"
+              className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
             >
-              <img
-                src="/logo.svg"
-                alt="ZiniPay Logo"
-                className="w-8 h-8 rounded-lg bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] p-1 shrink-0 group-hover:border-[#00EC97]/40 transition-colors"
-              />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <ZiniPayLogo className="w-7 h-7 drop-shadow-[0_0_8px_rgba(0,229,153,0.5)]" />
+              </div>
               {!sidebarCollapsed && (
                 <div className="flex flex-col leading-tight">
-                  <span className="font-display font-bold text-[var(--text-primary)] text-base tracking-tight">
+                  <span className="font-bold text-white text-base tracking-tight">
                     ZiniPay
                   </span>
-                  <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                  <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-500/20 w-fit mt-0.5">
                     Sputnik DAO v2
                   </span>
                 </div>
@@ -286,7 +300,7 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-emerald-950/40 transition-colors cursor-pointer"
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
@@ -296,33 +310,33 @@ export function DashboardShell({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-[var(--text-primary)]"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white"
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Quick Create Payout CTA */}
-          <div className="p-3">
+          {/* Primary Action: Full-Width Glowing Neon Emerald Button */}
+          <div className="p-3.5">
             <button
               type="button"
               onClick={() => {
                 setCurrentView('new_payout');
                 setMobileMenuOpen(false);
               }}
-              className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
+              className={`w-full py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
                 currentView === 'new_payout'
-                  ? 'bg-white text-black'
-                  : 'bg-[#00EC97] hover:bg-[#00EC97]/90 text-black'
+                  ? 'bg-white text-slate-950 shadow-[0_0_20px_rgba(255,255,255,0.4)]'
+                  : 'bg-[#00E599] hover:bg-[#00ffaa] text-slate-950 shadow-[0_0_20px_rgba(0,229,153,0.4)] hover:shadow-[0_0_28px_rgba(0,229,153,0.6)]'
               }`}
-              title="Dispatched proposed release to Sputnik DAO"
+              title="Dispatch proposed release to Sputnik DAO"
             >
-              <Plus size={15} />
-              {!sidebarCollapsed && <span>New Payout</span>}
+              <Plus size={16} className="font-bold" />
+              {!sidebarCollapsed && <span className="font-bold tracking-tight">New Payout</span>}
             </button>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links with Soft Emerald Accent for Active Item */}
           <nav className="flex flex-col gap-1 px-3 py-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -335,22 +349,22 @@ export function DashboardShell({
                     setCurrentView(item.id as DashboardView);
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer ${
                     isActive
-                      ? 'bg-[var(--bg-panel-alt)] text-[var(--text-primary)] font-semibold border border-[var(--border-subtle)]'
-                      : 'text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.03]'
+                      ? 'bg-emerald-500/10 text-emerald-400 font-semibold border-l-2 border-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04] border-l-2 border-transparent'
                   }`}
                   title={item.label}
                 >
                   <Icon
                     size={16}
-                    className={`shrink-0 ${isActive ? 'text-[#00EC97]' : 'text-slate-400'}`}
+                    className={`shrink-0 ${isActive ? 'text-[#00E599] drop-shadow-[0_0_6px_#00E599]' : 'text-slate-400'}`}
                   />
                   {!sidebarCollapsed && (
                     <span className="flex-1 text-left">{item.label}</span>
                   )}
                   {!sidebarCollapsed && item.id === 'security' && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 border border-red-500/30">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-red-500/20 text-rose-300 border border-red-500/30 font-bold shadow-[0_0_6px_rgba(239,68,68,0.2)]">
                       5+1
                     </span>
                   )}
@@ -360,84 +374,96 @@ export function DashboardShell({
           </nav>
         </div>
 
-        {/* Bottom: Network Badge & Wallet Status */}
-        <div className="p-3 border-t border-[var(--border-subtle)] flex flex-col gap-2.5 bg-[var(--bg-panel-alt)]/40">
-          {/* Network Badge */}
-          <div className="flex items-center justify-between px-2 py-1.5 rounded-md bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[11px] font-mono">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#00EC97] animate-pulse" />
+        {/* Bottom Sidebar Card: Recessed Dark Container with Agent & Wallet */}
+        <div className="p-3 border-t border-slate-800/70 flex flex-col gap-2.5 bg-[#070D0C]/60">
+          
+          {/* Active NEAR Testnet Agent Card in Recessed Container */}
+          <div className="p-3 rounded-xl bg-[#070D0C] border border-slate-800/80 flex flex-col gap-1.5 shadow-inner">
+            <div className="flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#00E599] shadow-[0_0_8px_#00E599] animate-pulse shrink-0" />
+                {!sidebarCollapsed && (
+                  <span className="text-slate-200 font-semibold truncate">NEAR Testnet</span>
+                )}
+              </div>
               {!sidebarCollapsed && (
-                <span className="text-slate-200 font-semibold">NEAR Testnet</span>
+                <span className="text-[10px] text-[#00E599] font-mono font-semibold">Active</span>
               )}
             </div>
             {!sidebarCollapsed && (
-              <span className="text-[10px] text-[var(--text-muted)]">FastNear</span>
+              <div className="text-[11px] font-mono text-slate-400 truncate flex items-center gap-1.5 mt-0.5" title="agentzinipaytestnet.testnet">
+                <Bot size={13} className="text-[#00E599] shrink-0" />
+                <span className="truncate">agentzinipaytestnet.testnet</span>
+              </div>
             )}
           </div>
 
-          {/* Wallet Status */}
-          <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] flex flex-col gap-1.5 text-xs">
+          {/* Connected Wallet Status */}
+          <div className="p-2.5 rounded-xl bg-[#070D0C] border border-slate-800/80 flex flex-col gap-1 text-xs shadow-inner">
             {connectedAccount ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase text-[var(--text-muted)]">
+                  <span className="text-[10px] font-mono uppercase text-slate-500">
                     {activeRole}
-                    {isSimulated ? ' (Simulation)' : ''}
+                    {isSimulated ? ' (Sim)' : ''}
                   </span>
                   <button
                     type="button"
                     onClick={onOpenWalletModal}
-                    className="text-[10px] text-[#00EC97] hover:underline font-mono cursor-pointer"
+                    className="text-[10px] text-[#00E599] hover:underline font-mono cursor-pointer"
                   >
                     Change
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-xs text-[var(--text-primary)] truncate" title={connectedAccount}>
-                  <Wallet size={12} className="text-[#00EC97] shrink-0" />
+                <div className="flex items-center gap-1.5 font-mono text-xs text-white truncate" title={connectedAccount}>
+                  <Wallet size={12} className="text-[#00E599] shrink-0" />
                   <span className="truncate">{connectedAccount}</span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-1.5">
                 {!sidebarCollapsed && (
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                  <span className="text-[10px] text-slate-500 font-mono">
                     Wallet: Not connected
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={onOpenWalletModal}
-                  className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full py-1.5 px-2 rounded-lg bg-[#0F1C18] hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Wallet size={12} />
+                  <Wallet size={12} className="text-[#00E599]" />
                   {!sidebarCollapsed && <span>Connect Wallet</span>}
                 </button>
               </div>
             )}
           </div>
+
         </div>
       </aside>
 
       {/* ── Main Dashboard Workspace ──────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* ── Top Bar ─────────────────────────────────────────── */}
-        <header className="h-14 border-b border-[var(--border-subtle)] bg-[var(--bg-panel)] px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative z-10">
+        
+        {/* ── Top Header Bar (Translucent Sticky Header) ───────── */}
+        <header className="h-16 border-b border-slate-800/60 bg-[#070D0C]/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0">
+          
           {/* Left: Mobile Toggle & Breadcrumbs */}
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-[var(--text-primary)] hover:bg-white/[0.08]"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08]"
             >
               <Menu size={18} />
             </button>
 
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono text-[var(--text-muted)] truncate min-w-0">
+            {/* Breadcrumbs: ZiniPay / Dashboard / Overview */}
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono text-slate-400 truncate min-w-0">
               <button
                 type="button"
                 onClick={onNavigateToLanding}
-                className="hidden sm:inline hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                className="hidden sm:inline hover:text-white transition-colors cursor-pointer"
               >
                 ZiniPay
               </button>
@@ -445,37 +471,38 @@ export function DashboardShell({
               <button
                 type="button"
                 onClick={() => setCurrentView('overview')}
-                className="hidden sm:inline hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                className="hidden sm:inline hover:text-white transition-colors cursor-pointer"
               >
                 Dashboard
               </button>
               <ChevronRight size={12} className="hidden sm:inline text-slate-600 shrink-0" />
-              <span className="text-[var(--text-primary)] font-semibold capitalize truncate">
+              <span className="text-white font-bold capitalize truncate">
                 {currentView.replace('_', ' ')}
               </span>
             </div>
           </div>
 
-          {/* Center / Right: Search & Actions */}
+          {/* Center / Right: Search, Refresh, Verified Badge & Wallet */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Search Omnibox */}
+            
+            {/* Dark Glass Search Omnibox */}
             <div className="relative hidden sm:block w-48 md:w-64">
               <Search
                 size={13}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
               />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search proposals, attacks..."
-                className="w-full bg-[var(--bg-canvas)] border border-[var(--border-subtle)] focus:border-[#00EC97] rounded-lg pl-8 pr-7 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none font-mono"
+                className="w-full bg-[#0B1412]/80 border border-slate-800/80 focus:border-emerald-500/50 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none font-mono shadow-inner"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-[var(--text-primary)]"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
                 >
                   <X size={12} />
                 </button>
@@ -487,33 +514,33 @@ export function DashboardShell({
               type="button"
               onClick={onRefresh}
               disabled={isLoadingOnChain}
-              className="p-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-[#0B1412]/80 hover:bg-slate-800/60 border border-slate-800/80 text-slate-400 hover:text-white transition-colors cursor-pointer shadow-inner"
               title="Refresh Sputnik DAO on-chain state"
             >
               <RefreshCw size={14} className={isLoadingOnChain ? 'animate-spin' : ''} />
             </button>
 
-            {/* Verified On-Chain Link */}
+            {/* Glowing Emerald Pill Badge: Verified on-chain */}
             <button
               type="button"
               onClick={onNavigateVerify ? onNavigateVerify : () => setVerificationModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-[#00EC97]/10 hover:bg-[#00EC97]/20 border border-[#00EC97]/30 text-xs font-mono text-[#00EC97] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-950/80 border border-emerald-500/40 text-xs font-mono text-[#00E599] font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-[0_0_15px_rgba(0,229,153,0.2)]"
               title="Verified on-chain"
             >
               <Shield size={13} />
               <span className="hidden sm:inline">Verified on-chain</span>
             </button>
 
-            {/* Connect Wallet Trigger */}
+            {/* Truncated Wallet Pill */}
             <button
               type="button"
               onClick={onOpenWalletModal}
-              className="px-3 py-1.5 rounded-lg bg-[var(--bg-panel-alt)] hover:bg-[var(--border-subtle)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-[#0B1412]/80 hover:bg-slate-800/60 border border-slate-800/80 text-xs font-mono font-semibold text-white flex items-center gap-2 transition-colors cursor-pointer shadow-inner"
             >
-              <Wallet size={13} className="text-[#00EC97]" />
+              <Wallet size={13} className="text-[#00E599]" />
               <span className="hidden sm:inline">
                 {connectedAccount
-                  ? `${connectedAccount.slice(0, 8)}...`
+                  ? `${connectedAccount.slice(0, 8)}...${connectedAccount.slice(-4)}`
                   : 'Connect Wallet'}
               </span>
             </button>
@@ -535,17 +562,17 @@ export function DashboardShell({
           {/* VIEW: NEW PAYOUT FORM */}
           {currentView === 'new_payout' && (
             <div className="max-w-3xl mx-auto w-full">
-              <div className="flex items-center justify-between mb-4 border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-800/80 pb-3">
                 <div>
-                  <h2 className="text-base font-bold text-[var(--text-primary)]">Dispatched New Payout</h2>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <h2 className="text-base font-bold text-white">Dispatched New Payout</h2>
+                  <p className="text-xs text-slate-400">
                     Agent deliberates on artifact, validates spend cap, and creates Sputnik DAO FunctionCall.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCurrentView('overview')}
-                  className="text-xs font-mono text-slate-400 hover:text-[var(--text-primary)] cursor-pointer"
+                  className="text-xs font-mono text-slate-400 hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -572,7 +599,7 @@ export function DashboardShell({
           {/* VIEW: OVERVIEW */}
           {currentView === 'overview' && (
             <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto min-w-0">
-              {/* 4-Metric High Density Strip with Real Visuals */}
+              {/* 4-Metric High Density Strip */}
               <OverviewKpis
                 treasuryState={treasuryState}
                 isLoadingOnChain={isLoadingOnChain}
@@ -597,13 +624,13 @@ export function DashboardShell({
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Columns3 size={16} className="text-[#00EC97]" />
-                    <h2 className="font-semibold text-[var(--text-primary)] text-base">Governance Board</h2>
+                    <Columns3 size={16} className="text-[#00E599]" />
+                    <h2 className="font-bold text-white text-base">Governance Board</h2>
                   </div>
                   <button
                     type="button"
                     onClick={() => setCurrentView('board')}
-                    className="text-xs font-mono text-[#00EC97] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-xs font-mono text-[#00E599] hover:underline cursor-pointer flex items-center gap-1"
                   >
                     <span>Expand Board</span>
                     <ChevronRight size={12} />
@@ -613,7 +640,7 @@ export function DashboardShell({
                 <KanbanBoard
                   proposals={proposals}
                   blockedAttacks={verifiedBlockedAttacks}
-                settledPayouts={settledPayouts}
+                  settledPayouts={settledPayouts}
                   searchQuery={searchQuery}
                   onInspectProposal={onInspectProof}
                   onInspectAttack={() => setCurrentView('security')}
@@ -635,17 +662,17 @@ export function DashboardShell({
           {/* VIEW: BOARD (Focused Full View) */}
           {currentView === 'board' && (
             <div className="flex flex-col gap-4 w-full max-w-7xl mx-auto">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                 <div>
-                  <h2 className="text-base font-bold text-[var(--text-primary)]">Public Board</h2>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <h2 className="text-base font-bold text-white">Public Board</h2>
+                  <p className="text-xs text-slate-400">
                     All proposals and blocked attacks across 4 governance stages.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCurrentView('new_payout')}
-                  className="px-3 py-1.5 rounded-lg bg-[#00EC97] hover:bg-[#00EC97]/90 text-black font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#00E599] hover:bg-[#00ffaa] text-black font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shadow-[0_0_15px_rgba(0,229,153,0.3)]"
                 >
                   <Plus size={14} />
                   <span>New Payout</span>
@@ -693,26 +720,26 @@ export function DashboardShell({
           {/* VIEW: SECURITY LOG */}
           {currentView === 'security' && (
             <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">
-              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-red-950/40 text-red-400 border border-red-500/30">
+                  <div className="p-2 rounded-xl bg-red-950/40 text-rose-400 border border-red-500/30">
                     <AlertOctagon size={18} />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-[var(--text-primary)]">Security & Attack Log</h2>
-                    <p className="text-xs text-[var(--text-secondary)]">
+                    <h2 className="text-base font-bold text-white">Security &amp; Attack Log</h2>
+                    <p className="text-xs text-slate-400">
                       5 on-chain blocked attack transactions + 1 blocked admin recovery action + 1 pre-chain check (not an on-chain transaction).
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-red-500/10 text-rose-300 border border-red-500/30 font-bold shadow-[0_0_8px_rgba(239,68,68,0.2)]">
                   5 Attacks + 1 Admin Blocked
                 </span>
               </div>
 
               {/* Group 1: 5 Blocked Attack Vectors */}
               <div className="flex flex-col gap-3 font-sans">
-                <h3 className="font-mono text-xs font-semibold text-red-400 uppercase tracking-wider">
+                <h3 className="font-mono text-xs font-semibold text-rose-400 uppercase tracking-wider">
                   Blocked Attack Attempts (5 On-Chain + 1 Pre-Chain)
                 </h3>
                 {verifiedBlockedAttacks
@@ -720,22 +747,22 @@ export function DashboardShell({
                   .map((att, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl bg-[var(--bg-panel)] border border-red-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-red-500/40 transition-colors"
+                      className="p-4 rounded-xl bg-[#181113]/90 border border-red-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-red-500/40 transition-colors shadow-md"
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/30 shrink-0">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-red-950/80 text-rose-300 border border-red-500/30 shrink-0">
                           {att.txHash ? `#ATK-${idx}` : '#CHECK-1'}
                         </span>
                         <div className="flex flex-col gap-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
+                            <h4 className="font-semibold text-xs text-white truncate">
                               {att.vector}
                             </h4>
-                            <span className="text-[10px] font-mono text-red-400">
+                            <span className="text-[10px] font-mono text-rose-400">
                               {att.blockedBy}
                             </span>
                           </div>
-                          <p className="text-xs text-red-200/90 font-mono bg-red-950/30 p-2 rounded border border-red-500/20 leading-relaxed">
+                          <p className="text-xs text-rose-200/90 font-mono bg-red-950/30 p-2.5 rounded-lg border border-red-500/20 leading-relaxed">
                             {att.rejectionReason}
                           </p>
                         </div>
@@ -746,7 +773,7 @@ export function DashboardShell({
                           href={att.explorerUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-[#00EC97] transition-colors"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#070D0C] hover:bg-slate-800/60 border border-slate-800 text-xs font-mono text-slate-300 hover:text-[#00E599] transition-colors"
                         >
                           <span>Explorer</span>
                           <ExternalLink size={12} />
@@ -757,7 +784,7 @@ export function DashboardShell({
               </div>
 
               {/* Group 2: 1 Blocked Admin Recovery Action */}
-              <div className="flex flex-col gap-3 font-sans pt-2 border-t border-[var(--border-subtle)]">
+              <div className="flex flex-col gap-3 font-sans pt-2 border-t border-slate-800/80">
                 <h3 className="font-mono text-xs font-semibold text-amber-400 uppercase tracking-wider">
                   Blocked Administrative Action (1 On-Chain Post-DAO Transfer)
                 </h3>
@@ -766,7 +793,7 @@ export function DashboardShell({
                   .map((att, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl bg-[var(--bg-panel)] border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-amber-500/40 transition-colors"
+                      className="p-4 rounded-xl bg-[#181113]/90 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-amber-500/40 transition-colors shadow-md"
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/30 shrink-0">
@@ -774,14 +801,14 @@ export function DashboardShell({
                         </span>
                         <div className="flex flex-col gap-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
+                            <h4 className="font-semibold text-xs text-white truncate">
                               {att.vector}
                             </h4>
                             <span className="text-[10px] font-mono text-amber-400">
                               {att.blockedBy}
                             </span>
                           </div>
-                          <p className="text-xs text-amber-200/90 font-mono bg-amber-950/30 p-2 rounded border border-amber-500/20 leading-relaxed">
+                          <p className="text-xs text-amber-200/90 font-mono bg-amber-950/30 p-2.5 rounded-lg border border-amber-500/20 leading-relaxed">
                             {att.rejectionReason}
                           </p>
                         </div>
@@ -792,7 +819,7 @@ export function DashboardShell({
                           href={att.explorerUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-canvas)] hover:bg-[var(--bg-panel-alt)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--text-secondary)] hover:text-amber-400 transition-colors"
+                          className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#070D0C] hover:bg-slate-800/60 border border-slate-800 text-xs font-mono text-slate-300 hover:text-amber-400 transition-colors"
                         >
                           <span>Explorer</span>
                           <ExternalLink size={12} />

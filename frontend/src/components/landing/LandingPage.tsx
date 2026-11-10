@@ -26,7 +26,7 @@ export function LandingPage({
   const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#070D0C] text-white font-sans selection:bg-[#00E599]/30 selection:text-white w-full max-w-full overflow-x-hidden antialiased">
+    <div className="min-h-screen relative flex flex-col bg-[#F4FBF7] dark:bg-[#070D0C] text-slate-900 dark:text-white transition-colors duration-200 font-sans selection:bg-[#00E599]/30 selection:text-white w-full max-w-full overflow-x-hidden antialiased">
       {/* ── Ambient Background: Obsidian Gradient, 3D Orbs & Constellations ── */}
       <AmbientBackground />
 

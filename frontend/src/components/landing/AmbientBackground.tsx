@@ -2,19 +2,28 @@ import React from 'react';
 
 /**
  * AmbientBackground.tsx
- * Renders the deep obsidian background (#070D0C to #0B1513),
- * glowing emerald/teal 3D floating orbs on viewport edges,
- * 3D volumetric organic blobs, and constellation network nodes.
+ * Renders theme-aware soft ambient lighting:
+ * - In dark mode: deep obsidian gradient (#070D0C) with soft glowing emerald/teal blurred ambient lighting.
+ * - In light mode: soft mint canvas (#F4FBF7) with subtle ambient emerald glows.
+ * Decorative 3D orbs are pushed to `-z-10 pointer-events-none`, with heavy blur-3xl and reduced opacity
+ * so they act as soft ambient glow behind text without obscuring headlines or blocking clicks.
  */
 export function AmbientBackground() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none"
+      className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none"
     >
-      {/* 1. Deep Obsidian / Slate Base Radial Gradient */}
+      {/* 1. Theme-Aware Base Radial Gradient */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 transition-colors duration-200"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 60%)',
+        }}
+      />
+      <div
+        className="absolute inset-0 dark:block hidden transition-opacity duration-200"
         style={{
           background:
             'radial-gradient(circle at 50% 0%, #0F231D 0%, #070D0C 55%, #050908 100%)',
@@ -22,13 +31,13 @@ export function AmbientBackground() {
       />
 
       {/* 2. Ambient Soft Green/Teal Atmospheric Glows */}
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px]" />
-      <div className="absolute top-[20%] -left-32 w-[500px] h-[600px] bg-emerald-600/15 rounded-full blur-[130px]" />
-      <div className="absolute top-[15%] -right-32 w-[550px] h-[600px] bg-teal-500/15 rounded-full blur-[140px]" />
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-emerald-500/10 dark:bg-emerald-500/10 rounded-full blur-[140px] -z-10 pointer-events-none" />
+      <div className="absolute top-[20%] -left-32 w-[500px] h-[600px] bg-emerald-600/10 dark:bg-emerald-600/15 rounded-full blur-[130px] -z-10 pointer-events-none" />
+      <div className="absolute top-[15%] -right-32 w-[550px] h-[600px] bg-teal-500/10 dark:bg-teal-500/15 rounded-full blur-[140px] -z-10 pointer-events-none" />
 
       {/* 3. Constellation / Network Nodes (Left & Right) */}
       <svg
-        className="absolute top-12 left-0 w-[380px] h-[680px] opacity-40 hidden md:block"
+        className="absolute top-12 left-0 w-[380px] h-[680px] opacity-25 dark:opacity-40 hidden md:block -z-10 pointer-events-none"
         viewBox="0 0 380 680"
         fill="none"
       >
@@ -79,7 +88,7 @@ export function AmbientBackground() {
       </svg>
 
       <svg
-        className="absolute top-16 right-0 w-[380px] h-[680px] opacity-40 hidden md:block"
+        className="absolute top-16 right-0 w-[380px] h-[680px] opacity-25 dark:opacity-40 hidden md:block -z-10 pointer-events-none"
         viewBox="0 0 380 680"
         fill="none"
       >
@@ -121,67 +130,52 @@ export function AmbientBackground() {
         <circle cx="300" cy="610" r="3" fill="#00E599" opacity="0.7" />
       </svg>
 
-      {/* 4. Ambient Floating 3D Elements matching the visual reference */}
+      {/* 4. Soft Ambient 3D Elements acting as soft ambient lighting behind content */}
 
       {/* 4a. Top Left Floating 3D Spherical Orb */}
-      <div className="absolute top-20 left-10 md:left-24 animate-pulse duration-1000">
+      <div className="absolute top-20 left-10 md:left-24 -z-10 pointer-events-none opacity-25 dark:opacity-30 blur-3xl animate-pulse duration-1000">
         <div
-          className="w-12 h-12 md:w-14 md:h-14 rounded-full relative"
+          className="w-16 h-16 md:w-20 md:h-20 rounded-full"
           style={{
             background:
               'radial-gradient(circle at 35% 30%, #5EEAD4 0%, #10B981 35%, #064E3B 70%, #022018 100%)',
-            boxShadow:
-              '0 0 30px rgba(16, 185, 129, 0.45), inset -2px -3px 6px rgba(0, 0, 0, 0.6), inset 2px 2px 5px rgba(255, 255, 255, 0.6)',
           }}
-        >
-          {/* Specular Glint */}
-          <div className="absolute top-2 left-2.5 w-3.5 h-2 rounded-full bg-white/70 blur-[1px] -rotate-45" />
-        </div>
+        />
       </div>
 
       {/* 4b. Mid-Left 3D Organic Fluid Flowing Orb/Blob */}
-      <div className="absolute top-[260px] -left-20 md:-left-12 pointer-events-none">
+      <div className="absolute top-[260px] -left-20 md:-left-12 -z-10 pointer-events-none opacity-25 dark:opacity-30 blur-3xl">
         <div
           className="w-64 h-80 md:w-80 md:h-96 rounded-[42%_58%_70%_30%/45%_45%_55%_55%]"
           style={{
             background:
               'radial-gradient(circle at 45% 35%, #34D399 0%, #059669 35%, #064E3B 65%, #022018 90%)',
-            filter: 'blur(1px)',
-            boxShadow:
-              '0 0 60px rgba(16, 185, 129, 0.35), inset -8px -10px 25px rgba(0, 0, 0, 0.7), inset 6px 8px 20px rgba(167, 243, 208, 0.4)',
             transform: 'rotate(-15deg)',
           }}
         />
       </div>
 
       {/* 4c. Mid-Right 3D Organic Fluid Flowing Orb/Blob */}
-      <div className="absolute top-[230px] -right-24 md:-right-16 pointer-events-none">
+      <div className="absolute top-[230px] -right-24 md:-right-16 -z-10 pointer-events-none opacity-25 dark:opacity-30 blur-3xl">
         <div
           className="w-72 h-88 md:w-96 md:h-[440px] rounded-[55%_45%_35%_65%/50%_60%_40%_50%]"
           style={{
             background:
               'radial-gradient(circle at 40% 30%, #2DD4BF 0%, #0D9488 35%, #064E3B 65%, #022018 90%)',
-            filter: 'blur(1px)',
-            boxShadow:
-              '0 0 60px rgba(45, 212, 191, 0.35), inset -8px -10px 25px rgba(0, 0, 0, 0.7), inset 6px 8px 20px rgba(153, 246, 228, 0.4)',
             transform: 'rotate(25deg)',
           }}
         />
       </div>
 
       {/* 4d. Lower-Right Floating 3D Small Orb */}
-      <div className="absolute top-[520px] right-24 md:right-48 animate-pulse duration-700">
+      <div className="absolute top-[520px] right-24 md:right-48 -z-10 pointer-events-none opacity-25 dark:opacity-30 blur-3xl animate-pulse duration-700">
         <div
-          className="w-8 h-8 md:w-10 md:h-10 rounded-full relative"
+          className="w-12 h-12 md:w-16 md:h-16 rounded-full"
           style={{
             background:
               'radial-gradient(circle at 35% 30%, #6EE7B7 0%, #10B981 40%, #064E3B 75%, #022018 100%)',
-            boxShadow:
-              '0 0 25px rgba(16, 185, 129, 0.55), inset -2px -2px 5px rgba(0, 0, 0, 0.6), inset 2px 2px 4px rgba(255, 255, 255, 0.6)',
           }}
-        >
-          <div className="absolute top-1.5 left-2 w-2.5 h-1.5 rounded-full bg-white/70 blur-[0.5px] -rotate-45" />
-        </div>
+        />
       </div>
     </div>
   );
