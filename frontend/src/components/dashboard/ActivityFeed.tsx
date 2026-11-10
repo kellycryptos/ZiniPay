@@ -122,17 +122,17 @@ export function ActivityFeed({
   };
 
   return (
-    <div className="bg-[#0F1815]/90 border border-slate-800/80 rounded-2xl p-6 flex flex-col gap-5 shadow-lg backdrop-blur-md w-full">
+    <div className="bg-white/90 dark:bg-[#0F1815]/90 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 flex flex-col gap-5 shadow-sm dark:shadow-lg backdrop-blur-md w-full transition-colors">
       
       {/* ── Header & Pill-Shaped Filter Bar ───────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/70 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/70 pb-5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[#00E599] shadow-[0_0_12px_rgba(0,229,153,0.2)]">
             <Activity size={18} />
           </div>
           <div>
-            <h2 className="font-bold text-white text-base tracking-tight">On-Chain Activity Feed</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">On-Chain Activity Feed</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Verified testnet events from Sputnik DAO v2 and PolicyHelper.
             </p>
           </div>
@@ -150,7 +150,7 @@ export function ActivityFeed({
                 className={`px-3 py-1 rounded-full text-[11px] font-mono transition-all duration-200 cursor-pointer ${
                   isActive
                     ? 'bg-[#00E599] text-slate-950 font-bold shadow-[0_0_12px_rgba(0,229,153,0.35)]'
-                    : 'bg-[#070D0C]/90 text-slate-400 hover:text-white border border-slate-800/80 hover:border-slate-700'
+                    : 'bg-slate-100 dark:bg-[#070D0C]/90 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 {b === 'all' ? 'All Events' : b}
@@ -161,7 +161,7 @@ export function ActivityFeed({
       </div>
 
       {/* ── Activity Ledger List ─────────────────────────────── */}
-      <div className="flex flex-col divide-y divide-slate-800/60 font-sans">
+      <div className="flex flex-col divide-y divide-slate-200 dark:divide-slate-800/60 font-sans">
         {filtered.length === 0 ? (
           <div className="py-8 text-center text-xs font-mono text-slate-500">
             No activity matches the selected filter.
@@ -170,7 +170,7 @@ export function ActivityFeed({
           filtered.map((item) => (
             <div
               key={item.id}
-              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-500/[0.02] px-2.5 rounded-xl transition-colors group"
+              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-500/[0.04] px-2.5 rounded-xl transition-colors group"
             >
               <div className="flex items-start gap-3 min-w-0">
                 <span
@@ -183,12 +183,12 @@ export function ActivityFeed({
 
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-xs text-white">{item.title}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="font-bold text-xs text-slate-900 dark:text-white">{item.title}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {item.timestamp}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
@@ -200,7 +200,7 @@ export function ActivityFeed({
                   href={item.explorerUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#070D0C] hover:bg-slate-800/60 border border-slate-800/80 text-[11px] font-mono text-slate-300 hover:text-[#00E599] hover:border-emerald-500/40 transition-colors shadow-inner"
+                  className="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#070D0C] hover:bg-slate-200 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-slate-700 dark:text-slate-300 hover:text-[#00E599] hover:border-emerald-500/40 transition-colors shadow-inner"
                   title="Inspect on NEARBlocks Testnet Explorer"
                 >
                   <span className="truncate max-w-[95px] sm:max-w-[120px]">

@@ -18,8 +18,8 @@ export function LandingStatusStrip({ onNavigateVerify }: LandingStatusStripProps
   return (
     <section className="relative py-10 sm:py-14 z-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Sleek, Full-Width Glassmorphic Notice Bar */}
-        <div className="p-6 sm:p-7 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 backdrop-blur-md flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-sm dark:shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+        {/* Sleek, Full-Width Notice Bar */}
+        <div className="p-6 sm:p-7 rounded-2xl bg-white/95 dark:bg-[#0F1715]/95 border border-emerald-600/20 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-sm dark:shadow-[0_0_30px_rgba(0,0,0,0.5)]">
           <div className="flex flex-col gap-3.5">
             {/* Badges Strip */}
             <div className="flex flex-wrap items-center gap-2.5">

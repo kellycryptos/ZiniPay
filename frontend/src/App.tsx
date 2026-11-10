@@ -2,22 +2,13 @@
  * App.tsx — ZiniPay Frontend Router & State Coordinator
  * 
  * Routes:
- *   "/"      -> LandingPage
- *   "/board" -> DashboardShell (Redesigned app shell & dark finance dashboard)
+ *   "/"      -> LandingPage (Eagerly rendered for maximum speed & sub-second LCP)
+ *   "/board" -> DashboardShell (Lazily loaded)
  *   "/app"   -> Redirects to "/board"
  */
 
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/landing/LandingPage';
-import { DashboardShell } from './components/dashboard/DashboardShell';
-import { DocsPage } from './components/docs/DocsPage';
-import { VerificationPage } from './components/verification/VerificationPage';
-import { AppHeader } from './components/navigation/AppHeader';
-import { UniversalFooter } from './components/navigation/UniversalFooter';
-import { ProofModal } from './components/ProofModal';
-import { DeliberationModal } from './components/DeliberationModal';
-import { IntentsModal } from './components/IntentsModal';
-import { WalletModal } from './components/WalletModal';
 import { Proposal, ActivityEvent } from './lib/types';
 import {
   fetchDaoProposals,
@@ -30,14 +21,39 @@ import {
   TreasuryBalanceResult,
 } from './lib/nearRpc';
 import {
-  signAndSendDaoVote,
   getStoredWalletAccount,
   setStoredWalletAccount,
-  disconnectWallet,
-  subscribeToWalletState,
-  openNearWalletModal,
-} from './lib/wallet';
+} from './lib/walletStorage';
 import { CheckCircle2 } from 'lucide-react';
+
+// Lazy-load dashboard, docs, and heavy modals to keep landing page bundle ultralight
+const DashboardShell = React.lazy(() =>
+  import('./components/dashboard/DashboardShell').then((m) => ({ default: m.DashboardShell }))
+);
+const DocsPage = React.lazy(() =>
+  import('./components/docs/DocsPage').then((m) => ({ default: m.DocsPage }))
+);
+const VerificationPage = React.lazy(() =>
+  import('./components/verification/VerificationPage').then((m) => ({ default: m.VerificationPage }))
+);
+const AppHeader = React.lazy(() =>
+  import('./components/navigation/AppHeader').then((m) => ({ default: m.AppHeader }))
+);
+const UniversalFooter = React.lazy(() =>
+  import('./components/navigation/UniversalFooter').then((m) => ({ default: m.UniversalFooter }))
+);
+const ProofModal = React.lazy(() =>
+  import('./components/ProofModal').then((m) => ({ default: m.ProofModal }))
+);
+const DeliberationModal = React.lazy(() =>
+  import('./components/DeliberationModal').then((m) => ({ default: m.DeliberationModal }))
+);
+const IntentsModal = React.lazy(() =>
+  import('./components/IntentsModal').then((m) => ({ default: m.IntentsModal }))
+);
+const WalletModal = React.lazy(() =>
+  import('./components/WalletModal').then((m) => ({ default: m.WalletModal }))
+);
 
 export default function App() {
   
@@ -54,6 +70,10 @@ export default function App() {
     }
     return '/';
   });
+
+  const isDashboardRoute = currentPath === '/board' || currentPath.startsWith('/app');
+  const isVerifyRoute = currentPath === '/verify' || currentPath.startsWith('/verify');
+  const isDocsRoute = currentPath === '/docs' || currentPath.startsWith('/docs');
 
   useEffect(() => {
     const onPopState = () => {
@@ -139,13 +159,9 @@ export default function App() {
     if (acc === 'zinipay-c1.testnet' || acc === 'zinipay-c2.testnet') {
       return 'council';
     }
-    if (acc === 'agentzinipaytestnet.testnet') {
-      return 'agent';
-    }
     return 'contributor';
   };
 
-  // On-chain live proposals and activities state
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
 
@@ -161,8 +177,10 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Restore wallet session or listen to selector changes & URL redirects
+  // Restore wallet session or listen to selector changes & URL redirects (ONLY on dashboard)
   useEffect(() => {
+    if (!isDashboardRoute) return;
+
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlAccountId = urlParams.get('account_id');
@@ -177,25 +195,35 @@ export default function App() {
     }
 
     let isSubscribed = true;
-    subscribeToWalletState(network, (acc) => {
-      if (isSubscribed && acc) {
-        const verifiedRole = resolveAccountRole(acc, daoPolicy);
-        setConnectedAccount(acc);
-        setIsSimulatedSigner(false);
-        setActiveRole(verifiedRole);
-        setStoredWalletAccount(acc, verifiedRole, false);
-        showToast(`Connected verified wallet: ${acc} (${verifiedRole})`);
-      }
-    }).then((unsub) => {
-      if (!isSubscribed) unsub();
+    let unsubFn: (() => void) | null = null;
+
+    import('./lib/wallet').then(({ subscribeToWalletState }) => {
+      if (!isSubscribed) return;
+      subscribeToWalletState(network, (acc) => {
+        if (isSubscribed && acc) {
+          const verifiedRole = resolveAccountRole(acc, daoPolicy);
+          setConnectedAccount(acc);
+          setIsSimulatedSigner(false);
+          setActiveRole(verifiedRole);
+          setStoredWalletAccount(acc, verifiedRole, false);
+          showToast(`Connected verified wallet: ${acc} (${verifiedRole})`);
+        }
+      }).then((unsub) => {
+        if (!isSubscribed) {
+          unsub();
+        } else {
+          unsubFn = unsub;
+        }
+      });
     });
 
     return () => {
       isSubscribed = false;
+      if (unsubFn) unsubFn();
     };
-  }, [network]);
+  }, [network, isDashboardRoute]);
 
-  // Real RPC Data Loading from Sputnik DAO
+  // Real RPC Data Loading from Sputnik DAO (ONLY on dashboard)
   const loadLiveDaoData = async (targetDao = daoContract, targetNet = network) => {
     if (!targetDao || !targetDao.trim()) {
       setIsLoadingOnChain(false);
@@ -251,12 +279,14 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!isDashboardRoute) return;
     loadLiveDaoData();
-  }, [network, daoContract, policyContractId, connectedAccount]);
+  }, [network, daoContract, policyContractId, connectedAccount, isDashboardRoute]);
 
   const handleOpenWalletSelector = async () => {
     try {
       showToast('Opening NEAR Wallet Selector (12s timeout)...');
+      const { openNearWalletModal } = await import('./lib/wallet');
       await openNearWalletModal(network);
     } catch (err: any) {
       console.error('Wallet selector error:', err);
@@ -284,6 +314,7 @@ export default function App() {
 
     try {
       showToast('Broadcasting signed act_proposal to NEAR testnet...');
+      const { signAndSendDaoVote } = await import('./lib/wallet');
       await signAndSendDaoVote({
         daoContractId: daoContract,
         proposalId,
@@ -292,31 +323,10 @@ export default function App() {
       showToast('Transaction confirmed on NEAR! On-chain vote cast.');
       await loadLiveDaoData();
     } catch (err: any) {
-      console.error('Wallet signing error:', err);
-      showToast(`Vote failed: ${err.message || 'Transaction rejected'}`);
-      return;
+      console.error('Vote failed:', err);
+      showToast(err.message || 'Vote broadcast failed on NEAR RPC.');
     }
-
-    const title = approve
-      ? `Council Vote Cast: Approved #ZP-${proposalId}`
-      : `Council Vote Cast: Rejected #ZP-${proposalId}`;
-
-    setActivities((prev) => [
-      {
-        id: `act-${Date.now()}`,
-        timestamp: 'Just now',
-        type: approve ? 'quorum_reached' : 'policy_pass',
-        title,
-        description: `${connectedAccount} voted ${approve ? 'Approve' : 'Reject'} on proposal #ZP-${proposalId}.`,
-        badge: approve ? 'Vote Approve' : 'Vote Reject',
-      },
-      ...prev,
-    ]);
   };
-
-  const isDashboardRoute = currentPath === '/board' || currentPath.startsWith('/app');
-  const isVerifyRoute = currentPath === '/verify' || currentPath.startsWith('/verify');
-  const isDocsRoute = currentPath === '/docs' || currentPath.startsWith('/docs');
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
@@ -332,149 +342,174 @@ export default function App() {
       )}
 
       {/* Proof Modal */}
-      <ProofModal
-        proposal={selectedProofProposal}
-        onClose={() => setSelectedProofProposal(null)}
-      />
+      {selectedProofProposal && (
+        <React.Suspense fallback={null}>
+          <ProofModal
+            proposal={selectedProofProposal}
+            onClose={() => setSelectedProofProposal(null)}
+          />
+        </React.Suspense>
+      )}
 
       {/* Deliberation Modal */}
-      <DeliberationModal
-        proposal={deliberationProposal}
-        isOpen={Boolean(deliberationProposal)}
-        onClose={() => setDeliberationProposal(null)}
-      />
+      {deliberationProposal && (
+        <React.Suspense fallback={null}>
+          <DeliberationModal
+            proposal={deliberationProposal}
+            isOpen={true}
+            onClose={() => setDeliberationProposal(null)}
+          />
+        </React.Suspense>
+      )}
 
       {/* Intents Cross-Chain Settlement Modal */}
-      <IntentsModal
-        proposal={intentsProposal}
-        daoContractId={daoContract}
-        isOpen={Boolean(intentsProposal)}
-        onClose={() => setIntentsProposal(null)}
-        onSettled={(id) => {
-          setProposals((prev) =>
-            prev.map((p) => (p.id === id ? { ...p, status: 'settled' } : p))
-          );
-          showToast(`Proposal #ZP-${id} settled cross-chain via NEAR Intents!`);
-        }}
-      />
+      {intentsProposal && (
+        <React.Suspense fallback={null}>
+          <IntentsModal
+            proposal={intentsProposal}
+            daoContractId={daoContract}
+            isOpen={true}
+            onClose={() => setIntentsProposal(null)}
+            onSettled={(id) => {
+              setProposals((prev) =>
+                prev.map((p) => (p.id === id ? { ...p, status: 'settled' } : p))
+              );
+              showToast(`Proposal #ZP-${id} settled cross-chain via NEAR Intents!`);
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {/* Wallet Selector Modal */}
-      <WalletModal
-        isOpen={isWalletModalOpen}
-        onClose={() => setIsWalletModalOpen(false)}
-        network={network}
-        connectedAccount={connectedAccount}
-        activeRole={activeRole}
-        isSimulated={isSimulatedSigner}
-        onConnectObserver={(acc) => {
-          const verifiedRole = resolveAccountRole(acc, daoPolicy);
-          setConnectedAccount(acc);
-          setIsSimulatedSigner(true);
-          setActiveRole(verifiedRole);
-          setStoredWalletAccount(acc, verifiedRole, true);
-          showToast(`Viewing as observer: ${acc} (${verifiedRole} · Read-Only)`);
-        }}
-        onLaunchSelector={handleOpenWalletSelector}
-        onDisconnect={async () => {
-          await disconnectWallet();
-          setConnectedAccount(null);
-          setIsSimulatedSigner(false);
-          setActiveRole('contributor');
-          showToast('Wallet disconnected');
-        }}
-      />
+      {isWalletModalOpen && (
+        <React.Suspense fallback={null}>
+          <WalletModal
+            isOpen={true}
+            onClose={() => setIsWalletModalOpen(false)}
+            network={network}
+            connectedAccount={connectedAccount}
+            activeRole={activeRole}
+            isSimulated={isSimulatedSigner}
+            onConnectObserver={(acc) => {
+              const verifiedRole = resolveAccountRole(acc, daoPolicy);
+              setConnectedAccount(acc);
+              setIsSimulatedSigner(true);
+              setActiveRole(verifiedRole);
+              setStoredWalletAccount(acc, verifiedRole, true);
+              showToast(`Viewing as observer: ${acc} (${verifiedRole} · Read-Only)`);
+            }}
+            onLaunchSelector={handleOpenWalletSelector}
+            onDisconnect={async () => {
+              const { disconnectWallet } = await import('./lib/wallet');
+              await disconnectWallet();
+              setConnectedAccount(null);
+              setIsSimulatedSigner(false);
+              setActiveRole('contributor');
+              showToast('Wallet disconnected');
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {/* Route Switcher: "/" -> LandingPage, "/board" -> DashboardShell */}
-      {isDashboardRoute ? (
-        <DashboardShell
-          proposals={proposals}
-          activities={activities}
-          network={network}
-          daoContract={daoContract}
-          onDaoContractChange={(dao) => {
-            setDaoContract(dao);
-            loadLiveDaoData(dao, network);
-          }}
-          policyContractId={policyContractId}
-          treasuryState={treasuryState}
-          isLoadingOnChain={isLoadingOnChain}
-          daoError={daoError}
-          onChainPolicy={onChainPolicy}
-          daoPolicy={daoPolicy}
-          contributorReputation={contributorReputation}
-          connectedAccount={connectedAccount}
-          isSimulated={isSimulatedSigner}
-          activeRole={activeRole}
-          onVote={handleVote}
-          onInspectProof={(prop) => setSelectedProofProposal(prop)}
-          onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
-          onExecuteIntent={(prop) => setIntentsProposal(prop)}
-          onOpenWalletModal={() => {
-            if (connectedAccount) {
-              setIsWalletModalOpen(true);
-            } else {
-              handleOpenWalletSelector();
-            }
-          }}
-          onProposalCreated={(newProp) => {
-            setProposals((prev) => [newProp, ...prev]);
-            setActivities((prev) => [
-              {
-                id: `act-${Date.now()}`,
-                timestamp: 'Just now',
-                type: 'proposal_created',
-                title: `Proposal #ZP-${newProp.id} Dispatched`,
-                description: `Three-Way Match Pass. Sputnik DAO proposal created.`,
-                badge: 'Pending',
-              },
-              ...prev,
-            ]);
-          }}
-          onShowToast={showToast}
-          onRefresh={() => {
-            loadLiveDaoData(daoContract, network);
-            showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
-          }}
-          onNavigateToLanding={() => navigate('/')}
-          onNavigateVerify={() => navigate('/verify')}
-          onNavigateDocs={() => navigate('/docs')}
-        />
-      ) : isVerifyRoute ? (
-        <VerificationPage
-          onNavigateHome={() => navigate('/')}
-          onNavigateBoard={() => navigate('/board')}
-          onNavigateDocs={() => navigate('/docs')}
-          network={network}
-        />
-      ) : isDocsRoute ? (
-        <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans w-full max-w-full overflow-x-hidden">
-          <AppHeader
-            currentPath="/docs"
+      <React.Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-[#070D0C] text-slate-400">
+            <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+          </div>
+        }
+      >
+        {isDashboardRoute ? (
+          <DashboardShell
+            proposals={proposals}
+            activities={activities}
+            network={network}
+            daoContract={daoContract}
+            onDaoContractChange={(dao) => {
+              setDaoContract(dao);
+              loadLiveDaoData(dao, network);
+            }}
+            policyContractId={policyContractId}
+            treasuryState={treasuryState}
+            isLoadingOnChain={isLoadingOnChain}
+            daoError={daoError}
+            onChainPolicy={onChainPolicy}
+            daoPolicy={daoPolicy}
+            contributorReputation={contributorReputation}
+            connectedAccount={connectedAccount}
+            isSimulated={isSimulatedSigner}
+            activeRole={activeRole}
+            onVote={handleVote}
+            onInspectProof={(prop) => setSelectedProofProposal(prop)}
+            onInspectDeliberation={(prop) => setDeliberationProposal(prop)}
+            onExecuteIntent={(prop) => setIntentsProposal(prop)}
+            onOpenWalletModal={() => {
+              if (connectedAccount) {
+                setIsWalletModalOpen(true);
+              } else {
+                handleOpenWalletSelector();
+              }
+            }}
+            onProposalCreated={(newProp) => {
+              setProposals((prev) => [newProp, ...prev]);
+              setActivities((prev) => [
+                {
+                  id: `act-${Date.now()}`,
+                  timestamp: 'Just now',
+                  type: 'proposal_created',
+                  title: `Proposal #ZP-${newProp.id} Dispatched`,
+                  description: `Three-Way Match Pass. Sputnik DAO proposal created.`,
+                  badge: 'Pending',
+                },
+                ...prev,
+              ]);
+            }}
+            onShowToast={showToast}
+            onRefresh={() => {
+              loadLiveDaoData(daoContract, network);
+              showToast(`Refreshed on-chain state from NEAR ${network.toUpperCase()}`);
+            }}
+            onNavigateToLanding={() => navigate('/')}
+            onNavigateVerify={() => navigate('/verify')}
+            onNavigateDocs={() => navigate('/docs')}
+          />
+        ) : isVerifyRoute ? (
+          <VerificationPage
             onNavigateHome={() => navigate('/')}
             onNavigateBoard={() => navigate('/board')}
             onNavigateDocs={() => navigate('/docs')}
-            onNavigateVerify={() => navigate('/verify')}
             network={network}
           />
-          <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-12">
-            <DocsPage embedded={false} network={network} />
-          </main>
-          <UniversalFooter
-            onNavigateBoard={() => navigate('/board')}
+        ) : isDocsRoute ? (
+          <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans w-full max-w-full overflow-x-hidden">
+            <AppHeader
+              currentPath="/docs"
+              onNavigateHome={() => navigate('/')}
+              onNavigateBoard={() => navigate('/board')}
+              onNavigateDocs={() => navigate('/docs')}
+              onNavigateVerify={() => navigate('/verify')}
+              network={network}
+            />
+            <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-12">
+              <DocsPage embedded={false} network={network} />
+            </main>
+            <UniversalFooter
+              onNavigateBoard={() => navigate('/board')}
+              onNavigateDocs={() => navigate('/docs')}
+              onNavigateVerify={() => navigate('/verify')}
+              network={network}
+            />
+          </div>
+        ) : (
+          <LandingPage
+            onNavigateToApp={() => navigate('/board')}
+            onNavigateToBoard={() => navigate('/board')}
             onNavigateDocs={() => navigate('/docs')}
             onNavigateVerify={() => navigate('/verify')}
             network={network}
           />
-        </div>
-      ) : (
-        <LandingPage
-          onNavigateToApp={() => navigate('/board')}
-          onNavigateToBoard={() => navigate('/board')}
-          onNavigateDocs={() => navigate('/docs')}
-          onNavigateVerify={() => navigate('/verify')}
-          network={network}
-        />
-      )}
+        )}
+      </React.Suspense>
     </div>
   );
 }

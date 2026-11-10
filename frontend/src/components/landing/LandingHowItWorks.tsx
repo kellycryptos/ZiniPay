@@ -32,7 +32,7 @@ export function LandingHowItWorks() {
           {steps.map((s) => (
             <div
               key={s.num}
-              className="p-6 sm:p-7 rounded-2xl bg-white/85 dark:bg-[#0F1715]/90 border border-emerald-600/20 dark:border-slate-800 hover:border-emerald-500/40 transition-all duration-300 flex flex-col gap-4 shadow-sm dark:shadow-lg backdrop-blur-md group"
+              className="p-6 sm:p-7 rounded-2xl bg-white/95 dark:bg-[#0F1715]/95 border border-emerald-600/20 dark:border-slate-800 hover:border-emerald-500/40 transition-colors duration-200 flex flex-col gap-4 shadow-sm dark:shadow-lg group"
             >
               <div className="font-mono text-xs font-bold text-[#00E599] px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-400/30 w-fit shadow-[0_0_12px_rgba(0,229,153,0.15)]">
                 Step {s.num}
