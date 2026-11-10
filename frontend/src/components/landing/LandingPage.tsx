@@ -25,7 +25,7 @@ export function LandingPage({
   const handleVerify = onNavigateVerify || (() => { window.location.href = '/verify'; });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-[#00EC97]/30 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans selection:bg-[#00EC97]/30 selection:text-white transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       {/* ── Plain Header ──────────────────────────────────────── */}
       <LandingHeader
         onNavigateHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
