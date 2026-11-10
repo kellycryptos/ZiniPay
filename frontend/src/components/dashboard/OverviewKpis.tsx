@@ -85,9 +85,9 @@ export function OverviewKpis({
   const activeCount = proposals.filter((p) => p.status === 'pending_quorum').length;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full font-sans">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full font-sans min-w-0">
       {/* ── CARD 1: Treasury Balance ──────────────────────────── */}
-      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97] shrink-0">
@@ -95,7 +95,7 @@ export function OverviewKpis({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] truncate">
-                Treasury Balance
+                Treasury
               </p>
               <p
                 className="text-[10px] text-[var(--text-secondary)] font-mono truncate"
@@ -145,7 +145,7 @@ export function OverviewKpis({
       </div>
 
       {/* ── CARD 2: Payouts Settled ───────────────────────────── */}
-      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-[#00EC97]">
@@ -153,7 +153,7 @@ export function OverviewKpis({
             </div>
             <div>
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                Payouts Settled
+                Payouts
               </p>
               <p className="text-[10px] text-[var(--text-secondary)] font-mono">
                 {isLoaded ? `${settledCount} on-chain releases` : 'Not loaded'}
@@ -195,9 +195,9 @@ export function OverviewKpis({
                 <span className="font-mono text-sm text-[#00EC97] font-semibold">NEAR</span>
               </div>
               {/* Distinct deployment labels for Proposal #5 and Proposal #6 */}
-              <div className="flex flex-col gap-0.5 mt-1 text-[9px] font-mono text-slate-400">
+              <div className="flex flex-col gap-1 mt-1 text-[9px] font-mono text-slate-400">
                 {payoutsList.map((p) => (
-                  <span key={p.proposalId} className="truncate" title={p.deploymentLabel}>
+                  <span key={p.proposalId} className="break-words leading-tight" title={p.deploymentLabel}>
                     • #{p.proposalId} ({p.amountNear}N): {p.deploymentLabel}
                   </span>
                 ))}
@@ -221,7 +221,7 @@ export function OverviewKpis({
       </div>
 
       {/* ── CARD 3: Active Requests ───────────────────────────── */}
-      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-subtle)] text-amber-400">
@@ -229,7 +229,7 @@ export function OverviewKpis({
             </div>
             <div>
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                Active Requests
+                Requests
               </p>
               <p className="text-[10px] text-[var(--text-secondary)] font-mono">
                 Sputnik DAO v2
@@ -258,7 +258,7 @@ export function OverviewKpis({
       </div>
 
       {/* ── CARD 4: Blocked Attempts (5 Attack Txs + 1 Blocked Admin) ── */}
-      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-red-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all group">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] hover:border-red-500/40 rounded-xl p-4 flex flex-col justify-between shadow-lg transition-all group min-w-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-red-950/40 border border-red-500/30 text-red-400">
@@ -266,7 +266,7 @@ export function OverviewKpis({
             </div>
             <div>
               <p className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                Blocked Attempts
+                Blocked
               </p>
               <p className="text-[10px] text-red-300/80 font-mono">
                 5 attack txs + 1 admin action
