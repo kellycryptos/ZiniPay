@@ -69,14 +69,6 @@ export function LandingHero({
     <section className="relative pt-10 pb-16 sm:pt-16 sm:pb-20 overflow-hidden z-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
         
-        {/* 1. Track & Network Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-400/50 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_18px_rgba(16,185,129,0.25)] mb-6 transition-transform hover:scale-105">
-          <span className="w-2 h-2 rounded-full bg-[#00E599] shadow-[0_0_8px_#00E599] animate-pulse" />
-          <span className="text-xs sm:text-sm font-medium text-emerald-800 dark:text-emerald-300">
-            NEAR HACKATHON · Social Money Track · Testnet Live
-          </span>
-        </div>
-
         {/* 2. Main Headline */}
         <h1 className="max-w-4xl text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.12]">
           <span className="block text-slate-900 dark:text-white">
@@ -164,7 +156,7 @@ export function LandingHero({
                   1. Agent proposes
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Verifies PR &amp; drafts proposal
+                  Verifies PR & drafts proposal
                 </div>
               </div>
             </div>
@@ -198,7 +190,7 @@ export function LandingHero({
                   2. Policy enforces
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  Spend caps &amp; CID burned
+                  Spend caps & CID burned
                 </div>
               </div>
             </div>
