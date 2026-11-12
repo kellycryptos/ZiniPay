@@ -10,39 +10,104 @@ Status: NEAR testnet only. Not audited. The AI review step is simulated in this 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
+[![Security Policy](https://img.shields.io/badge/Security-Policy%20%26%20Limits-yellow.svg)](SECURITY.md)
+
+## Contents
+
+1. [The problem](#the-problem)
+2. [What ZiniPay does](#what-zinipay-does)
+3. [How a payout flows](#how-a-payout-flows)
+4. [Attacks and what stops them](#attacks-and-what-stops-them)
+5. [Try it: do this, see that](#try-it-do-this-see-that)
+6. [Proof on testnet](#proof-on-testnet)
+7. [How NEAR is used](#how-near-is-used)
+8. [Deployed on testnet](#deployed-on-testnet)
+9. [Limits](#limits)
+10. [Hackathon tracks](#hackathon-tracks)
+11. [Repository layout](#repository-layout)
+12. [What we used](#what-we-used)
+13. [Developer experience](#developer-experience)
+14. [AI assistance](#ai-assistance)
 
 ## The problem
 
-If you give an AI agent a key to a community treasury, one prompt injection or bug can drain it. If a human council checks every pull request by hand, bounty payments stop scaling. We wanted a middle path where the agent does the paperwork and cannot move money on its own.
+If you give an AI agent a key to a community treasury, one prompt injection or bug can drain it, and nothing can undo the transfer. If a human council checks every pull request by hand, bounty payments stop scaling. We wanted a middle path where the agent does the paperwork and cannot move money on its own.
 
-## How it works
+Community treasuries that adopt agents run into four failures:
+
+1. Unbounded drain. A compromised agent with a transfer key can empty the treasury in one transaction.
+2. Replay. A contributor submits the same pull request or deliverable again and again to get paid each time.
+3. Deliverable theft. Someone claims a merged pull request that another person wrote.
+4. Prompt injection and made-up milestones. Text inside a pull request tricks the agent into approving work that doesn't exist.
+
+## What ZiniPay does
 
 A payout passes three gates.
 
-1. The agent checks the deliverable off-chain. It reads the GitHub pull request, checks that it is merged, and checks that the author matches the person asking to be paid. The chain does not see this step.
-2. The `PolicyHelper` contract enforces rules on-chain. The cap per payout depends on the contributor's reputation (10 NEAR Bronze, 15 NEAR Silver, 20 NEAR Gold). There is a 60 second cooldown per recipient. Each deliverable ID can be paid once, and IDs are lowercased so capital letters can't get around the check.
-3. Two humans approve. Both council members must vote yes on the Sputnik DAO. The agent account can only propose. It has no vote and no council seat.
+1. The agent checks the deliverable off-chain.
+   - It reads the GitHub pull request and checks that it is merged and that the author matches the person asking to be paid.
+   - It looks for a line in the PR body that binds the payout to one account (`zinipay-recipient: <account.testnet>`), so nobody can claim someone else's work.
+   - It reduces IPFS identifiers to a standard form.
+   - Two agent roles, an Inspector and a Risk Arbiter, review the result with strict typed output (Zod schemas). This review is simulated in the current build.
+   - The chain does not see this step.
+2. The `PolicyHelper` contract enforces rules on-chain.
+   - A payout can only run when the Sputnik DAO calls `PolicyHelper::release`. Direct calls are rejected.
+   - The cap per payout depends on the contributor's reputation: 10 NEAR Bronze (0 to 19 points), 15 NEAR Silver (20 to 59), 20 NEAR Gold (60 and up).
+   - There is a 60 second cooldown per recipient.
+   - Each deliverable ID can be paid once. IDs are lowercased first so capital letters can't get around the check.
+   - If the transfer fails, a callback (`on_release_done`) puts the ID back and resets the cooldown.
+3. Two humans approve.
+   - Both council members must vote yes on the Sputnik DAO. The agent account can only propose. It has no vote and no council seat.
 
-Reputation belongs to named NEAR accounts. Each finished payout adds 5 points up to 19 (Bronze). Moving to Silver (20 to 59) or Gold (60 and up) takes a council vote through the DAO.
+### Social Money features
 
-## What is real
+- Reputation tied to named accounts. Each contributor's record is tied to their NEAR named account, such as `zinipay-recipient2.testnet`. The score and cap are readable from the contract with `get_reputation` and `get_effective_cap`. Each finished payout adds 5 points up to 19. Silver and Gold need a council vote through the DAO (`update_reputation`), so scores can't be farmed.
+- Tiered approvals. The source defines a faster schedule for trusted contributors: Gold up to 2 NEAR with no vote, Silver up to 5 NEAR with one vote, and two votes above that. This is advisory. It is not deployed, and the live DAO requires two votes for every payout.
+- Public board at `/board`. It shows proposals, contributor cards and receipt links from real testnet data.
+- Trezu. The design should allow a Trezu treasury in place of Sputnik, but this is untested. See [docs/TREZU_INTEGRATION.md](docs/TREZU_INTEGRATION.md).
 
-Everything below is on NEAR testnet and you can open each link.
+## How a payout flows
 
-- Two real payouts, 0.10 NEAR each: Proposal #5 and Proposal #6, both approved by two council votes.
-- Five attacks that reverted on-chain, plus one admin call that was rejected. We found the capital-letter replay hole ourselves with a red-team run, patched it, then attacked again.
-- Contract ownership moved to the DAO, so changing policy needs a council vote.
+```
+[1. Contributor]  Submits a PR with "zinipay-recipient: <account.testnet>"
+       |
+[2. Agent]        Checks the PR is merged, the author and the recipient line.
+       |          Runs the Inspector and Risk Arbiter review (simulated).
+       |
+[3. Policy check] Reads the recipient's score, tier cap, cooldown and whether
+       |          the deliverable ID is already used. Also computes the advisory
+       |          approval tier.
+       |
+[4. Proposal]     Agent calls Sputnik DAO add_proposal (proposer role only).
+       |          Payload: PolicyHelper::release(recipient, amount, deliverable)
+       |
+[5. Human vote]   Council members zinipay-c1 and zinipay-c2 both vote yes.
+       |          The DAO requires 2 of 2 today.
+       |
+[6. Settlement]   The DAO calls PolicyHelper::release. The contract checks:
+       |            caller is the DAO, amount is within the tier cap,
+       |            deliverable not used, cooldown over.
+       |          Then it burns the ID, sets the cooldown and sends the NEAR.
+       |          A callback rolls the ID and cooldown back if the transfer fails.
+       |
+[7. Reputation]   Score goes up (to 19 at most), the board shows the receipt.
+```
 
-| Attack | Contract response | Transaction |
-| --- | --- | --- |
-| Replay a paid deliverable | CID already used | [`9Gp7HmJb9j…`](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb) |
-| Request 16 NEAR when the cap is 15 | Exceeds effective tier cap | [`EiktoyYPMJ…`](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ) |
-| Call release from a non-DAO account | Only owner or designated DAO | [`2zsvqGDF4B…`](https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B) |
-| Replay the same ID with different capital letters | CID already used | [`EwQAsc5rXE…`](https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y) |
-| Second payout inside the 60 second cooldown | Cooldown not elapsed | [`2hVRAoT67H…`](https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD) |
-| Former owner tries an admin call after ownership moved | Rejected, owner is now the DAO | [`EmKpSxi4LX…`](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) |
+## Attacks and what stops them
 
-Payout transactions: Proposal #5 [`4B1ExcqigaRw…`](https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd) and Proposal #6 [`2nWMVtQ4z2L7…`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d). The full list is in [`frontend/public/data/verified.json`](frontend/public/data/verified.json) and on the site at `/verify`.
+| Attack | What the attacker does | Where it stops | Result |
+| --- | --- | --- | --- |
+| Deliverable theft | Claims another person's merged PR | Agent check (off-chain) | The author does not match the recipient, so no proposal is created |
+| Replay | Resubmits an already paid PR | Contract | Reverts with "CID already used" |
+| Capital letter replay | Resubmits `KELLYCRYPTOS/ZINIPAY#2` | Contract | IDs are lowercased, so it reverts with "CID already used" |
+| Over cap | Asks for more than the tier allows | Contract | Reverts with "exceeds effective tier cap" |
+| Direct call | Calls `release` without the DAO | Contract | Reverts with "Only owner or designated DAO can call this" |
+| Fast repeat | Second payout within 60 seconds | Contract | Reverts with "Cooldown not elapsed" |
+| Agent self-approval | Agent tries to vote for its own proposal | DAO policy | The agent holds proposal rights only, no vote permissions |
+| Failed transfer | Recipient account can't receive | Contract callback | The ID is released and the cooldown reset |
+| Prompt injection | Instructions hidden in a PR | Agent output schema | Typed output limits what the model can return. The model review is simulated, so this part is not proven on-chain |
+
+The red-team run found one real hole: the same ID in different capital letters passed the first duplicate check. We patched the contract, then attacked again. The second attempt reverted. Both are in the proof tables below.
 
 ## Try it: do this, see that
 
@@ -65,13 +130,76 @@ No private keys and no `.env` file are needed. Steps 4 to 6 read public testnet 
    See: the contributor's score (30 points), tier (Silver, 1.5x cap, 15 NEAR) and the two payout receipts with explorer links. Task counts and total paid come from a local cache, the score comes from the contract.
 
 6. Do: `npm run verify:proposal -- 6`
-   See: Proposal #6 read from the DAO and checked against the policy contract, with its two council votes. Without network access it says it could not reach the RPC.
+   See: Proposal #6 read from the DAO and checked against the policy contract: target `zinipay-policy2.testnet::release`, recipient, amount, tier cap, burned deliverable ID and the two council votes. Without network access it says it could not reach the RPC. Run it with `5` to check Proposal #5.
 
 7. Do: `npm run frontend:dev`, then open http://localhost:5173/board
    See: the public board with live testnet proposals, contributor cards and receipt links. The same pages run at https://zini-pay.vercel.app.
 
-8. Do: open any transaction link in the tables above.
+8. Do: open any transaction link in the tables below.
    See: the real testnet transaction on NearBlocks. The five attack transactions show as failed with the contract's panic message.
+
+## Proof on testnet
+
+Everything here is on NEAR testnet. The full list lives in [`frontend/public/data/verified.json`](frontend/public/data/verified.json) and on the site at `/verify`.
+
+Payouts, 0.10 NEAR each, both approved by two council votes:
+
+| Proposal | Date | Deliverable | Payout transaction |
+| --- | --- | --- | --- |
+| #5 | 2026-10-30 | `kellycryptos/ZiniPay#1` | [`4B1ExcqigaRw…`](https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd) |
+| #6 | 2026-11-02 | `kellycryptos/ZiniPay#2` | [`2nWMVtQ4z2L7…`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d) |
+
+Proposal #5 ran on the first deployment of the contract (code hash `Eft7wVX8…`). Proposal #6 and everything after it ran on the current one (`4aAns5JeyBVUEMLS6uJSyomHZ6qJGQGbYApLVhL4xAyt`).
+
+Proposal #6 step by step:
+
+| Step | What happened | Transaction |
+| --- | --- | --- |
+| Proposal #6 created | Agent submits a FunctionCall proposal for `PolicyHelper::release` | [`HBs2djKVAtQz…`](https://testnet.nearblocks.io/txns/HBs2djKVAtQzvBToXJfbUM7WiCb1jUgYYrP4H3CHkgVK) |
+| Council 1 vote | `zinipay-c1.testnet` votes yes (1 of 2) | [`22HTUkeVM6nA…`](https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD) |
+| Council 2 vote and payout | `zinipay-c2.testnet` votes yes, quorum reached, 0.10 NEAR paid | [`2nWMVtQ4z2L7…`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d) |
+| Promotion to Silver | Council raises the recipient to 25 points (cap 15 NEAR) | [`DfpR26Q4qgoX…`](https://testnet.nearblocks.io/txns/DfpR26Q4qgoXw1oBh481vBkizypsrME6HLwjHj3gKvYf) |
+
+Attacks that reverted on-chain:
+
+| Attack | Contract response | Transaction |
+| --- | --- | --- |
+| Replay Deliverable CID | `CID already used — duplicate release attempt blocked` | [`9Gp7HmJb9jNg…`](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb) |
+| Over-Cap Treasury Spend | `Amount 16 NEAR exceeds effective tier cap 15 NEAR for recipient zinipay-recipient2.testnet` | [`EiktoyYPMJZt…`](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ) |
+| Unauthorized Release Caller | `Only owner or designated DAO can call this` | [`2zsvqGDF4BkE…`](https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B) |
+| Case-Variant CID Replay | `CID already used — duplicate release attempt blocked` | [`EwQAsc5rXELJ…`](https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y) |
+| Cooldown Violation | `Cooldown not elapsed. 16 seconds remaining.` | [`2hVRAoT67HwC…`](https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD) |
+| Former Owner Admin Rejection | `Only owner or designated DAO can call this` | [`EmKpSxi4LXBs…`](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) |
+
+Admin control moved to the DAO:
+
+| Step | What happened | Transaction |
+| --- | --- | --- |
+| Ownership transferred to the DAO | PolicyHelper owner is now `zinipay-demo.sputnikv2.testnet` | [`BmUTUzULrCCN…`](https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX) |
+| Former owner blocked | A direct admin call by the old owner is rejected | [`EmKpSxi4LXBs…`](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) |
+| Admin proposal #7 created | DAO proposal to run `update_reputation` | [`73JaSgQv8G51…`](https://testnet.nearblocks.io/txns/73JaSgQv8G51VdKTPnYwVasWFogd3EvDDzCr1dx6VJix) |
+| Council 1 vote on #7 | Yes vote | [`Cs4sLs72XeLi…`](https://testnet.nearblocks.io/txns/Cs4sLs72XeLiv5yAG8qnTHJVXDfkV7e1tg46pyoK6Vk8) |
+| Council 2 vote on #7 and execution | Quorum reached, the admin call runs through the DAO | [`3xqHqNnvstR7…`](https://testnet.nearblocks.io/txns/3xqHqNnvstR7uTFdV1cvpajw7BSPAxMXLgRLRyBZUYkw) |
+
+The first entry in `blockedAttacks` (stolen deliverable) is stopped by the agent's local checks before any transaction exists, so it has no transaction hash.
+
+## How NEAR is used
+
+ZiniPay depends on two NEAR pieces: our `PolicyHelper` Rust contract and the Sputnik DAO v2 role system.
+
+`PolicyHelper` (`contracts/policy-helper/src/lib.rs`, `near-sdk` 5.1.0):
+- Only the designated DAO account can trigger a payout. The check is on `env::predecessor_account_id()`.
+- Used deliverable IDs live in an on-chain set. IDs are normalized (trimmed and lowercased) before the lookup and the insert.
+- The spend cap comes from the recipient's on-chain score.
+- A cross-contract promise sends the NEAR, and the `on_release_done` callback reverses the bookkeeping if the transfer fails.
+
+Sputnik DAO v2 (`zinipay-demo.sputnikv2.testnet`):
+- The agent account `agentzinipaytestnet.testnet` is in a proposer role with `*:AddProposal` only. It is not in the council and holds no voting permission.
+- The DAO needs both council votes before it calls the policy contract.
+
+Why the agent has its own funded account: a NEAR function-call key can't attach a deposit, and Sputnik needs a 1 NEAR proposal bond. So the agent uses a small funded account for bonds only (2 to 5 NEAR). It has no keys or permissions on the treasury, so a stolen agent key can spend the bond float and nothing else.
+
+Without NEAR we would have had to build our own multisig and role system, and handle failed transfers off-chain.
 
 ## Deployed on testnet
 
@@ -83,19 +211,26 @@ No private keys and no `.env` file are needed. Steps 4 to 6 read public testnet 
 | Council | [`zinipay-c1.testnet`](https://testnet.nearblocks.io/address/zinipay-c1.testnet) and [`zinipay-c2.testnet`](https://testnet.nearblocks.io/address/zinipay-c2.testnet) |
 | Example recipient | [`zinipay-recipient2.testnet`](https://testnet.nearblocks.io/address/zinipay-recipient2.testnet) |
 
+Prerequisites: Node 20 or newer and npm 10 or newer. Rust with the `wasm32-unknown-unknown` target is only needed to rebuild the contract.
+
 ## Limits
 
 We would rather you hear these from us.
 
-- Testnet only. No real funds. No independent audit. Our own checks: `cargo test` (23 passing), `cargo clippy` (no warnings in the contract) and `cargo audit`. Details in [SECURITY.md](SECURITY.md).
+- Testnet only. No real funds. No independent audit. Our own checks: `cargo test` (23 passing), `cargo clippy` (no warnings in the contract) and `cargo audit` (advisories only in NEAR toolkit crates that are not compiled into the deployed WASM). Details in [SECURITY.md](SECURITY.md).
 - The AI review is simulated. NEAR AI Cloud returned a payment error for our key, so the review step runs locally. The human votes and the contract rules are real.
 - Every payout needs both council votes. The faster approval schedule for trusted contributors exists in the source as `get_approval_tier`, but it is advisory and is not deployed.
-- `burn_cid`, `get_approval_tier` and `get_contributor_record` are in `main` but not in the deployed contract (deployed from commit `6fb2426`). We did not redeploy, so the evidence above stays tied to one code hash. The build is not reproducible.
+- `burn_cid`, `get_approval_tier` and `get_contributor_record` are in `main` but not in the deployed contract (deployed from commit `6fb2426`, matched by method names). We did not redeploy, so the evidence above stays tied to one code hash. The build is not reproducible.
+- Contract ownership moved to the DAO in the transaction listed above. The old owner can no longer change policy. `reset_cooldown` was called once by the old owner on Oct 30 during early testing.
+- Silver and Gold promotions only happen through council action. The recipient went to 25 points by council call and to 30 through DAO Proposal #7.
 - The 24 hour rolling spend limit is checked by the agent only. The contract enforces the per payout cap, the cooldown and one-time deliverables.
 - The GitHub PR check happens off-chain. The chain enforces that each deliverable ID is used once, not that the PR exists.
-- Completed task counts and total paid shown in the CLI come from a local cache (`zinipay-reputation.json`). The score itself is read from the contract.
+- Completed task counts and total paid in the CLI come from a local cache (`zinipay-reputation.json`). The score itself is read from the contract.
+- `migrate_canonicalize_cids` has no access control. It only rewrites existing burned IDs to their lowercase form and can be run more than once safely.
 - Anyone can submit a proposal to the DAO. The 1 NEAR proposal bond is the only spam deterrent.
-- Trezu is untested. The design should allow it, but we only ran Sputnik DAO v2. See [docs/TREZU_INTEGRATION.md](docs/TREZU_INTEGRATION.md).
+- The rate limiter on the Vercel endpoint is in memory and best effort. Hard limits depend on spending caps set at the AI provider.
+- NEAR Intents is used for quotes only. We do not settle cross-chain.
+- Trezu is untested. We only ran Sputnik DAO v2.
 
 Demo values you should not copy to production:
 
@@ -106,8 +241,7 @@ Demo values you should not copy to production:
 | Approval schedule | Advisory, 2 of 2 always | Deploy and test first |
 | Audit | Self-reviewed | Independent audit before mainnet |
 
-## Next steps
-
+Next steps:
 - Deploy `get_approval_tier` and `get_contributor_record` through a council proposal and re-run the verifier.
 - Store completed tasks, total paid and rejections on-chain, with a migration.
 - Run one real proposal through a Trezu treasury.
@@ -128,7 +262,7 @@ Timeline: the first commit is dated 2026-10-25, after the hackathon announcement
 - `agent`: the proposing agent, GitHub checks and the policy engine (TypeScript)
 - `frontend`: the website and public board (React and Vite)
 - `scripts`: the verifier scripts
-- `docs`: [design notes](docs/DESIGN_NOTES.md), [developer experience log](docs/DEVEX.md), [NEAR alignment](docs/NEAR_ALIGNMENT.md)
+- `docs`: [design notes](docs/DESIGN_NOTES.md), [developer experience log](docs/DEVEX.md), [NEAR alignment](docs/NEAR_ALIGNMENT.md), [Trezu notes](docs/TREZU_INTEGRATION.md)
 
 ## What we used
 
@@ -137,8 +271,19 @@ This is the code and services that existed before the hackathon or that we did n
 - Rust: `near-sdk` 5.1.0
 - Agent: `near-api-js`, `@nearai/inference-sdk`, `openai` client, `zod`, `commander`, `axios`, `lowdb`, `dotenv`
 - Frontend: React 18, Vite, TypeScript, Tailwind, `@near-wallet-selector`, `lucide-react`
-- Services: Sputnik DAO v2 contracts, NEAR Intents 1Click quote API (quotes only, no settlement), NEAR AI Cloud, GitHub REST API
+- Services: Sputnik DAO v2 contracts, NEAR Intents 1Click quote API, NEAR AI Cloud, GitHub REST API
 - No templates or boilerplate. The contract, agent, UI and scripts were written for this project.
+
+## Developer experience
+
+[`docs/DEVEX.md`](docs/DEVEX.md) logs the real NEAR problems we hit, with the errors and fixes. The main ones:
+
+- Moving to `near-sdk` 5: balances became `NearToken` and storage keys needed `BorshStorageKey`.
+- The Sputnik factory on testnet is `sputnikv2.testnet`, not the older `sputnikdao2.testnet`.
+- A function-call key can't attach a deposit (`CannotAttachDeposit`), which led to the separate funded agent account.
+- Panic messages are buried in nested promise receipts. We parse `receipts_outcome[].outcome` to find them.
+- Public testnet RPC gets rate limited, so the scripts retry and fall back across several endpoints.
+- The capital letter replay hole, and the lowercase fix.
 
 ## AI assistance
 
