@@ -14,7 +14,7 @@
 | **Tagline** | Agents propose payouts, contracts enforce policy, humans approve. | Focus: Fail-closed governance on Sputnik DAO v2 |
 | **Primary Tracks** | **1. AI Agents**<br>**2. AI Security & Defense**<br>**3. Social / Governance (Sputnik DAO)** | Directly fits contract architecture and multi-agent roles |
 | **Public GitHub Repo** | `https://github.com/kellycryptos/ZiniPay` | Must remain public |
-| **Live Web App / Dashboard** | `https://zini-pay.vercel.app` (Demo mode: `https://zini-pay.vercel.app/app?demo=1`) | Zero wallet required to inspect live testnet state |
+| **Live Web App / Dashboard** | `https://zini-pay.vercel.app`  | Zero wallet required to inspect live testnet state |
 | **Sputnik DAO Treasury** | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet) | Active Sputnik DAO v2 treasury contract |
 | **PolicyHelper Contract** | [`zinipay-policy2.testnet`](https://testnet.nearblocks.io/address/zinipay-policy2.testnet) | Rust smart contract enforcing on-chain policy |
 | **DevEx / Friction Log** | [`docs/DEVEX.md`](DEVEX.md) | 13 documented NEAR protocol friction points |
@@ -66,7 +66,7 @@ Giving AI agents unilateral treasury access leads to runaway spending and prompt
 Watch the 90-second end-to-end proof: legitimate PR evaluation → proposal creation → multi-sig settlement → blocked attacks.
 
 Code: https://github.com/kellycryptos/ZiniPay
-Live App: https://zini-pay.vercel.app/app?demo=1
+Live App: https://zini-pay.vercel.app
 Explorer: https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet
 
 #NEARHackathon #NEAR #AI #Web3Security
