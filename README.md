@@ -44,28 +44,34 @@ Everything below is on NEAR testnet and you can open each link.
 
 Payout transactions: Proposal #5 [`4B1ExcqigaRw…`](https://testnet.nearblocks.io/txns/4B1ExcqigaRw1K6FM7KZuACtzeFuHmMoVf6dbag6BPjd) and Proposal #6 [`2nWMVtQ4z2L7…`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d). The full list is in [`frontend/public/data/verified.json`](frontend/public/data/verified.json) and on the site at `/verify`.
 
-## Check it yourself
+## Try it: do this, see that
 
-No keys and no `.env` file are needed.
+No private keys and no `.env` file are needed. Steps 4 to 6 read public testnet RPC, so they need internet access.
 
-```bash
-git clone https://github.com/kellycryptos/ZiniPay.git
-cd ZiniPay
-npm install
-npm run verify:testnet
-```
+1. Do: `git clone https://github.com/kellycryptos/ZiniPay.git && cd ZiniPay && npm install`
+   See: dependencies install for the `agent` and `frontend` workspaces.
 
-The verifier reads public testnet RPC and checks the council, the agent's lack of voting rights, the policy contract's state and the recorded transactions. If the network can't be reached it reports UNVERIFIED instead of passing. On our last run with the network up it printed 24 PASSED, 0 UNVERIFIED, 0 FAILED.
+2. Do: `npm test --prefix agent`
+   See: `All agent tests completed successfully!` The suites cover the policy engine, anti-replay checks, reputation tracking and tier logic.
 
-Other commands:
+3. Do: `cd contracts/policy-helper && cargo test`
+   See: `test result: ok. 23 passed; 0 failed`. Needs a Rust toolchain.
 
-```bash
-npm test --prefix agent                 # agent tests
-cd contracts/policy-helper && cargo test  # 23 contract tests
-npm run verify:proposal -- 6            # check one DAO proposal against the contract
-npm run verify:reputation -- zinipay-recipient2.testnet
-npm run frontend:dev                    # dashboard at http://localhost:5173
-```
+4. Do: `npm run verify:testnet`
+   See: with network access, every check passes and the summary reads `24 PASSED / 0 UNVERIFIED / 0 FAILED`. It confirms the 2-of-2 council, that the agent has no voting rights, that the policy contract is bound to the DAO, the recipient's score and cap, burned deliverable IDs, and the status of the recorded transactions, including the five reverted attacks.
+   Without network access it prints `0 PASSED / 24 UNVERIFIED / 0 FAILED`, says nothing was verified, and exits with code 2. It never reports FAILED just because the network is down.
+
+5. Do: `npm run verify:reputation -- zinipay-recipient2.testnet`
+   See: the contributor's score (30 points), tier (Silver, 1.5x cap, 15 NEAR) and the two payout receipts with explorer links. Task counts and total paid come from a local cache, the score comes from the contract.
+
+6. Do: `npm run verify:proposal -- 6`
+   See: Proposal #6 read from the DAO and checked against the policy contract, with its two council votes. Without network access it says it could not reach the RPC.
+
+7. Do: `npm run frontend:dev`, then open http://localhost:5173/board
+   See: the public board with live testnet proposals, contributor cards and receipt links. The same pages run at https://zini-pay.vercel.app.
+
+8. Do: open any transaction link in the tables above.
+   See: the real testnet transaction on NearBlocks. The five attack transactions show as failed with the contract's panic message.
 
 ## Deployed on testnet
 
