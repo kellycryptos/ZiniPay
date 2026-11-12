@@ -211,7 +211,30 @@ export default function App() {
     let isSubscribed = true;
     let unsubFn: (() => void) | null = null;
 
-    import('./lib/wallet').then(({ subscribeToWalletState }) => {
+    // The wallet library is about 1.8 MB. Only load it when this visitor can
+    // actually have a wallet session: a saved real account, a wallet redirect
+    // back to the site, or selector data left in storage. Everyone else loads
+    // it later, when they press Connect.
+    const hasWalletSession = (() => {
+      try {
+        const stored = getStoredWalletAccount();
+        if (stored && !stored.isSimulated) return true;
+        const q = new URLSearchParams(window.location.search);
+        if (q.get('account_id') || q.get('transactionHashes') || q.get('errorCode')) return true;
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i) || '';
+          if (k.startsWith('near-wallet-selector') || k.startsWith('near_app_wallet')) return true;
+        }
+      } catch {
+        /* storage blocked */
+      }
+      return false;
+    })();
+
+    (hasWalletSession
+      ? import('./lib/wallet')
+      : Promise.reject(new Error('no-wallet-session'))
+    ).then(({ subscribeToWalletState }) => {
       if (!isSubscribed) return;
       subscribeToWalletState(network, (acc) => {
         if (isSubscribed && acc) {
@@ -229,6 +252,8 @@ export default function App() {
           unsubFn = unsub;
         }
       });
+    }).catch(() => {
+      /* no wallet session, nothing to subscribe to */
     });
 
     return () => {
@@ -268,16 +293,21 @@ export default function App() {
         setStoredWalletAccount(connectedAccount, verifiedRole, false);
       }
 
+      // Show treasury and proposals right away, then load policy details
+      setProposals(liveProps);
+      setIsLoadingOnChain(false);
+
       if (policyContractId) {
-        const onChain = await fetchPolicyContractConfig(policyContractId, targetNet);
+        const [onChain, rep] = await Promise.all([
+          fetchPolicyContractConfig(policyContractId, targetNet),
+          connectedAccount
+            ? fetchOnChainReputation(policyContractId, connectedAccount, targetNet)
+            : Promise.resolve(null),
+        ]);
         setOnChainPolicy(onChain);
-        if (connectedAccount) {
-          const rep = await fetchOnChainReputation(policyContractId, connectedAccount, targetNet);
-          setContributorReputation(rep);
-        }
+        if (connectedAccount) setContributorReputation(rep as number | null);
       }
 
-      setProposals(liveProps);
       if (liveProps.length > 0 && currentPath.startsWith('/board')) {
         showToast(`Synced ${liveProps.length} on-chain proposals from ${targetDao}`);
       }
