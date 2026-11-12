@@ -122,6 +122,13 @@ async function verifyProposal() {
   const proposal = await rpcQuery('get_proposal', { id: proposalId }, DAO_ID);
 
   if (!proposal) {
+    // Tell "network unreachable" apart from "proposal really missing"
+    const reachable = await rpcQuery('get_policy', {}, DAO_ID);
+    if (!reachable) {
+      console.error('⚠ Could not reach any NEAR testnet RPC endpoint. Nothing was verified.');
+      console.error('  Run this again from a machine with internet access.');
+      process.exit(2);
+    }
     console.error(`❌ Proposal #${proposalId} not found on DAO contract ${DAO_ID}.`);
     process.exit(1);
   }

@@ -58,8 +58,31 @@ function parseYocto(val) {
 let passed = 0;
 let failed = 0;
 let unverified = 0;
+// Set when no testnet RPC can be reached at all. Then nothing can be checked,
+// so a check that did not pass is UNVERIFIED, never FAILED.
+let rpcDown = false;
+
+async function probeRpc() {
+  for (const url of VIEW_RPC_ENDPOINTS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 'probe', method: 'status', params: [] }),
+        signal: AbortSignal.timeout(5000),
+      }).then((r) => r.json());
+      if (res?.result) return true;
+    } catch {
+      // try next endpoint
+    }
+  }
+  return false;
+}
 
 function report(step, title, state, details = '') {
+  if (rpcDown && state !== true) {
+    state = 'UNVERIFIED';
+  }
   if (state === true) {
     passed++;
     console.log(`  ✓ [PASS] ${step}: ${title}${details ? ` — ${details}` : ''}`);
@@ -73,6 +96,7 @@ function report(step, title, state, details = '') {
 }
 
 async function rpcPost(method, params, endpoints = VIEW_RPC_ENDPOINTS, timeoutMs = 6000) {
+  if (rpcDown) return null;
   for (const url of endpoints) {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -185,6 +209,12 @@ async function main() {
 ║  Network: NEAR Testnet | RPC: Public FastNear / Official Fallback ║
 ╚══════════════════════════════════════════════════════════════════╝
 `);
+
+  rpcDown = !(await probeRpc());
+  if (rpcDown) {
+    console.warn('  ⚠ No NEAR testnet RPC endpoint could be reached from this machine.');
+    console.warn('    Checks cannot run, so they are reported as UNVERIFIED, not FAILED.\n');
+  }
 
   // ── 1. DAO Contract & Roles ────────────────────────────────────────────────
   console.log('1. Sputnik DAO v2 Verification:');
@@ -425,7 +455,10 @@ async function main() {
 ════════════════════════════════════════════════════════════════════
 `);
 
-  if (failed > 0) {
+  if (rpcDown) {
+    console.log('  ⚠ NETWORK UNREACHABLE: nothing was verified. Run again with internet access.\n');
+    process.exit(2);
+  } else if (failed > 0) {
     process.exit(1);
   } else if (unverified > 0) {
     console.log('  ⚠ ON-CHAIN STATE VERIFIED; SOME HISTORICAL TX STATUSES UNVERIFIED DUE TO RPC TIMEOUT.\n');
