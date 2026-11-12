@@ -588,7 +588,7 @@ npm run agent:propose -- \
 # 4. Launch the dashboard locally
 npm run frontend:dev
 ```
-Open `http://localhost:5173` in your browser. Add `?demo=1` to explore the dashboard in demo mode with sample proposals, or connect a NEAR testnet wallet (e.g. Meteor, HERE, MyNearWallet) to interact with live proposals.
+Open `http://localhost:5173` in your browser. The dashboard shows live testnet data with no wallet needed. Connect a NEAR testnet wallet (e.g. Meteor, HERE, MyNearWallet) to interact with live proposals.
 
 ### Pre-Hackathon Code, Libraries, and Templates Used
 In accordance with NEAR HACKATHON rule Q-005:

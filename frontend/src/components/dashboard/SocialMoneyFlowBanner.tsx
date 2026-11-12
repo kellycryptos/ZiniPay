@@ -13,12 +13,10 @@ import {
 
 interface SocialMoneyFlowBannerProps {
   onSimulateFlow?: () => void;
-  isDemoMode?: boolean;
 }
 
 export function SocialMoneyFlowBanner({
   onSimulateFlow,
-  isDemoMode = false,
 }: SocialMoneyFlowBannerProps) {
   const [selectedStep, setSelectedStep] = useState<number>(1);
 
@@ -79,11 +77,6 @@ export function SocialMoneyFlowBanner({
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight">
                 Social Money Lifecycle: One Complete Flow at a Glance
               </h3>
-              {isDemoMode && (
-                <span className="px-2 py-0.5 rounded-full bg-[#00E599]/15 text-[#00EC97] border border-[#00E599]/30 text-[10px] font-mono font-bold">
-                  Demo Mode
-                </span>
-              )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Named Contributor Request ➔ PolicyHelper Spend Cap Check ➔ Sputnik DAO Multi-Sig Quorum ➔ Payout &amp; Reputation Update

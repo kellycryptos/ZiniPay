@@ -76,17 +76,17 @@ This guide outlines the honest product walkthrough designed to demonstrate **ver
 ---
 
 ### 🎬 Scene 3: Community Treasury Dashboard & Honest Limitations (1:40 – 2:30)
-**Goal**: Showcase the live frontend, explain demo mode, and state architectural limitations transparently.
+**Goal**: Showcase the live frontend and state architectural limitations transparently.
 
-- **Screen**: Browser on ZiniPay Dashboard ([https://zini-pay.vercel.app/app?demo=1](https://zini-pay.vercel.app/app?demo=1))
+- **Screen**: Browser on ZiniPay Dashboard ([https://zini-pay.vercel.app/app](https://zini-pay.vercel.app/app))
 - **Actions on Screen**:
   1. Highlight the **"Three-Way Release Gate"** indicators (`Scope Verified`, `Cap ≤ Limit`, `Zero Replay`).
-  2. Point out the **"Simulation"** label on the demo mode banner.
+  2. Point out the **"Model review: simulated"** label.
   3. Show the **"Attack Attempts & Blocked Exploits"** panel in the right sidebar.
 - **Voiceover**:
   > *"On the ZiniPay dashboard at zini-pay.vercel.app, council members and contributors see live data straight from Sputnik DAO RPC.
   >
-  > We provide an explicit `?demo=1` mode so anyone can explore simulated proposals and deliberation logs without needing testnet tokens.
+  > No wallet is needed to look. Everything shown comes from live testnet data.
   >
   > To be completely transparent about our current scope:
   > - Daily spend limits currently live in the agent daemon, while per-proposal tier caps and cooldowns live on-chain in Rust.
