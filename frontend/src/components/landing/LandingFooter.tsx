@@ -50,7 +50,7 @@ export function LandingFooter({
           </p>
           <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-500">
             <ShieldCheck size={13} className="text-emerald-500" />
-            <span>Built for NEAR HACKATHON · Social Money Track</span>
+            <span>Testnet only. Not audited.</span>
           </div>
         </div>
 

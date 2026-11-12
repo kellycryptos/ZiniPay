@@ -26,16 +26,11 @@ export function LandingClosingCta({
           {/* Subtle Ambient Emerald Accent within the Card */}
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-[70px] pointer-events-none -z-10" />
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-700 dark:text-[#00EC97] font-semibold mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#00E599] animate-pulse" />
-            <span>NEAR HACKATHON · Social Money Track</span>
-          </div>
-
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white relative z-10">
-            Judge-Ready. Verified On-Chain.
+            Give your AI agent a budget, not your keys.
           </h2>
           <p className="max-w-2xl text-base sm:text-lg text-slate-600 dark:text-slate-400 mt-4 leading-relaxed relative z-10">
-            Explore live proposals on the public board, test the 60-second verification suite, or inspect the audited Rust contracts on GitHub.
+            Watch live proposals on the public board, or check every rule yourself on the verification page. The contracts are open source on GitHub.
           </p>
 
           {/* Action CTAs */}
@@ -65,7 +60,7 @@ export function LandingClosingCta({
               className="px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-[#00EC97] font-mono text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
             >
               <Shield size={16} />
-              <span>Run On-Chain Verifier</span>
+              <span>Verify On-Chain</span>
             </a>
           </div>
         </div>

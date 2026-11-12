@@ -30,10 +30,10 @@ export function LandingKeyFeatures({
     {
       icon: LayoutDashboard,
       title: 'Public Transparency Board',
-      tag: 'Zero-Wallet Evaluation',
+      tag: 'No Wallet Needed',
       description:
-        'Live dashboard at /board with ?demo=1 mode allows any community member or hackathon judge to view liquid treasury balances, proposals across 4 stages, contributor records, and testnet explorer receipts without an injected wallet.',
-      highlight: 'Real-time Sputnik DAO v2 sync + Demo mode',
+        'The public board lets any community member view treasury balances, proposals across 4 stages, contributor records, and testnet explorer receipts without an injected wallet.',
+      highlight: 'Live Sputnik DAO v2 data',
     },
     {
       icon: ShieldCheck,
@@ -49,12 +49,8 @@ export function LandingKeyFeatures({
     <section className="relative py-12 sm:py-20 z-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="mb-12 text-center sm:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-700 dark:text-[#00EC97] font-semibold mb-3">
-            <ShieldCheck size={13} />
-            <span>Social Money Track Architecture</span>
-          </div>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Core Features: Built for Social Money Governance
+            Core Features
           </h2>
           <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
             Four interlocking mechanisms that turn autonomous agent proposals into safe, transparent community disbursements.
@@ -103,7 +99,7 @@ export function LandingKeyFeatures({
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00E599] animate-pulse" />
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-              Explore the live Social Money governance board on NEAR Testnet
+              Explore the live governance board on NEAR testnet
             </span>
           </div>
           <div className="flex items-center gap-3">
