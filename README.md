@@ -115,7 +115,12 @@ Demo values you should not copy to production:
 
 ## Hackathon tracks
 
-We submitted to Social Money (reputation tied to named accounts, a council that approves payouts) and AI Security & Defense (a contract that limits what a tricked agent can do).
+We submitted to two tracks.
+
+- Social Money: reputation tied to named NEAR accounts, and a Sputnik DAO council that approves every payout.
+- AI Security & Defense: a policy contract that limits what a tricked agent can do, with spending caps, a cooldown and one-time deliverables.
+
+Timeline: the first commit is dated 2026-10-25, after the hackathon announcement on 2026-10-19. All code was written inside the hackathon window. Everything runs on testnet, which the rules allow for every track.
 
 ## Repository layout
 
