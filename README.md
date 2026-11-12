@@ -251,7 +251,7 @@ ZiniPay extends standard DAO tooling with four Social Money capabilities designe
    - Uses real testnet data with direct explorer links to Sputnik DAO proposals and `PolicyHelper` receipts.
 
 4. **Trezu Treasury Compatibility (Alternative Custody)**:
-   - Built to support both Sputnik DAO v2 and Trezu / NEAR multi-sig treasury instances without contract changes.
+   - Designed so a Trezu treasury could be used in place of Sputnik DAO v2 without contract changes. This has not been tested. Only Sputnik DAO v2 on testnet is verified.
    - Detailed integration patterns and configuration blueprints are documented in [`docs/TREZU_INTEGRATION.md`](docs/TREZU_INTEGRATION.md).
 
 ---
@@ -296,7 +296,9 @@ ZiniPay extends standard DAO tooling with four Social Money capabilities designe
 
 ### Trezu Alternative Custody Architecture
 
-Communities utilizing [Trezu](https://trezu.app) as their multisig custody layer can operate ZiniPay identically:
+> Untested. Only Sputnik DAO v2 on testnet has been run. The notes below describe the intended design for a Trezu treasury.
+
+Communities utilizing [Trezu](https://trezu.app) as their multisig custody layer could operate ZiniPay the same way:
 - **Zero Contract Changes**: `PolicyHelper` verifies `predecessor_account_id == self.dao_account_id`. The DAO treasury address can point to either a Sputnik DAO v2 contract (`*.sputnikv2.testnet`) or a Trezu multisig contract (`*.near`).
 - **Proposal Flow**: The ZiniPay agent submits multi-sig transactions to the Trezu contract.
 - **Quorum Execution**: Trezu council signers approve in the Trezu web interface. Upon reaching threshold, Trezu calls `PolicyHelper::release`, enforcing spend caps, anti-replay, and cooldowns.
@@ -649,6 +651,23 @@ Based on verified on-chain state queries directly on NEAR Testnet (`test.rpc.fas
 12. **AI-Assisted Engineering Disclosure**: In full accordance with hackathon rules and transparency standards, AI tooling (Claude, Antigravity) was utilized for code generation, adversarial edge-case analysis, test automation, and UI implementation under human architectural direction and verification.
 
 ---
+
+### Demo vs Production Settings
+
+| Setting | Demo (testnet now) | Production suggestion |
+|---|---|---|
+| Cooldown between payouts | 60 seconds, enforced on-chain, so checks can run back to back | 24 hours |
+| Rolling 24 hour spend cap | Enforced by the agent only, not on-chain | Add an on-chain aggregate window |
+| Approval votes | 2 of 2 council on every payout, enforced by Sputnik DAO | Tier based schedule only after it is deployed and tested |
+| Tier approval schedule | Advisory view in source, not deployed | Deploy through a DAO proposal, then re-verify |
+| Audit | Self-reviewed only | Independent audit before mainnet |
+
+### Next Steps
+
+- Deploy `get_approval_tier` and `get_contributor_record` through a council proposal, then re-run the verifier.
+- Store completed tasks, total paid and rejections on-chain in `PolicyHelper`, with a migration.
+- Run one real proposal through a Trezu treasury before claiming compatibility.
+- Independent audit and a reproducible build with NearBlocks contract verification.
 
 ## 12. License
 

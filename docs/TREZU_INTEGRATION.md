@@ -8,7 +8,9 @@
 
 [Trezu](https://trezu.app) is NEAR's modern multi-sig treasury governance platform designed for DAO councils, teams, and community funds. Under the hood, Trezu treasuries are governed by **Sputnik DAO v2** smart contracts and NEAR native multi-sig policies.
 
-Because ZiniPay's architecture enforces strict role separation (**Agent proposes → PolicyHelper constrains → Human council approves**), ZiniPay is wire-compatible with any Trezu-managed treasury.
+> Status: untested. Only Sputnik DAO v2 on testnet has been run. This page describes the intended design.
+
+Because ZiniPay's architecture enforces strict role separation (**Agent proposes → PolicyHelper constrains → Human council approves**), it should work with a Trezu-managed treasury, but this has not been tried.
 
 ---
 

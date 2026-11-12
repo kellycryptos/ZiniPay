@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Award, Users, ExternalLink, ShieldCheck, CheckCircle2, Scale, Info } from 'lucide-react';
 
 interface ContributorReputationStripProps {
@@ -18,6 +18,33 @@ export function ContributorReputationStrip({
     network === 'mainnet' ? 'https://nearblocks.io' : 'https://testnet.nearblocks.io';
 
   const score = contributorScore ?? 30;
+  const tier =
+    score >= 60
+      ? { name: 'GOLD', mult: '2.0x', cap: 20 }
+      : score >= 20
+        ? { name: 'SILVER', mult: '1.5x', cap: 15 }
+        : { name: 'BRONZE', mult: '1.0x', cap: 10 };
+
+  // Real payout records for the contributor, read from the verified testnet record
+  const RECIPIENT = 'zinipay-recipient2.testnet';
+  const [payouts, setPayouts] = useState<
+    { proposalId: number; amountNear: string; txHash: string; explorerUrl: string }[]
+  >([]);
+  useEffect(() => {
+    let alive = true;
+    fetch('/data/verified.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d || !Array.isArray(d.settledPayouts)) return;
+        setPayouts(d.settledPayouts.filter((p: any) => p.recipient === RECIPIENT));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const lastPayout = payouts.length ? payouts[payouts.length - 1] : null;
+  const totalPaid = payouts.reduce((sum, p) => sum + parseFloat(p.amountNear || '0'), 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
@@ -64,7 +91,7 @@ export function ContributorReputationStrip({
             {/* Silver Tier Badge */}
             <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 text-slate-800 dark:text-slate-100 text-[10px] font-mono font-bold border border-slate-300 dark:border-slate-500 flex items-center gap-1.5 shadow-sm self-start sm:self-auto">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-white" />
-              <span>SILVER TIER (1.5x)</span>
+              <span>{tier.name} TIER ({tier.mult})</span>
             </span>
           </div>
 
@@ -75,33 +102,41 @@ export function ContributorReputationStrip({
             </div>
             <div>
               <span className="text-[10px] text-slate-500 uppercase block">Spend Cap</span>
-              <span className="text-sm font-bold text-emerald-600 dark:text-[#00EC97]">15.0 NEAR</span>
+              <span className="text-sm font-bold text-emerald-600 dark:text-[#00EC97]">{tier.cap.toFixed(1)} NEAR</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-500 uppercase block">Completed Tasks</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">2 Tasks</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">{payouts.length} Tasks</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-500 uppercase block">Total Disbursed</span>
-              <span className="text-sm font-bold text-slate-900 dark:text-white">0.20 NEAR</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">{totalPaid.toFixed(2)} NEAR</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/70 text-[11px] font-mono">
+            <div>
+              <span className="text-[10px] text-slate-500 uppercase block">Votes Required Today</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white">2 of 2 council</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-500 uppercase block">Last Payout Receipt</span>
+              {lastPayout ? (
+                <a
+                  href={lastPayout.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm font-bold text-emerald-600 dark:text-[#00EC97] hover:underline"
+                >
+                  Proposal #{lastPayout.proposalId} · {lastPayout.txHash.slice(0, 8)}…
+                </a>
+              ) : (
+                <span className="text-sm text-slate-500">Loading</span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Secondary Contributor Card: alice-contributor.testnet (Demo) */}
-        <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-[#070D0C]/50 border border-slate-200 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-            <span className="text-slate-700 dark:text-slate-300">alice-contributor.testnet</span>
-            <span className="text-[10px] text-slate-500">(Demo Contributor)</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold">
-              BRONZE TIER (10 pts · 10N Cap)
-            </span>
-            <span className="text-slate-500 text-[10px]">1 Completed</span>
-          </div>
-        </div>
       </div>
 
       {/* ── RIGHT (5 COLS): Visible Tier Policy Matrix ─────────── */}
@@ -120,8 +155,8 @@ export function ContributorReputationStrip({
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-mono text-emerald-700 dark:text-[#00EC97]">
-            Enforced
+          <span className="text-[10px] font-mono text-amber-700 dark:text-amber-400">
+            Caps enforced
           </span>
         </div>
 
@@ -136,7 +171,7 @@ export function ContributorReputationStrip({
             </div>
             <div className="text-right">
               <span className="font-bold text-slate-900 dark:text-white">10 NEAR</span>
-              <span className="text-[10px] text-slate-500 block">Full DAO Quorum</span>
+              <span className="text-[10px] text-slate-500 block">2 of 2 votes</span>
             </div>
           </div>
 
@@ -149,7 +184,7 @@ export function ContributorReputationStrip({
             </div>
             <div className="text-right">
               <span className="font-bold text-emerald-600 dark:text-[#00EC97]">15 NEAR (1.5x)</span>
-              <span className="text-[10px] text-slate-500 block">1 vote ≤ 5N / 2 votes &gt; 5N</span>
+              <span className="text-[10px] text-slate-500 block">Advisory: 1 vote ≤ 5N</span>
             </div>
           </div>
 
@@ -162,7 +197,7 @@ export function ContributorReputationStrip({
             </div>
             <div className="text-right">
               <span className="font-bold text-slate-900 dark:text-white">20 NEAR (2.0x)</span>
-              <span className="text-[10px] text-slate-500 block">Auto ≤ 2N / 1 vote ≤ 8N</span>
+              <span className="text-[10px] text-slate-500 block">Advisory: auto ≤ 2N</span>
             </div>
           </div>
         </div>
@@ -172,7 +207,7 @@ export function ContributorReputationStrip({
             <CheckCircle2 size={11} className="text-[#00EC97]" />
             <span>Over-cap requests fail-closed on chain</span>
           </span>
-          <span className="text-slate-500">60s Cooldown</span>
+          <span className="text-slate-500">Live DAO needs 2 of 2 votes</span>
         </div>
       </div>
     </div>
