@@ -35,6 +35,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const applyTheme = (t: Theme) => {
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
+      // Pause every CSS transition for one frame so dozens of elements do not
+      // animate at once. This is what freezes some phones on theme switch.
+      root.classList.add('theme-switching');
+      window.setTimeout(() => root.classList.remove('theme-switching'), 120);
       if (t === 'light') {
         root.classList.remove('dark');
         root.classList.add('light');
@@ -64,11 +68,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleTheme = () => {
-    setThemeState((prev) => {
-      const nextTheme = prev === 'dark' ? 'light' : 'dark';
-      applyTheme(nextTheme);
-      return nextTheme;
-    });
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (
