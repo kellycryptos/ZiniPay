@@ -21,7 +21,12 @@ import path from 'path';
 const targetAccount = process.argv[2] || 'zinipay-recipient2.testnet';
 const POLICY_ID = process.env.POLICY_CONTRACT_ID || 'zinipay-policy2.testnet';
 const DAO_ID = process.env.DAO_CONTRACT_ID || 'zinipay-demo.sputnikv2.testnet';
-const RPC_URL = process.env.NEAR_NODE_URL || 'https://test.rpc.fastnear.com';
+const RPC_URLS = [
+  ...(process.env.NEAR_NODE_URL ? [process.env.NEAR_NODE_URL] : []),
+  'https://test.rpc.fastnear.com',
+  'https://archival-rpc.testnet.near.org',
+  'https://rpc.testnet.near.org',
+];
 const EXPLORER_URL = 'https://testnet.nearblocks.io';
 
 function parseYocto(val) {
@@ -48,33 +53,35 @@ function formatNear(yocto) {
 }
 
 async function rpcCall(methodName, args = {}) {
-  try {
-    const res = await axios.post(
-      RPC_URL,
-      {
-        jsonrpc: '2.0',
-        id: 'rep-query',
-        method: 'query',
-        params: {
-          request_type: 'call_function',
-          finality: 'final',
-          account_id: POLICY_ID,
-          method_name: methodName,
-          args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+  for (const url of RPC_URLS) {
+    try {
+      const res = await axios.post(
+        url,
+        {
+          jsonrpc: '2.0',
+          id: 'rep-query',
+          method: 'query',
+          params: {
+            request_type: 'call_function',
+            finality: 'final',
+            account_id: POLICY_ID,
+            method_name: methodName,
+            args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+          },
         },
-      },
-      { timeout: 7000 }
-    );
-    if (res.data?.result?.result) {
-      const raw = Buffer.from(res.data.result.result).toString('utf-8');
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return raw;
+        { timeout: 7000 }
+      );
+      if (res.data?.result?.result) {
+        const raw = Buffer.from(res.data.result.result).toString('utf-8');
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return raw;
+        }
       }
+    } catch {
+      // try the next endpoint
     }
-  } catch (err) {
-    // Fallback to null on RPC failure
   }
   return null;
 }
@@ -139,46 +146,7 @@ async function main() {
     payouts: [],
   };
 
-  const repFile = path.join(process.cwd(), 'zinipay-reputation.json');
-  if (fs.existsSync(repFile)) {
-    try {
-      const repJson = JSON.parse(fs.readFileSync(repFile, 'utf8'));
-      if (repJson.entries?.[targetAccount]) {
-        ledgerEntry = { ...ledgerEntry, ...repJson.entries[targetAccount] };
-      }
-    } catch {}
-  }
-
-  // Use on-chain score as authoritative if available
-  const score = onChainScore !== null && onChainScore !== undefined ? onChainScore : ledgerEntry.score;
-  const tierInfo = getTierInfo(score);
-  console.log('✓ Done\n');
-
-  // 3. Print Verified Track Record
-  console.log('════════════════════════════════════════════════════════════════════');
-  console.log(`  CONTRIBUTOR TRACK RECORD: ${targetAccount}`);
-  console.log('════════════════════════════════════════════════════════════════════');
-  console.log(`  • On-Chain Score:       ${score} pts ${onChainScore !== null ? `(verified on ${POLICY_ID})` : '(ledger fallback)'}`);
-  console.log(`  • Reputation Tier:      ${tierInfo.tier} (${tierInfo.capMult}x spend cap multiplier)`);
-  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks} (local off-chain cache, not verified on-chain)`);
-  console.log(`  • Total Value Paid:     ${ledgerEntry.totalPaidNear.toFixed(4)} NEAR`);
-  console.log(`  • Proposals Approved:   ${ledgerEntry.approvedProposals} (local off-chain cache, not verified on-chain)`);
-  console.log(`  • Deliverable Rejections: ${ledgerEntry.rejectionsCount} (local off-chain cache, not verified on-chain)`);
-  if (onChainCap) {
-    console.log(`  • Effective Spend Cap:  ${formatNear(parseYocto(onChainCap))}`);
-  }
-  console.log('────────────────────────────────────────────────────────────────────');
-
-  // 4. Print Tiered Approval Resolution
-  console.log(`\n  TIERED APPROVAL SCHEDULE (${tierInfo.tier} Tier):`);
-  const schedule = getApprovalSchedule(tierInfo.tier, score);
-  schedule.forEach((s) => {
-    const typeColor = s.type === 'AutoApprove' ? 'AUTO-APPROVE' : s.type === 'SingleCouncil' ? 'SINGLE-COUNCIL' : s.type === 'FullDaoQuorum' ? 'FULL-DAO' : 'REJECTED';
-    console.log(`    [${typeColor.padEnd(14)}] ${s.range.padEnd(26)} → Votes: ${s.votes.toString().padEnd(3)} | ${s.desc}`);
-  });
-
-  // 5. Testnet Proofs & Payout Receipts
-  console.log('\n  CONFIRMED TESTNET PAYOUT RECEIPTS:');
+  // Recorded payouts from the verified testnet record
   const verifiedPath = path.join(process.cwd(), 'frontend', 'public', 'data', 'verified.json');
   let matchedTxs = [];
   if (fs.existsSync(verifiedPath)) {
@@ -191,6 +159,64 @@ async function main() {
     } catch {}
   }
 
+  const repFile = path.join(process.cwd(), 'zinipay-reputation.json');
+  if (fs.existsSync(repFile)) {
+    try {
+      const repJson = JSON.parse(fs.readFileSync(repFile, 'utf8'));
+      if (repJson.entries?.[targetAccount]) {
+        ledgerEntry = { ...ledgerEntry, ...repJson.entries[targetAccount] };
+      }
+    } catch {}
+  }
+
+  // The local cache is not committed. Fall back to the recorded payouts.
+  let countsFromRecord = false;
+  if (!ledgerEntry.completedTasks && matchedTxs.length > 0) {
+    ledgerEntry.completedTasks = matchedTxs.length;
+    ledgerEntry.approvedProposals = matchedTxs.length;
+    ledgerEntry.totalPaidNear = matchedTxs.reduce((n, t) => n + parseFloat(t.amountNear || '0'), 0);
+    countsFromRecord = true;
+  }
+  const cacheNote = countsFromRecord ? 'from verified.json, not read from the chain' : 'local off-chain cache, not verified on-chain';
+  const offline = onChainScore === null || onChainScore === undefined;
+
+  // Use on-chain score as authoritative if available
+  const score = onChainScore !== null && onChainScore !== undefined ? onChainScore : ledgerEntry.score;
+  const tierInfo = getTierInfo(score);
+  console.log('✓ Done\n');
+
+  // 3. Print Verified Track Record
+  console.log('════════════════════════════════════════════════════════════════════');
+  console.log(`  CONTRIBUTOR TRACK RECORD: ${targetAccount}`);
+  console.log('════════════════════════════════════════════════════════════════════');
+  if (offline) {
+    console.log('  • On-Chain Score:       UNAVAILABLE (no NEAR testnet RPC endpoint could be reached)');
+    console.log('  • Reputation Tier:      UNKNOWN until the score can be read from the contract');
+  } else {
+    console.log(`  • On-Chain Score:       ${score} pts (verified on ${POLICY_ID})`);
+    console.log(`  • Reputation Tier:      ${tierInfo.tier} (${tierInfo.capMult}x spend cap multiplier)`);
+  }
+  console.log(`  • Completed Tasks:      ${ledgerEntry.completedTasks} (${cacheNote})`);
+  console.log(`  • Total Value Paid:     ${ledgerEntry.totalPaidNear.toFixed(4)} NEAR`);
+  console.log(`  • Proposals Approved:   ${ledgerEntry.approvedProposals} (${cacheNote})`);
+  console.log(`  • Deliverable Rejections: ${ledgerEntry.rejectionsCount} (${cacheNote})`);
+  if (onChainCap) {
+    console.log(`  • Effective Spend Cap:  ${formatNear(parseYocto(onChainCap))}`);
+  }
+  console.log('────────────────────────────────────────────────────────────────────');
+
+  // 4. Print Tiered Approval Resolution (advisory schedule, needs a real score)
+  console.log(`\n  TIERED APPROVAL SCHEDULE${offline ? '' : ` (${tierInfo.tier} Tier)`}:`);
+  console.log('  Advisory only. The live DAO requires 2 of 2 council votes for every payout.');
+  const schedule = offline ? [] : getApprovalSchedule(tierInfo.tier, score);
+  if (offline) console.log('    Skipped: the score could not be read from the chain.');
+  schedule.forEach((s) => {
+    const typeColor = s.type === 'AutoApprove' ? 'AUTO-APPROVE' : s.type === 'SingleCouncil' ? 'SINGLE-COUNCIL' : s.type === 'FullDaoQuorum' ? 'FULL-DAO' : 'REJECTED';
+    console.log(`    [${typeColor.padEnd(14)}] ${s.range.padEnd(26)} → Votes: ${s.votes.toString().padEnd(3)} | ${s.desc}`);
+  });
+
+  // 5. Testnet Proofs & Payout Receipts
+  console.log('\n  CONFIRMED TESTNET PAYOUT RECEIPTS:');
   if (matchedTxs.length > 0) {
     matchedTxs.forEach((tx, idx) => {
       console.log(`    ${idx + 1}. Proposal #${tx.proposalId ?? '-'}: ${tx.amountNear ?? '0.10'} NEAR → Deliverable: ${tx.deliverable || tx.prTitle}`);
@@ -207,7 +233,13 @@ async function main() {
   }
 
   console.log('\n════════════════════════════════════════════════════════════════════');
-  console.log('  ✓ SOCIAL MONEY REPUTATION & TIERED APPROVAL VERIFIED CLEAN');
+  if (offline) {
+    console.log('  ⚠ NOT VERIFIED: the NEAR testnet RPC could not be reached.');
+    console.log('    The payout list above comes from verified.json. Run again with internet access.');
+    console.log('════════════════════════════════════════════════════════════════════\n');
+    process.exit(2);
+  }
+  console.log('  ✓ SCORE AND CAP READ FROM THE CONTRACT ON NEAR TESTNET');
   console.log('════════════════════════════════════════════════════════════════════\n');
 }
 

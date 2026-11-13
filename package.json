@@ -23,7 +23,7 @@
     "verify:proposal": "node scripts/verify-proposal.mjs",
     "verify:reputation": "node scripts/verify-reputation.mjs",
     "verify:testnet": "node scripts/verify-testnet.mjs",
-    "demo:social-money": "node scripts/demo-social-money.mjs",
+    "demo:social-money": "npm run agent:build && node scripts/demo-social-money.mjs",
     "demo": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --demo",
     "inspect": "node node_modules/tsx/dist/cli.mjs agent/src/index.ts --inspect"
   },
