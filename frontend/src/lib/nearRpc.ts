@@ -52,15 +52,26 @@ async function postRpc(network: 'testnet' | 'mainnet', payload: any, timeout = 7
   if (network === 'mainnet') {
     return axios.post('https://rpc.mainnet.near.org', payload, { timeout });
   }
-  for (const url of TESTNET_RPCS) {
-    try {
-      const res = await axios.post(url, payload, { timeout });
-      if (res && res.data) return res;
-    } catch {
-      // Try fallback RPC
-    }
+  // Ask every endpoint at the same time and use the first real answer.
+  // One slow or rate limited server then no longer delays the page.
+  try {
+    return await new Promise<any>((resolve, reject) => {
+      let failed = 0;
+      TESTNET_RPCS.forEach((url) => {
+        axios
+          .post(url, payload, { timeout })
+          .then((res) => {
+            if (res && res.data) resolve(res);
+            else if (++failed === TESTNET_RPCS.length) reject(new Error('empty RPC response'));
+          })
+          .catch(() => {
+            if (++failed === TESTNET_RPCS.length) reject(new Error('all RPC endpoints failed'));
+          });
+      });
+    });
+  } catch {
+    return axios.post(TESTNET_RPCS[0], payload, { timeout });
   }
-  return axios.post(TESTNET_RPCS[0], payload, { timeout });
 }
 
 export type TreasuryBalanceResult = {
