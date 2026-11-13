@@ -393,6 +393,27 @@ code, kbd, samp, pre, .font-mono {
   pointer-events: none;
 }
 
+/* Theme switch: no transitions for a moment, so phones do not stall */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+}
+
+/* Phones: drop the costly blur and glass effects. They cause blank or frozen
+   screens on some mobile browsers, mostly right after a theme switch. */
+@media (max-width: 767px) {
+  [class*='backdrop-blur'] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .blur-3xl,
+  .blur-2xl,
+  [class*='blur-\['] {
+    filter: none !important;
+  }
+}
+
 /* Accessibility: respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
