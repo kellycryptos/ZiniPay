@@ -556,6 +556,7 @@ async function runPropose(opts: ProposeOpts) {
     const originalCaseCid = ghMatch ? `${ghMatch[1]}/${ghMatch[2]}#${ghMatch[3]}` : opts.deliverable;
     const formsToCheck = Array.from(new Set([canonicalCid, originalCaseCid, opts.deliverable]));
 
+    let answered = 0;
     for (const form of formsToCheck) {
       const isUsed = await queryContractView<boolean>(
         cfg.nodeUrl,
@@ -563,6 +564,7 @@ async function runPropose(opts: ProposeOpts) {
         'cid_used',
         { cid: form }
       );
+      if (isUsed !== null) answered++;
       if (isUsed === true) {
         onChainCidUsed = true;
         burnedCidMatched = form;
@@ -570,6 +572,16 @@ async function runPropose(opts: ProposeOpts) {
       }
     }
     if (onChainCidUsed === null) {
+      if (answered === 0) {
+        // Fail closed: if the chain cannot be read we cannot rule out a replay.
+        console.log(
+          chalk.red(
+            `\n  ✗ Could not read cid_used from ${cfg.nodeUrl}. The replay check could not run, so this request is not cleared (fail closed).`
+          )
+        );
+        console.log(chalk.gray('    Run this again from a machine that can reach NEAR testnet RPC.'));
+        process.exit(2);
+      }
       onChainCidUsed = false;
     }
   }
