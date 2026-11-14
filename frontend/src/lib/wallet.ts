@@ -181,3 +181,63 @@ export async function signAndSendDaoVote(opts: {
     ],
   });
 }
+
+export async function signAndSendDaoProposal(opts: {
+  daoContractId: string;
+  policyContractId: string;
+  recipient: string;
+  amountYocto: string;
+  deliverableCid: string;
+  description: string;
+  bondYocto?: string;
+}): Promise<{ txHash?: string; result?: any }> {
+  if (!selectorInstance || !selectorInstance.isSignedIn()) {
+    throw new Error('No active NEAR wallet connected. Please connect your wallet via the selector to dispatch proposals.');
+  }
+  const wallet = await selectorInstance.wallet();
+  const bond = opts.bondYocto || '1000000000000000000000000'; // 1 NEAR proposal bond
+
+  const releaseArgs = JSON.stringify({
+    recipient: opts.recipient,
+    amount: opts.amountYocto,
+    cid: opts.deliverableCid,
+  });
+
+  const base64Args = typeof btoa !== 'undefined'
+    ? btoa(releaseArgs)
+    : Buffer.from(releaseArgs).toString('base64');
+
+  const res = await wallet.signAndSendTransaction({
+    receiverId: opts.daoContractId,
+    actions: [
+      {
+        type: 'FunctionCall',
+        params: {
+          methodName: 'add_proposal',
+          args: {
+            proposal: {
+              description: opts.description,
+              kind: {
+                FunctionCall: {
+                  receiver_id: opts.policyContractId,
+                  actions: [
+                    {
+                      method_name: 'release',
+                      args: base64Args,
+                      deposit: opts.amountYocto,
+                      gas: '150000000000000', // 150 TGas
+                    },
+                  ],
+                },
+              },
+            },
+          },
+          gas: '200000000000000', // 200 TGas
+          deposit: bond,
+        },
+      } as any,
+    ],
+  });
+
+  return { txHash: (res as any)?.transaction?.hash, result: res };
+}

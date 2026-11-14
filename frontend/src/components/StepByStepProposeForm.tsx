@@ -53,6 +53,7 @@ export function StepByStepProposeForm({
   // Step verification states
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
+  const [isDispatching, setIsDispatching] = useState<boolean>(false);
   const [evalError, setEvalError] = useState<string | null>(null);
 
   // Results for each step
@@ -356,69 +357,112 @@ export function StepByStepProposeForm({
   };
 
   // Dispatch proposal to on-chain Sputnik DAO
-  const handleDispatch = () => {
+  const handleDispatch = async () => {
     if (!connectedAccount) {
       onShowToast('Wallet not connected. Connect a verified NEAR wallet to dispatch proposals.');
       onOpenWalletModal();
       return;
     }
 
-    const newId = Date.now() % 10000;
-    const newProp: Proposal = {
-      id: newId,
-      title: task,
-      proposer: connectedAccount,
-      recipient,
-      amountNear: amount,
-      amountYocto: (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString(),
-      proofCid: deliverable,
-      summary: `Deliberated via ZiniPay Agent. Three-Way Match clearance confirmed.`,
-      evidenceType: deliverable.includes('github') ? 'github_pr' : 'milestone_deliverable',
-      evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${deliberationStatus.attestationSummary}`,
-      createdAt: 'Just now',
-      status: 'pending_quorum',
-      simulated: Boolean(deliberationStatus.simulated),
-      policy: {
-        withinCap: true,
-        capLimit: `${onChainPolicy ? (Number(BigInt(onChainPolicy.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1) : '15.0'} NEAR`,
-        cooldownElapsed: true,
-        cooldownRemainingSecs: 0,
-        cidUnique: true,
-        reputationQualified: true,
-        reputationScore: 85,
-        tier: 'Gold',
-      },
-      settlement: {
-        type: destinationChain === 'near' ? 'native_near' : 'cross_chain_intent',
-        targetChain: destinationChain,
-        targetToken: destinationChain === 'near' ? 'NEAR' : 'USDC',
-        recipientAddress: destinationChain === 'near' ? recipient : crossChainAddress,
-        quoteEstimate: destinationChain !== 'near' ? `~${(Number(amount) * 4.6).toFixed(2)} USDC` : undefined,
-      },
-      targetContract: policyContractId || 'zinipay-policy2.testnet',
-      targetMethod: 'release',
-      isZinipayRelease: true,
-      votes: {
-        approve: 1,
-        reject: 0,
-        required: 2,
-      },
-    };
+    setIsDispatching(true);
+    let onChainTxHash: string | undefined;
 
-    onProposalCreated(newProp);
-    onShowToast(`Proposal #ZP-${newId} queued with Three-Way Match!`);
+    try {
+      const yoctoAmount = (BigInt(Math.floor(Number(amount) * 1e4)) * 10n ** 20n).toString();
+      const proposalDesc = `[Three-Way Match: PASS] Task: ${task} | Deliverable: ${deliverable} | Recipient: ${recipient}`;
 
-    // Reset form
-    setTask('');
-    setDeliverable('');
-    setRecipient('');
-    setAmount('');
-    setCrossChainAddress('');
-    setCurrentStep(1);
-    setDeliverableStatus({ status: 'pending', reason: 'Awaiting artifact input' });
-    setPolicyStatus({ status: 'pending', reason: 'Awaiting policy validation' });
-    setDeliberationStatus({ status: 'pending', reason: 'Awaiting agent deliberation' });
-    setPayloadStatus({ status: 'pending', reason: 'Awaiting clearance' });
+      // Check if real wallet connected and dispatch on-chain
+      let isRealWallet = false;
+      try {
+        const { isRealWalletConnected, signAndSendDaoProposal } = await import('../lib/wallet');
+        isRealWallet = isRealWalletConnected();
+        if (isRealWallet) {
+          onShowToast('Signing & broadcasting add_proposal to Sputnik DAO...');
+          const res = await signAndSendDaoProposal({
+            daoContractId: daoContract,
+            policyContractId: policyContractId || 'zinipay-policy2.testnet',
+            recipient,
+            amountYocto: yoctoAmount,
+            deliverableCid: deliverable,
+            description: proposalDesc,
+            bondYocto: daoPolicy?.proposal_bond || '1000000000000000000000000',
+          });
+          onChainTxHash = res?.txHash;
+          onShowToast('Proposal successfully submitted to Sputnik DAO on-chain!');
+        }
+      } catch (walletErr: any) {
+        if (walletErr?.message?.includes('No active NEAR wallet connected')) {
+          // Simulation / demo observer mode
+        } else {
+          throw walletErr;
+        }
+      }
+
+      const newId = Date.now() % 10000;
+      const newProp: Proposal = {
+        id: newId,
+        title: task,
+        proposer: connectedAccount,
+        recipient,
+        amountNear: amount,
+        amountYocto: yoctoAmount,
+        proofCid: deliverable,
+        summary: `Deliberated via ZiniPay Agent. Three-Way Match clearance confirmed.`,
+        evidenceType: deliverable.includes('github') ? 'github_pr' : 'milestone_deliverable',
+        evidenceDetails: `Task: ${task} | Deliverable: ${deliverable} | Attestation: ${deliberationStatus.attestationSummary}`,
+        createdAt: 'Just now',
+        status: 'pending_quorum',
+        simulated: !isRealWallet,
+        txHash: onChainTxHash,
+        policy: {
+          withinCap: true,
+          capLimit: `${onChainPolicy ? (Number(BigInt(onChainPolicy.per_proposal_cap) / 10n ** 22n) / 100).toFixed(1) : '15.0'} NEAR`,
+          cooldownElapsed: true,
+          cooldownRemainingSecs: 0,
+          cidUnique: true,
+          reputationQualified: true,
+          reputationScore: 85,
+          tier: 'Gold',
+        },
+        settlement: {
+          type: destinationChain === 'near' ? 'native_near' : 'cross_chain_intent',
+          targetChain: destinationChain,
+          targetToken: destinationChain === 'near' ? 'NEAR' : 'USDC',
+          recipientAddress: destinationChain === 'near' ? recipient : crossChainAddress,
+          quoteEstimate: destinationChain !== 'near' ? `~${(Number(amount) * 4.6).toFixed(2)} USDC` : undefined,
+        },
+        targetContract: policyContractId || 'zinipay-policy2.testnet',
+        targetMethod: 'release',
+        isZinipayRelease: true,
+        votes: {
+          approve: 1,
+          reject: 0,
+          required: 2,
+        },
+      };
+
+      onProposalCreated(newProp);
+      if (!isRealWallet) {
+        onShowToast(`Proposal #ZP-${newId} queued with Three-Way Match!`);
+      }
+
+      // Reset form
+      setTask('');
+      setDeliverable('');
+      setRecipient('');
+      setAmount('');
+      setCrossChainAddress('');
+      setCurrentStep(1);
+      setDeliverableStatus({ status: 'pending', reason: 'Awaiting artifact input' });
+      setPolicyStatus({ status: 'pending', reason: 'Awaiting policy validation' });
+      setDeliberationStatus({ status: 'pending', reason: 'Awaiting agent deliberation' });
+      setPayloadStatus({ status: 'pending', reason: 'Awaiting clearance' });
+    } catch (err: any) {
+      console.error('Dispatch error:', err);
+      onShowToast(err.message || 'Failed to dispatch proposal to Sputnik DAO');
+    } finally {
+      setIsDispatching(false);
+    }
   };
 
   return (
@@ -738,16 +782,18 @@ export function StepByStepProposeForm({
             <button
               type="button"
               onClick={handleDispatch}
-              disabled={payloadStatus.status !== 'passed' || !connectedAccount}
+              disabled={payloadStatus.status !== 'passed' || !connectedAccount || isDispatching}
               className={`btn-primary text-xs py-2.5 px-5 flex items-center justify-center gap-2 ${
-                !connectedAccount || payloadStatus.status !== 'passed'
+                !connectedAccount || payloadStatus.status !== 'passed' || isDispatching
                   ? 'opacity-40 cursor-not-allowed'
                   : 'cursor-pointer'
               }`}
             >
-              <Send size={13} />
+              <Send size={13} className={isDispatching ? 'animate-spin' : ''} />
               <span>
-                {connectedAccount
+                {isDispatching
+                  ? 'Broadcasting to Sputnik DAO...'
+                  : connectedAccount
                   ? 'Sign & Dispatch to Sputnik DAO'
                   : 'Connect Wallet to Dispatch'}
               </span>
