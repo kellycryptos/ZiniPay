@@ -168,7 +168,7 @@ No private keys and no `.env` file are needed. Steps 4 to 8 read public testnet 
    See: `THREE-WAY MATCH FAILED` because the deliverable was already settled on-chain (PR #2 paid Proposal #6). This is the replay check running against the live contract. No transaction is sent. Without network access it prints that it could not read `cid_used` and exits with code 2, so it never clears a request it could not check.
 
 8. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`
-   See: the request is rejected because the PR author (`vsavchyn-dev`) does not match the recipient handle. This is the off-chain stolen deliverable check. It needs internet access for GitHub and NEAR RPC.
+   See: the request passes the policy checks and is then rejected with `Consensus Verdict: REJECTED` because the PR author (`vsavchyn-dev`, read from GitHub) does not match the recipient handle. This is the off-chain stolen deliverable check. In this build it runs inside the simulated review step, so the output is labeled `[SIMULATION]`. It needs internet access for GitHub and NEAR RPC.
 
 9. Do: `npm run demo:social-money`
    See: a local walkthrough with no chain calls: a request, a score update, a tiered outcome and a blocked replay. It uses a made-up account (`alice-contributor.testnet`) to show the logic, so it is an illustration and not evidence. It builds the agent first, so it takes about a minute.
