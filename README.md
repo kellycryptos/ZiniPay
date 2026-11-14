@@ -11,6 +11,8 @@ Status: NEAR testnet only. Not audited. The AI review step is simulated in this 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
 [![Security Policy](https://img.shields.io/badge/Security-Policy%20%26%20Limits-yellow.svg)](SECURITY.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6.svg)](https://www.typescriptlang.org)
+[![Rust](https://img.shields.io/badge/Rust-contract-DEA584.svg)](https://www.rust-lang.org)
 
 ## Contents
 
@@ -18,16 +20,18 @@ Status: NEAR testnet only. Not audited. The AI review step is simulated in this 
 2. [What ZiniPay does](#what-zinipay-does)
 3. [How a payout flows](#how-a-payout-flows)
 4. [Attacks and what stops them](#attacks-and-what-stops-them)
-5. [Try it: do this, see that](#try-it-do-this-see-that)
-6. [Proof on testnet](#proof-on-testnet)
-7. [How NEAR is used](#how-near-is-used)
-8. [Deployed on testnet](#deployed-on-testnet)
-9. [Limits](#limits)
-10. [Hackathon tracks](#hackathon-tracks)
-11. [Repository layout](#repository-layout)
-12. [What we used](#what-we-used)
-13. [Developer experience](#developer-experience)
-14. [AI assistance](#ai-assistance)
+5. [Claims and evidence](#claims-and-evidence)
+6. [Where each NEAR piece lives](#where-each-near-piece-lives)
+7. [Try it: do this, see that](#try-it-do-this-see-that)
+8. [Proof on testnet](#proof-on-testnet)
+9. [How NEAR is used](#how-near-is-used)
+10. [Deployed on testnet](#deployed-on-testnet)
+11. [Limits](#limits)
+12. [Hackathon tracks](#hackathon-tracks)
+13. [Repository layout](#repository-layout)
+14. [What we used](#what-we-used)
+15. [Developer experience](#developer-experience)
+16. [AI assistance](#ai-assistance)
 
 ## The problem
 
@@ -109,9 +113,37 @@ A payout passes three gates.
 
 The red-team run found one real hole: the same ID in different capital letters passed the first duplicate check. We patched the contract, then attacked again. The second attempt reverted. Both are in the proof tables below.
 
+## Claims and evidence
+
+Each claim, whether the chain enforces it, where it lives in the code and the receipt that shows it.
+
+| Claim | Enforced or advisory | Code | Evidence |
+| --- | --- | --- | --- |
+| Two council votes approve every payout | Enforced by Sputnik DAO | [`agent/src/dao.ts`](agent/src/dao.ts), [`scripts/setup-testnet.mjs`](scripts/setup-testnet.mjs) | [`zinipay-demo.sputnikv2.testnet`](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet), votes [`22HTUkeVM6…`](https://testnet.nearblocks.io/txns/22HTUkeVM6nA3k4vrwYfojpMDhVi8Lcj4z2fGzETaepD) and [`2nWMVtQ4z2…`](https://testnet.nearblocks.io/txns/2nWMVtQ4z2L7Yerc8GBCBuAiYR4sM8xsKDo2V8tCwg5d) |
+| The agent has no vote and no council seat | Enforced by the DAO policy | [`scripts/setup-testnet.mjs`](scripts/setup-testnet.mjs) | `npm run verify:testnet`, check 1.3 |
+| Payout cap depends on reputation (10, 15 or 20 NEAR) | Enforced on-chain | [`contracts/policy-helper/src/lib.rs`](contracts/policy-helper/src/lib.rs) (`get_effective_cap`, `release`) | Recipient score 30, cap 15 NEAR. Over-cap attack [`EiktoyYPMJ…`](https://testnet.nearblocks.io/txns/EiktoyYPMJZt2C4rF5sR5rBF899yY4mYAVQmH9yMqARZ) |
+| Each deliverable ID pays once, capital letters ignored | Enforced on-chain | same file (`release`, `cid_used`) | Replay [`9Gp7HmJb9j…`](https://testnet.nearblocks.io/txns/9Gp7HmJb9jNg9QmGRUXunTpqqfGfhRbGPR4MJAGmEUSb), case variant [`EwQAsc5rXE…`](https://testnet.nearblocks.io/txns/EwQAsc5rXELJuLS8CG64uwT68WnBnHUSJCAQhwvgRc8y) |
+| 60 second cooldown per recipient | Enforced on-chain | same file (`release`) | Cooldown attack [`2hVRAoT67H…`](https://testnet.nearblocks.io/txns/2hVRAoT67HwCY1PJkNCwHNQgtqW461X4XFdSq6ed8jgD) |
+| Only the DAO can call `release` | Enforced on-chain | same file (`release`) | Unauthorized call [`2zsvqGDF4B…`](https://testnet.nearblocks.io/txns/2zsvqGDF4BkEs4MEvemnt2URXMHMjHuJtFFVXvKKWF4B) |
+| The DAO owns the contract | Enforced on-chain | same file (`update_reputation` and admin methods) | Ownership transfer [`BmUTUzULrC…`](https://testnet.nearblocks.io/txns/BmUTUzULrCCNDK1GTpwmq5QMLgvwPbFjGAjDjVnwZwJX), former owner blocked [`EmKpSxi4LX…`](https://testnet.nearblocks.io/txns/EmKpSxi4LXBs8VShDEhH55SjmDp3zkFTHTfoTQqE1w14) |
+| Two payouts of 0.10 NEAR were made | Recorded on-chain | [`frontend/public/data/verified.json`](frontend/public/data/verified.json) | Proposals #5 and #6, see Proof on testnet |
+| Approval schedule by tier (fewer votes for trusted contributors) | Advisory. Not deployed | [`agent/src/reputation.ts`](agent/src/reputation.ts), `get_approval_tier` in source only | The DAO still asks for 2 of 2 |
+| PR is merged and the author matches | Off-chain check in the agent | [`agent/src/policy.ts`](agent/src/policy.ts), [`agent/src/validator.ts`](agent/src/validator.ts) | Not visible on-chain |
+| AI review of the deliverable | Simulated in this build | [`agent/src/deliberation.ts`](agent/src/deliberation.ts) | None. The NEAR AI Cloud key returned HTTP 402 |
+
+## Where each NEAR piece lives
+
+| Piece | What it does here | Code | Status |
+| --- | --- | --- | --- |
+| Sputnik DAO v2 | Holds the treasury, takes proposals, counts council votes | [`agent/src/dao.ts`](agent/src/dao.ts), [`frontend/src/lib/nearRpc.ts`](frontend/src/lib/nearRpc.ts) | Live on testnet |
+| `PolicyHelper` contract (Rust) | Caps, cooldown, one-time IDs, reputation, rollback | [`contracts/policy-helper/src/lib.rs`](contracts/policy-helper/src/lib.rs) | Live on testnet |
+| NEAR AI Cloud | Inspector and Risk Arbiter review | [`agent/src/deliberation.ts`](agent/src/deliberation.ts) | Simulated, no funded key |
+| NEAR Intents (1Click quotes) | Price quote for a cross-chain payout | [`agent/src/intents.ts`](agent/src/intents.ts), [`frontend/src/components/IntentsModal.tsx`](frontend/src/components/IntentsModal.tsx) | Quotes only, no settlement |
+| Wallet Selector | Connect a NEAR wallet, or look around read-only | [`frontend/src/lib/wallet.ts`](frontend/src/lib/wallet.ts), [`frontend/src/components/WalletModal.tsx`](frontend/src/components/WalletModal.tsx) | Works, read-only observer mode cannot vote |
+
 ## Try it: do this, see that
 
-No private keys and no `.env` file are needed. Steps 4 to 6 read public testnet RPC, so they need internet access.
+No private keys and no `.env` file are needed. Steps 4 to 8 read public testnet RPC or GitHub, so they need internet access.
 
 1. Do: `git clone https://github.com/kellycryptos/ZiniPay.git && cd ZiniPay && npm install`
    See: dependencies install for the `agent` and `frontend` workspaces.
@@ -132,11 +164,20 @@ No private keys and no `.env` file are needed. Steps 4 to 6 read public testnet 
 6. Do: `npm run verify:proposal -- 6`
    See: Proposal #6 read from the DAO and checked against the policy contract: target `zinipay-policy2.testnet::release`, recipient, amount, tier cap, burned deliverable ID and the two council votes. Without network access it says it could not reach the RPC. Run it with `5` to check Proposal #5.
 
-7. Do: `npm run frontend:dev`, then open http://localhost:5173/board
-   See: the public board with live testnet proposals, contributor cards and receipt links. The same pages run at https://zini-pay.vercel.app.
+7. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`
+   See: `THREE-WAY MATCH FAILED` because the deliverable was already settled on-chain (PR #2 paid Proposal #6). This is the replay check running against the live contract. No transaction is sent. Without network access it prints that it could not read `cid_used` and exits with code 2, so it never clears a request it could not check.
 
-8. Do: open any transaction link in the tables below.
-   See: the real testnet transaction on NearBlocks. The five attack transactions show as failed with the contract's panic message.
+8. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`
+   See: the request is rejected because the PR author (`vsavchyn-dev`) does not match the recipient handle. This is the off-chain stolen deliverable check. It needs internet access for GitHub and NEAR RPC.
+
+9. Do: `npm run demo:social-money`
+   See: a local walkthrough with no chain calls: a request, a score update, a tiered outcome and a blocked replay. It uses a made-up account (`alice-contributor.testnet`) to show the logic, so it is an illustration and not evidence. It builds the agent first, so it takes about a minute.
+
+10. Do: `npm run frontend:dev`, then open http://localhost:5173/board
+    See: the public board with live testnet proposals, contributor cards and receipt links. The same pages run at https://zini-pay.vercel.app.
+
+11. Do: open any transaction link in the tables below.
+    See: the real testnet transaction on NearBlocks. The five attack transactions show as failed with the contract's panic message.
 
 ## Proof on testnet
 
