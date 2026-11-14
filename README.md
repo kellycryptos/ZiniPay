@@ -70,6 +70,20 @@ A payout passes three gates.
 - Public board at `/board`. It shows proposals, contributor cards and receipt links from real testnet data.
 - Trezu. The design should allow a Trezu treasury in place of Sputnik, but this is untested. See [docs/TREZU_INTEGRATION.md](docs/TREZU_INTEGRATION.md).
 
+## Public board
+
+![Live testnet data, captured 2026-11-13. Contributor reputation card with Silver tier, 30 points and 15 NEAR spend cap](docs/screenshots/final-contributor-card.png)
+
+*Live testnet data, captured 2026-11-13. Contributor reputation card with Silver tier, 30 points and 15 NEAR spend cap.*
+
+![Live testnet data, captured 2026-11-13. On-chain activity feed with proposals, council votes and blocked attacks](docs/screenshots/final-activity.png)
+
+*Live testnet data, captured 2026-11-13. On-chain activity feed with proposals, council votes and blocked attacks.*
+
+![Live testnet data, captured 2026-11-13. Visible tier policy matrix showing Bronze, Silver and Gold spend caps](docs/screenshots/final-tier-box.png)
+
+*Live testnet data, captured 2026-11-13. Visible tier policy matrix showing Bronze, Silver and Gold spend caps.*
+
 ## How a payout flows
 
 ```
