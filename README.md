@@ -8,6 +8,17 @@ Live site: https://zini-pay.vercel.app
 
 Status: NEAR testnet only. Not audited. The AI review step is simulated in this build (see Limits).
 
+### Distinction from NEAR Agent API
+PolicyHelper does not control an agent-held wallet. It gates proposals into an existing Sputnik DAO treasury based on the on-chain reputation of named accounts. This is different from the Agent API model (owner-signed policy over funds the agent holds). The two approaches solve different custody problems. The live demo uses Sputnik DAO v2 only.
+
+| Dimension | NEAR Agent API (`agentsonintents.com`) | ZiniPay `PolicyHelper` + Sputnik DAO |
+| :--- | :--- | :--- |
+| **Custody Target** | Agent-held wallet (agent holds and signs funds) | Community DAO treasury (agent holds $0 funds, 0 custody) |
+| **Spending Cap** | Owner-signed session allowance on agent wallet | Dynamic on-chain cap by recipient reputation (10/15/20 NEAR) |
+| **Payout Authority** | Autonomous agent dispatch | 2-of-2 Human Council multi-sig quorum required |
+| **Attack Blast Radius** | Compromised agent drains its wallet allowance | Compromised agent can only propose; council & contract block drain |
+| **Stateful Protections** | Session key duration | On-chain CID anti-replay, 60s cooldown, promise rollback |
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Network: NEAR Testnet](https://img.shields.io/badge/Network-NEAR%20Testnet-00EC97.svg)](https://testnet.nearblocks.io/address/zinipay-demo.sputnikv2.testnet)
 [![Security Policy](https://img.shields.io/badge/Security-Policy%20%26%20Limits-yellow.svg)](SECURITY.md)
@@ -18,20 +29,22 @@ Status: NEAR testnet only. Not audited. The AI review step is simulated in this 
 
 1. [The problem](#the-problem)
 2. [What ZiniPay does](#what-zinipay-does)
-3. [How a payout flows](#how-a-payout-flows)
-4. [Attacks and what stops them](#attacks-and-what-stops-them)
-5. [Claims and evidence](#claims-and-evidence)
-6. [Where each NEAR piece lives](#where-each-near-piece-lives)
-7. [Try it: do this, see that](#try-it-do-this-see-that)
-8. [Proof on testnet](#proof-on-testnet)
-9. [How NEAR is used](#how-near-is-used)
-10. [Deployed on testnet](#deployed-on-testnet)
-11. [Limits](#limits)
-12. [Hackathon tracks](#hackathon-tracks)
-13. [Repository layout](#repository-layout)
-14. [What we used](#what-we-used)
-15. [Developer experience](#developer-experience)
-16. [AI assistance](#ai-assistance)
+3. [Verification notes for judges](#verification-notes-for-judges)
+4. [Public board](#public-board)
+5. [How a payout flows](#how-a-payout-flows)
+6. [Attacks and what stops them](#attacks-and-what-stops-them)
+7. [Claims and evidence](#claims-and-evidence)
+8. [Where each NEAR piece lives](#where-each-near-piece-lives)
+9. [Try it: do this, see that](#try-it-do-this-see-that)
+10. [Proof on testnet](#proof-on-testnet)
+11. [How NEAR is used](#how-near-is-used)
+12. [Deployed on testnet](#deployed-on-testnet)
+13. [Limits](#limits)
+14. [Hackathon tracks](#hackathon-tracks)
+15. [Repository layout](#repository-layout)
+16. [What we used](#what-we-used)
+17. [Developer experience](#developer-experience)
+18. [AI assistance](#ai-assistance)
 
 ## The problem
 
@@ -69,6 +82,33 @@ A payout passes three gates.
 - Tiered approvals. The source defines a faster schedule for trusted contributors: Gold up to 2 NEAR with no vote, Silver up to 5 NEAR with one vote, and two votes above that. This is advisory. It is not deployed, and the live DAO requires two votes for every payout.
 - Public board at `/board`. It shows proposals, contributor cards and receipt links from real testnet data.
 - Trezu. The design should allow a Trezu treasury in place of Sputnik, but this is untested. See [docs/TREZU_INTEGRATION.md](docs/TREZU_INTEGRATION.md).
+
+## Verification notes for judges
+
+> **60-Second Keyless Judge Verification**: Run this in your terminal with zero `.env` and zero private keys to verify all 24 on-chain checks against live testnet RPC:
+> ```bash
+> npm run verify:testnet
+> ```
+> Confirms 2-of-2 council quorum, agent proposer isolation (0 voting rights), Silver tier 15 NEAR cap, burned deliverables, and 14 testnet transactions (including 6 reverted attack proofs).
+
+Deployed contracts (testnet):
+- PolicyHelper: `zinipay-policy2.testnet`
+- Sputnik DAO: `zinipay-demo.sputnikv2.testnet`
+- Agent (proposer only): `agentzinipaytestnet.testnet`
+
+The following are enforced on-chain in the deployed PolicyHelper:
+- Reputation-scaled spend caps (10, 15, 20 NEAR)
+- CID anti-replay (case-insensitive)
+- Per-recipient cooldown (60s)
+- Only the designated DAO can call `release`
+- DAO ownership of the contract
+
+The following are not deployed or are advisory:
+- `get_approval_tier` and reduced-vote schedules (live DAO mandates full 2-of-2 council quorum)
+- Full contributor records (tasks, total paid) beyond the on-chain score
+- Trezu live path (design only)
+
+Run the keyless verification commands in the “Try it: do this, see that” section to confirm the live path.
 
 ## Public board
 
@@ -159,38 +199,38 @@ Each claim, whether the chain enforces it, where it lives in the code and the re
 
 No private keys and no `.env` file are needed. Steps 4 to 8 read public testnet RPC or GitHub, so they need internet access.
 
-1. Do: `git clone https://github.com/kellycryptos/ZiniPay.git && cd ZiniPay && npm install`
+1. Do: `git clone https://github.com/kellycryptos/ZiniPay.git && cd ZiniPay && npm install`  
    See: dependencies install for the `agent` and `frontend` workspaces.
 
-2. Do: `npm test --prefix agent`
+2. Do: `npm test --prefix agent`  
    See: `All agent tests completed successfully!` The suites cover the policy engine, anti-replay checks, reputation tracking and tier logic.
 
-3. Do: `cd contracts/policy-helper && cargo test`
+3. Do: `cd contracts/policy-helper && cargo test`  
    See: `test result: ok. 23 passed; 0 failed`. Needs a Rust toolchain.
 
-4. Do: `npm run verify:testnet`
-   See: with network access, every check passes and the summary reads `24 PASSED / 0 UNVERIFIED / 0 FAILED`. It confirms the 2-of-2 council, that the agent has no voting rights, that the policy contract is bound to the DAO, the recipient's score and cap, burned deliverable IDs, and the status of the recorded transactions, including the five reverted attacks.
+4. Do: `npm run verify:testnet`  
+   See: with network access, every check passes and the summary reads `24 PASSED / 0 UNVERIFIED / 0 FAILED`. It confirms the 2-of-2 council, that the agent has no voting rights, that the policy contract is bound to the DAO, the recipient's score and cap, burned deliverable IDs, and the status of the recorded transactions, including the five reverted attacks.  
    Without network access it prints `0 PASSED / 24 UNVERIFIED / 0 FAILED`, says nothing was verified, and exits with code 2. It never reports FAILED just because the network is down.
 
-5. Do: `npm run verify:reputation -- zinipay-recipient2.testnet`
+5. Do: `npm run verify:reputation -- zinipay-recipient2.testnet`  
    See: the contributor's score (30 points), tier (Silver, 1.5x cap, 15 NEAR) and the two payout receipts with explorer links. Task counts and total paid come from a local cache, the score comes from the contract.
 
-6. Do: `npm run verify:proposal -- 6`
+6. Do: `npm run verify:proposal -- 6`  
    See: Proposal #6 read from the DAO and checked against the policy contract: target `zinipay-policy2.testnet::release`, recipient, amount, tier cap, burned deliverable ID and the two council votes. Without network access it says it could not reach the RPC. Run it with `5` to check Proposal #5.
 
-7. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`
+7. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/kellycryptos/ZiniPay/pull/2" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`  
    See: `THREE-WAY MATCH FAILED` because the deliverable was already settled on-chain (PR #2 paid Proposal #6). This is the replay check running against the live contract. No transaction is sent. Without network access it prints that it could not read `cid_used` and exits with code 2, so it never clears a request it could not check.
 
-8. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`
+8. Do: `npm run agent:propose -- --task "Implement Sputnik DAO Three-Way Gate" --deliverable "https://github.com/near/near-sdk-rs/pull/1651" --recipient zinipay-recipient2.testnet --amount 0.1 --github-handle kellycryptos --dry-run`  
    See: the request passes the policy checks and is then rejected with `Consensus Verdict: REJECTED` because the PR author (`vsavchyn-dev`, read from GitHub) does not match the recipient handle. This is the off-chain stolen deliverable check. In this build it runs inside the simulated review step, so the output is labeled `[SIMULATION]`. It needs internet access for GitHub and NEAR RPC.
 
-9. Do: `npm run demo:social-money`
+9. Do: `npm run demo:social-money`  
    See: a local walkthrough with no chain calls: a request, a score update, a tiered outcome and a blocked replay. It uses a made-up account (`alice-contributor.testnet`) to show the logic, so it is an illustration and not evidence. It builds the agent first, so it takes about a minute.
 
-10. Do: `npm run frontend:dev`, then open http://localhost:5173/board
+10. Do: `npm run frontend:dev`, then open http://localhost:5173/board  
     See: the public board with live testnet proposals, contributor cards and receipt links. The same pages run at https://zini-pay.vercel.app.
 
-11. Do: open any transaction link in the tables below.
+11. Do: open any transaction link in the tables below.  
     See: the real testnet transaction on NearBlocks. The five attack transactions show as failed with the contract's panic message.
 
 ## Proof on testnet
@@ -272,20 +312,20 @@ Prerequisites: Node 20 or newer and npm 10 or newer. Rust with the `wasm32-unkno
 
 We would rather you hear these from us.
 
-- Testnet only. No real funds. No independent audit. Our own checks: `cargo test` (23 passing), `cargo clippy` (no warnings in the contract) and `cargo audit` (advisories only in NEAR toolkit crates that are not compiled into the deployed WASM). Details in [SECURITY.md](SECURITY.md).
-- The AI review is simulated. NEAR AI Cloud returned a payment error for our key, so the review step runs locally. The human votes and the contract rules are real.
-- Every payout needs both council votes. The faster approval schedule for trusted contributors exists in the source as `get_approval_tier`, but it is advisory and is not deployed.
-- `burn_cid`, `get_approval_tier` and `get_contributor_record` are in `main` but not in the deployed contract (deployed from commit `6fb2426`, matched by method names). We did not redeploy, so the evidence above stays tied to one code hash. The build is not reproducible.
-- Contract ownership moved to the DAO in the transaction listed above. The old owner can no longer change policy. `reset_cooldown` was called once by the old owner on Oct 30 during early testing.
-- Silver and Gold promotions only happen through council action. The recipient went to 25 points by council call and to 30 through DAO Proposal #7.
-- The 24 hour rolling spend limit is checked by the agent only. The contract enforces the per payout cap, the cooldown and one-time deliverables.
-- The GitHub PR check happens off-chain. The chain enforces that each deliverable ID is used once, not that the PR exists.
-- Completed task counts and total paid in the CLI come from a local cache (`zinipay-reputation.json`). The score itself is read from the contract.
-- `migrate_canonicalize_cids` has no access control. It only rewrites existing burned IDs to their lowercase form and can be run more than once safely.
-- Anyone can submit a proposal to the DAO. The 1 NEAR proposal bond is the only spam deterrent.
-- The rate limiter on the Vercel endpoint is in memory and best effort. Hard limits depend on spending caps set at the AI provider.
-- NEAR Intents is used for quotes only. We do not settle cross-chain.
-- Trezu is untested. We only ran Sputnik DAO v2.
+- This is testnet only. There are no real funds and no independent audit. We tested it with `cargo test`, `cargo clippy` and `cargo audit` ourselves. Details in [SECURITY.md](SECURITY.md).
+- The AI review is simulated. The NEAR AI Cloud key returned HTTP 402, so the Inspector and Risk Arbiter run locally. The human votes and the contract rules are real.
+- Tiered approvals are advisory. The faster schedule for trusted contributors is in the source but not deployed. Every live payout still needs two council votes.
+- Some functions are in main but not in the deployed contract. `burn_cid`, `get_approval_tier` and `get_contributor_record` are in the current source. The deployed code is from commit `6fb2426`. We did not redeploy, so the evidence above stays tied to one code hash. The build is not reproducible.
+- Ownership moved to the DAO. The old owner called `reset_cooldown` once during testing. The DAO owns it now.
+- Silver and Gold promotions need a council vote. They cannot be self-updated. The recipient went to 25 points by council call and to 30 through DAO Proposal #7.
+- The 24-hour rolling spend limit is checked by the agent only, not the contract. The contract enforces the per payout cap, the cooldown and one-time deliverables.
+- GitHub PR existence is checked off-chain. The chain only enforces ID uniqueness.
+- Task counts and totals come from a local cache (`zinipay-reputation.json`). The score is on-chain.
+- `migrate_canonicalize_cids` has no access control. It is a one-time migration helper that rewrites existing burned IDs to lowercase and can be run safely.
+- Anyone can propose to the DAO. The 1 NEAR bond is the only deterrent.
+- Rate limiting on the Vercel endpoint is in-memory and best effort. Hard limits depend on spending caps set at the AI provider.
+- NEAR Intents is used for quotes only. There is no cross-chain settlement.
+- Trezu is untested. Only Sputnik DAO v2 is deployed.
 
 Demo values you should not copy to production:
 

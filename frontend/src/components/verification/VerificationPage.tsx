@@ -420,6 +420,17 @@ export function VerificationPage({
           <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-2xl leading-relaxed">
             Independent proof for DAO treasurers and contributors. Inspect live in-browser RPC queries, blocked attack transaction receipts, and the complete on-chain audit trail.
           </p>
+
+          {/* Architectural Distinction Note for Evaluators */}
+          <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-panel)] border border-[var(--border-subtle)] flex flex-col gap-2.5">
+            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">
+              <Shield size={14} />
+              <span>Architectural Notice: Why PolicyHelper vs. NEAR Agent API</span>
+            </div>
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+              NEAR Agent API governs agent-held wallets under owner-signed policies. ZiniPay solves a different custody challenge: protecting a <strong className="text-[var(--text-primary)]">community DAO treasury (Sputnik DAO v2)</strong> where the proposing agent holds <strong className="text-[var(--text-primary)]">0 custody, 0 funds, and 0 vote permissions</strong>. Payouts are gated into Sputnik DAO proposals based on on-chain contributor reputation (Bronze 10N, Silver 15N, Gold 20N) and mandate <strong className="text-[var(--text-primary)]">2-of-2 human council multi-sig approval</strong> before any transfer occurs.
+            </p>
+          </div>
         </div>
 
         {/* SECTION 1: IN-BROWSER CHECKS */}
