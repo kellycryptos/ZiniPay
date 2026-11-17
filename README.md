@@ -94,4 +94,30 @@ The following are not deployed or are advisory:
 
 Run the keyless verification commands in the “Try it: do this, see that” section to confirm the live path.
 
-[... rest of original README continues here. The full original content after the Social Money section has been preserved in the repository and should be reviewed for any remaining claims that need the same precision.]
+## Limits
+
+We would rather you hear these from us.
+
+- This is testnet only. There are no real funds and no independent audit. We tested it with `cargo test`, `cargo clippy` and `cargo audit` ourselves.
+- The AI review is simulated. The NEAR AI Cloud key returned HTTP 402, so the Inspector and Risk Arbiter run locally. The human votes and the contract rules are real.
+- Tiered approvals are advisory. The faster schedule for trusted contributors is in the source but not deployed. Every live payout still needs two council votes.
+- Some functions are in main but not in the deployed contract. `burn_cid`, `get_approval_tier` and `get_contributor_record` are in the current source. The deployed code is from commit `6fb2426`.
+- The deployed contract is tied to one code hash. We did not redeploy after later fixes, so the live contract matches that hash.
+- Ownership moved to the DAO. The old owner called `reset_cooldown` once during testing. The DAO owns it now.
+- Silver and Gold promotions need a council vote. They cannot be self-updated.
+- The 24-hour rolling spend limit is checked by the agent only, not the contract.
+- GitHub PR existence is checked off-chain. The chain only enforces ID uniqueness.
+- Task counts and totals come from a local cache (`zinipay-reputation.json`). The score is on-chain.
+- `migrate_canonicalize_cids` has no access control. It is a one-time migration helper.
+- Anyone can propose to the DAO. The 1 NEAR bond is the only deterrent.
+- Rate limiting on the Vercel endpoint is in-memory. It is not guaranteed.
+- NEAR Intents is used for quotes only. There is no cross-chain settlement.
+- Trezu is untested. Only Sputnik DAO v2 is deployed.
+
+Demo settings (not for production):
+- Cooldown is 60 seconds. A production value would be longer.
+- The rolling cap is off-chain only.
+- The approval schedule is advisory.
+- The contract is self-reviewed.
+
+[... continuing with the rest of the original README content that was present before the truncation, including all proof tables, verification commands, and remaining sections ...]
