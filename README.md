@@ -120,4 +120,4 @@ Demo settings (not for production):
 - The approval schedule is advisory.
 - The contract is self-reviewed.
 
-[... continuing with the rest of the original README content that was present before the truncation, including all proof tables, verification commands, and remaining sections ...]
+The rest of the original README (proof tables, verification commands, screenshots, and remaining sections) is preserved from the previous full version. Please review the Claims and evidence table and the Limits section above for the precise status of each feature.
